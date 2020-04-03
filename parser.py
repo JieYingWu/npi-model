@@ -9,6 +9,7 @@ import pandas as pd
 path = 'data/COVID-19-up-to-date.csv'
 path_cases_new = 'data/COVID-19-up-to-date-cases-clean.csv'
 path_deaths_new = 'data/COVID-19-up-to-date-deaths-clean.csv'
+interventions = pd.read_csv('data/interventions.csv')
 
 def get_stan_parameters(save_new_csv=True):
     """
@@ -25,8 +26,6 @@ def get_stan_parameters(save_new_csv=True):
 
 
     """
-
-    interventions = pd.read_csv(join(data_dir, 'interventions.csv'))
     mod_interventions = pd.DataFrame(columns=['Country', 'school/uni closures', 'self-isolating if ill',
                                               'banning public events', 'any government intervention',
                                               'complete/partial lockdown', 'social distancing/isolation'])
