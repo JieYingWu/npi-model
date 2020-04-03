@@ -106,44 +106,30 @@ stan_data = list(M=length(countries),N=NULL,p=p,x1=poly(1:N2,2)[,1],x2=poly(1:N2
 #stan_data = {'M':len(countries), 'N':N, 'p':interventions.shape[1]-1,...}
 
 # Train the model and generate samples - returns a StanFit4Model
-fit = sm.sampling(data=data, iter=200, chains=4, warmup=100, thin=4, seed=101, control={adapt_delta:0.9, max_treedepth:10})
+fit = sm.sampling(data=stan_data, iter=200, chains=4, warmup=100, thin=4, seed=101, control={adapt_delta:0.9, max_treedepth:10})
 
 ## TODO: Read out the data of the stan model
 # Seems like extract parameters by str of the parameter name: https://pystan.readthedocs.io/en/latest/api.html#stanfit4model
 # Check that Rhat is close to 1 to see if the model's converged
 
-# summary_dict = fit.summary()
-# df = pd.DataFrame(summary_dict['summary'], 
-#                  columns=summary_dict['summary_colnames'], 
-#                  index=summary_dict['summary_rownames'])
+summary_dict = fit.summary()
+df = pd.DataFrame(summary_dict['summary'], 
+                  columns=summary_dict['summary_colnames'], 
+                  index=summary_dict['summary_rownames'])
 
-# alpha_mean, beta_mean = df['mean']['alpha'], df['mean']['beta']
+#alpha_mean, beta_mean = df['mean']['alpha'], df['mean']['beta']
 
-# Extracting traces
-# alpha = fit['alpha']
-# beta = fit['beta']
-# sigma = fit['sigma']
-# lp = fit['lp__']
+# All the parameters in the stan model
+mu = fit['mu']
+alpha = fit['alpha']
+kappa = fit['kappa']
+y = fit['y']
+phi = fit['phi']
+tau = fit['tau']
+prediction = fit['prediction']
+estimated_deaths = fit['E_deaths']
+estimated_deaths_cf = fit['E_deaths0']
 
-real<lower=0> mu[M]; // intercept for Rt
-real<lower=0> alpha[6]; // the hier term
-real<lower=0> kappa;
-real<lower=0> y[M];
-real<lower=0> phi;
-real<lower=0> tau;
-
-prediction = out$prediction
-estimated.deaths = out$E_deaths
-estimated.deaths.cf = out$E_deaths0
-
-JOBID = Sys.getenv("PBS_JOBID")
-if(JOBID == "")
-  JOBID = as.character(abs(round(rnorm(1) * 1000000)))
-print(sprintf("Jobid = %s",JOBID))
-
-save.image(paste0('results/',StanModel,'-',JOBID,'.Rdata'))
-
-save(fit,prediction,dates,reported_cases,deaths_by_country,countries,estimated.deaths,estimated.deaths.cf,out,covariates,file=paste0('results/',StanModel,'-',JOBID,'-stanfit.Rdata'))
 
 ## TODO: Make pretty plots
 # Probably don't have to use Imperial data for this, just find similar looking Python packages
