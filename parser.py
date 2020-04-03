@@ -20,7 +20,8 @@ def get_stan_parameters(save_new_csv=True):
     x[N2]; // index of days (starting at 1)
     cases[N2,M]; // reported cases
     deaths[N2, M]; // reported deaths -- the rows with i > N contain -1 and should be ignored
-    EpidemicStart[M]; 
+    EpidemicStart[M];
+    p; //intervention dates
 
 
     """
