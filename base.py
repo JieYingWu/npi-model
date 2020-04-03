@@ -4,8 +4,10 @@ import numpy as np
 
 import pystan
 import matplotlib.pyplot as plt
-import seaborn as sns
+import seaborn as sn
 import pandas as pd
+from statsmodels.distributions.empirical_distribution import ECDF
+
 
 ## Copied from https://towardsdatascience.com/an-introduction-to-bayesian-inference-in-pystan-c27078e58d53
 # sns.set()  # Nice plot aesthetic
@@ -69,18 +71,33 @@ covid_up_to_date = np.loadtxt(join(data_dir, 'COVID-19-up-to-date.csv'))
 N = shape(cases)[1]
 N2 = 75
 
-
 ## TODO: turn rgammAlt, ecdf, and function thing into Python gamma distribution and convolution
 # infection to onset
 mean1 = 5.1
 cv1 = 0.86
 # onset to death
-mean2 = 18.8; cv2 = 0.45 
-## assume that IFR is probability of dying given infection
-x1 = rgammaAlt(5e6,mean1,cv1) # infection-to-onset -> do all people who are infected get to onset?
-x2 = rgammaAlt(5e6,mean2,cv2) # onset-to-death
-f = ecdf(x1+x2)
-convolution = function(u) (IFR * f(u)) # IFR is the country's probability of death
+mean2 = 18.8
+cv2 = 0.45 
+
+def conv(ifr, u): # IFR is the country's probability of death
+    return ifr * u
+
+for c in countries:
+    ifr = weighted_fatalities[c]
+    
+    h = np.zeros(N2) # Discrete hazard rate from time t = 1, ..., 100
+
+    ## assume that IFR is probability of dying given infection
+    x1 = np.random.gamma(mean1, cv1, 5e6) # infection-to-onset -> do all people who are infected get to onset?
+    x2 = np.random.gamma(mean2, cv2, 5e6) # onset-to-death
+
+    f = ECDF(x1+x2)
+
+    h[1] = (conv(1.5) - conv(0))
+    
+    for(i in 2:length(h)) {
+        h[i] = (convolution(i+.5) - convolution(i-.5)) / (1-convolution(i-.5))
+    }
 
 ## TODO: fill in the data for the stan model - check if Python wants something different
 stan_data = list(M=length(countries),N=NULL,p=p,x1=poly(1:N2,2)[,1],x2=poly(1:N2,2)[,2],
