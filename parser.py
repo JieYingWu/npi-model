@@ -36,6 +36,7 @@ def get_stan_parameters(save_new_csv=True):
     mod_interventions['banning public events'] = interventions.iloc[0:11]['public_events']
     mod_interventions['social distancing/isolation'] = interventions.iloc[0:11]['social_distancing_encouraged']
     mod_interventions['complete/partial lockdown'] = interventions.iloc[0:11]['lockdown']
+    mod_interventions['any government intervention'] = interventions.iloc[0:11]['lockdown']
 
     for col in mod_interventions.columns.tolist():
         if col == 'Country' or col == 'complete/partial lockdown':
@@ -43,9 +44,10 @@ def get_stan_parameters(save_new_csv=True):
         col1 = pd.to_datetime(mod_interventions[col]).dt.date
         col2 = pd.to_datetime(mod_interventions['complete/partial lockdown']).dt.date
         mod_interventions[col] = np.where(col1 > col2, col2, col1).astype(str)
+        if col != 'self-isolating if ill':
+            mod_interventions[col3] = np.where(col1 < col3, col1, col1).astype(str)
 
     mod_interventions.sort_values('Country', inplace=True)
-
 
     countries = sorted(['Denmark', 'Italy', 'Germany', 'Spain', 'United Kingdom', 'France', 'Norway', 'Belgium', 'Austria', 'Sweden', 'Switzerland'])
     print(countries)
