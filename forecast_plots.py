@@ -47,7 +47,7 @@ p <- ggplot(data_country) +
 
 
 def plot_forecast(data_country):#, data_country_forecast):
-    g_bar = ggplot(aes(x='time', y='deaths'), data=data_country) + geom_bar() #+ stat_smooth(colour='blue', span=0.2)
+    g_bar = ggplot(data_country, aes(x='time', weight='deaths')) + geom_bar(colour='red', fill='red') + ggtitle("Deaths") #+ stat_smooth(colour='blue', span=0.2)
     #g_line1 = ggplot(aes(x='time', y='estimated_deaths'), data=data_country) + geom_line() #+ stat_smooth(colour='blue', span=0.2)
     #g_line2 = ggplot(aes(x='time', y='estimated_deaths_forecast'), data=data_country_forecast) + geom_line()
 
@@ -56,12 +56,14 @@ def plot_forecast(data_country):#, data_country_forecast):
     #print(g_line2)
 
 
-dates = [pd.to_datetime('2020-03-16'), pd.to_datetime('2020-03-17'), pd.to_datetime('2020-03-18')]
+#here i make somy dummy data
+dates = [pd.to_datetime('2020-03-16'), pd.to_datetime('2020-03-17'), pd.to_datetime('2020-03-18'),
+         pd.to_datetime('2020-03-19'), pd.to_datetime('2020-03-20'), pd.to_datetime('2020-03-21'),
+         pd.to_datetime('2020-03-22'), pd.to_datetime('2020-03-23'), pd.to_datetime('2020-03-24')]
+
 data_country = {'time':	dates,
-                'deaths': [4, 4, 10],
-                'estimated_deaths':[20, 15, 10]}
+                'deaths': [1, 5, 10, 20, 100, 160, 170, 210, 300],
+                'estimated_deaths':[1, 5, 10, 100, 150, 160, 170, 190, 200]}
 
 df = pd.DataFrame(data=data_country)
-print(type(data_country))
-print(type(meat))
 plot_forecast(df)#,data_country_forecast)
