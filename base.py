@@ -79,9 +79,6 @@ cv1 = 0.86
 mean2 = 18.8
 cv2 = 0.45 
 
-def conv(ifr, u): # IFR is the country's probability of death
-    return ifr * u
-
 for c in countries:
     ifr = weighted_fatalities[c]
     
@@ -93,11 +90,13 @@ for c in countries:
 
     f = ECDF(x1+x2)
 
+    def conv(u): # IFR is the country's probability of death
+        return ifr * f(u)
+    
     h[1] = (conv(1.5) - conv(0))
     
-    for(i in 2:length(h)) {
+    for(i in 2:length(h)):
         h[i] = (convolution(i+.5) - convolution(i-.5)) / (1-convolution(i-.5))
-    }
 
 ## TODO: fill in the data for the stan model - check if Python wants something different
 stan_data = list(M=length(countries),N=NULL,p=p,x1=poly(1:N2,2)[,1],x2=poly(1:N2,2)[,2],
