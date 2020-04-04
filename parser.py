@@ -57,8 +57,7 @@ def get_stan_parameters(save_new_csv=True):
     deaths_dict_padded = {}
     start_date_dict = {}
     start_date = datetime.date(2019,12,31)
-
-    with open(path, 'r') as file:
+    with open(path, 'r', encoding='latin1') as file:
         reader = csv.reader(file, delimiter=',')
         next(reader)
 
