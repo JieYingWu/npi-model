@@ -118,8 +118,68 @@ def get_stan_parameters(save_new_csv=True):
 
     return final_dict
 
+
+def get_stan_parameters_our(num_counties):
+    cases_path = '../disease_spread/data/infections_timeseries.csv'
+    deaths_path = '../disease_spread/data/deaths_timeseries.csv'
+
+    # Pick counties with 20 most cases:
+    df_cases = pd.read_csv(cases_path)
+    df_deaths = pd.read_csv(deaths_path)
+    
+    headers = df_cases.columns.values
+    last_day = headers[-1]
+    observed_days = len(headers[2:])
+    
+    df_cases = df_cases.sort_values(by=[last_day], ascending=False)
+    df_cases = df_cases.iloc[:num_counties].copy()
+    df_cases = df_cases.reset_index(drop=True)
+    
+    fips_list = df_cases['FIPS'].tolist()
+    merge_df = pd.DataFrame({'merge':fips_list})
+    df_deaths = df_deaths.loc[df_deaths['FIPS'].isin(fips_list)]
+
+    df_deaths = pd.merge(merge_df, df_deaths, left_on='merge', right_on='FIPS', how='outer')
+    df_deaths = df_deaths.reset_index(drop=True)
+    
+    counter_list = []
+    for index, row in df_cases.iterrows():
+        cases_list = row[2:]
+        counter = 1
+        for cases in cases_list:
+            if cases == 0:
+                counter += 1
+        counter_list.append(counter)
+
+
+    df_cases = df_cases.drop(['FIPS', 'Combined_Key'], axis=1)
+    df_cases = df_cases.T
+    df_cases = df_cases.to_numpy()
+    
+    df_deaths = df_deaths.drop(['merge','FIPS', 'Combined_Key'], axis=1)
+    df_deaths = df_deaths.T
+    df_deaths = df_deaths.to_numpy()
+
+    
+    final_dict = {}
+    final_dict['M'] = num_counties
+    # #final_dict['N0'] = 
+    final_dict['N'] = np.asarray(num_counties* [observed_days]).astype(np.int)
+    final_dict['N2'] = observed_days
+    final_dict['x'] = np.arange(1, observed_days + 1).astype(np.int)
+    final_dict['cases'] = df_cases.astype(np.int)
+    final_dict['deaths'] = df_deaths.astype(np.int)
+    final_dict['EpidemicStart'] = np.asarray(counter_list).astype(np.int)
+
+    return final_dict
+
+            
+                
+
+
     
 if __name__ == '__main__':
-    get_stan_parameters()
+    #pick 20 counties
+    get_stan_parameters_our(20)
 
 
