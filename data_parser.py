@@ -28,8 +28,8 @@ def get_stan_parameters(save_new_csv=True):
     path_deaths_new = 'data/COVID-19-up-to-date-deaths-clean.csv'
     imp_interventions_dir = 'data/interventions.csv'
     
-    interventions = pd.read_csv(imp_interventions_dir, encoding='latin1')
-    covid_up_to_date = pd.read_csv(imp_covid_dir, encoding='latin1')
+    interventions = pd.read_csv(imp_interventions_dir, encoding='latin-1')
+    covid_up_to_date = pd.read_csv(imp_covid_dir, encoding='latin-1')
 
     mod_interventions = pd.DataFrame(columns=['Country', 'school/uni closures', 'self-isolating if ill',
                                               'banning public events', 'any government intervention',
@@ -143,7 +143,7 @@ def get_stan_parameters(save_new_csv=True):
     start_date_dict = {}
     start_date = datetime.date(2019,12,31)
 
-    with open(imp_covid_dir, 'r') as file:
+    with open(imp_covid_dir, 'r', encoding='latin-1') as file:
         reader = csv.reader(file, delimiter=',')
         next(reader)
 
@@ -200,13 +200,13 @@ def get_stan_parameters(save_new_csv=True):
         start_date_int_list.append(date)
 
 
-    with open(path_cases_new, 'w', newline='', encoding='latin1') as file:
+    with open(path_cases_new, 'w', newline='', encoding='latin-1') as file:
         writer = csv.writer(file, delimiter=',')
         for i, country in enumerate(countries_list):
             row = [country] + [cases for cases in reversed(cases_dict[country])]
             writer.writerow(row)
 
-    with open(path_deaths_new, 'w', newline='', encoding='latin1') as file:
+    with open(path_deaths_new, 'w', newline='', encoding='latin-1') as file:
         writer = csv.writer(file, delimiter=',')
         for i, country in enumerate(countries_list):
             row = [country] + [deaths for deaths in reversed(deaths_dict[country])]
