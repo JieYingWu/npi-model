@@ -131,7 +131,7 @@ def get_stan_parameters(save_new_csv=True):
 
     final_dict = {}
     final_dict['M'] = len(countries)
-    #final_dict['N0'] = 
+    final_dict['N0'] = 6
     final_dict['N'] = np.asarray(len_list).astype(np.int)
     final_dict['N2'] = len_list[0]
     final_dict['x'] = np.arange(1, (datetime.date(2020,3,28)+datetime.timedelta(days=1)-start_date).days + 1)
@@ -187,7 +187,7 @@ def get_stan_parameters_our(num_counties):
     
     final_dict = {}
     final_dict['M'] = num_counties
-    # #final_dict['N0'] = 
+    final_dict['N0'] = 6
     final_dict['N'] = np.asarray(num_counties* [observed_days]).astype(np.int)
     final_dict['N2'] = observed_days
     final_dict['x'] = np.arange(1, observed_days + 1).astype(np.int)
