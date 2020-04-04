@@ -56,7 +56,8 @@ countries = ['Denmark', 'Italy', 'Germany', 'Spain', 'United Kingdom', 'France',
 
 #interventions = np.loadtxt(join(data_dir, 'interventions.csv'))
 ## TODO: They check that if any measure has not been in place until lockdown, set that intervention date to lockdown
-## TODO: Build an array of intervention days where rows are the countries and columns are the interventions in this order: school/uni closures, self-isolating if ill, bannig public events, any government intervention, complete/partial lockdown, and social distancing/isolation
+## TODO: Build an array of intervention days where rows are the countries and columns are the interventions in this order:
+# school/uni closures, self-isolating if ill, bannig public events, any government intervention, complete/partial lockdown, and social distancing/isolation
 
 weighted_fatalities = np.loadtxt(join(data_dir, 'weighted_fatality.csv'), skiprows=1, delimiter=',', dtype=str)
 ifrs = {}
