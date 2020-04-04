@@ -29,7 +29,7 @@ def get_stan_parameters(save_new_csv=True):
     deaths[N2, M]; // reported deaths -- the rows with i > N contain -1 and should be ignored
     EpidemicStart[M];
     p; //intervention dates
-
+    covariate1, ...., covariate7
 
     """
     interventions = pd.read_csv(imp_interventions_dir)
@@ -151,7 +151,6 @@ def get_stan_parameters(save_new_csv=True):
         reader = csv.reader(file, delimiter=',')
         next(reader)
 
-
         for row in reader:
             dateRep, day, month, year, cases, deaths, country, geoId,countryCode, pop = row
             current_date = datetime.date(int(year), int(month), int(day))
@@ -203,7 +202,6 @@ def get_stan_parameters(save_new_csv=True):
     for date in start_date_list:
         date = ((date+datetime.timedelta(days=1)-start_date).days)
         start_date_int_list.append(date)
-
 
 
     with open(path_cases_new, 'w', newline='') as file:
