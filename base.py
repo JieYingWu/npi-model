@@ -1,57 +1,20 @@
+from os.path import join, exists
 import sys
 import numpy as np
+from data_parser import get_stan_parameters, get_stan_parameters_our
 
 import pystan
 import pandas as pd
-
-from os.path import join, exists
 from statsmodels.distributions.empirical_distribution import ECDF
-
-from data_parser import get_stan_parameters, get_stan_parameters_our
-
-## Copied from https://towardsdatascience.com/an-introduction-to-bayesian-inference-in-pystan-c27078e58d53
-# sns.set()  # Nice plot aesthetic
-# np.random.seed(101)
-
-# model = """
-
-# data {
-#     int<lower=0> N;
-#     vector[N] x;
-#     vector[N] y;
-# }
-# parameters {
-#     real alpha;
-#     real beta;
-#     real<lower=0> sigma;
-# }
-# model {
-#     y ~ normal(alpha + beta * x, sigma);
-# }
-
-# """
-
-# # Parameters to be inferred
-# alpha = 4.0
-# beta = 0.5
-# sigma = 1.0
-
-# # Generate and plot data
-# x = 10 * np.random.rand(100)
-# y = alpha + beta * x
-# y = np.random.normal(y, scale=sigma)
-
-# # Put our data in a dictionary
-# #data = {'N': len(x), 'x': x, 'y': y}
 
 # Compile the model
 sm = pystan.StanModel(file='stan-models/base.stan')
 
-
 data_dir = sys.argv[1]
 
 countries = ['Denmark', 'Italy', 'Germany', 'Spain', 'United Kingdom', 'France', 'Norway', 'Belgium', 'Austria', 'Sweden', 'Switzerland']
-#serial.interval = np.loadtxt(join(data_dir, 'serial_interval.csv')) # Time between primary infector showing symptoms and secondary infected showing symptoms - this is a probability distribution from 1 to 100 days
+serial_interval = np.loadtxt(join(data_dir, 'serial_interval.csv'), skiprows=1, delimiter=',') # Time between primary infector showing symptoms and secondary infected showing symptoms - this is a probability distribution from 1 to 100 days
+SI = serial_interval[:,1]
 
 #interventions = np.loadtxt(join(data_dir, 'interventions.csv'))
 ## TODO: They check that if any measure has not been in place until lockdown, set that intervention date to lockdown
@@ -68,6 +31,7 @@ for i in range(weighted_fatalities.shape[0]):
 
 stan_data = get_stan_parameters()
 N2 = stan_data['N2']
+stan_data['SI'] = SI
 
 ## TODO: turn rgammAlt, ecdf, and function thing into Python gamma distribution and convolution
 # infection to onset
@@ -77,8 +41,9 @@ cv1 = 0.86
 mean2 = 18.8
 cv2 = 0.45 
 
-for c in countries:
-    ifr = ifrs[c]
+all_f = np.zeros((N2, len(countries)))
+for c in range(len(countries)):
+    ifr = ifrs[countries[c]]
     
     h = np.zeros(N2) # Discrete hazard rate from time t = 1, ..., 100
 
@@ -100,9 +65,9 @@ for c in countries:
     s[0] = 1
     for i in range(1, N2):
         s[i] = s[i-1]*(1-h[i-1])
-    f = s * h
+    all_f[:,c] = s * h
 
-stan_data['f'] = f
+stan_data['f'] = all_f
 print(stan_data.keys())
 ## TODO: fill in the data for the stan model - check if Python wants something different
 #stan_data = list(M=length(countries),N=NULL,p=p,x1=poly(1:N2,2)[,1],x2=poly(1:N2,2)[,2],
@@ -111,8 +76,6 @@ print(stan_data.keys())
 #                 EpidemicStart = NULL) # N0 = 6 to make it consistent with Rayleigh
 #stan_data = {'M':len(countries), 'N':N, 'p':interventions.shape[1]-1,...}
 
-stan_data = get_stan_parameters(save_new_csv=False)
-# stan_data = get_stan_parameters_our(20)
 # Train the model and generate samples - returns a StanFit4Model
 fit = sm.sampling(data=stan_data, iter=200, chains=4, warmup=100, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
 
