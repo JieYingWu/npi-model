@@ -6,7 +6,7 @@ import future.backports.datetime as datetime
 import pandas as pd
 
 
-path = 'data/COVID-19-up-to-date.csv'
+covid_up_to_date = 'data/COVID-19-up-to-date.csv'
 path_cases_new = 'data/COVID-19-up-to-date-cases-clean.csv'
 path_deaths_new = 'data/COVID-19-up-to-date-deaths-clean.csv'
 interventions = pd.read_csv('data/interventions.csv')
@@ -37,17 +37,95 @@ def get_stan_parameters(save_new_csv=True):
     mod_interventions['social distancing/isolation'] = interventions.iloc[0:11]['social_distancing_encouraged']
     mod_interventions['complete/partial lockdown'] = interventions.iloc[0:11]['lockdown']
     mod_interventions['any government intervention'] = interventions.iloc[0:11]['lockdown']
+    mod_interventions['sport'] = interventions.iloc[0:11]['sport']
+    mod_interventions['travel_restrictions'] = interventions.iloc[0:11]['travel_restrictions']
+
+    mod_interventions.sort_values('Country', inplace=True)
 
     for col in mod_interventions.columns.tolist():
         if col == 'Country' or col == 'complete/partial lockdown':
             continue
-        col1 = pd.to_datetime(mod_interventions[col]).dt.date
-        col2 = pd.to_datetime(mod_interventions['complete/partial lockdown']).dt.date
+        col1 = pd.to_datetime(mod_interventions[col], format='%Y-%m-%d').dt.date
+        # .apply(lambda x: dt.strptime(x, '%Y-%m-%d'))
+        col2 = pd.to_datetime(mod_interventions['complete/partial lockdown'], format='%Y-%m-%d').dt.date
+        col3 = pd.to_datetime(mod_interventions['any government intervention'], format='%Y-%m-%d').dt.date
         mod_interventions[col] = np.where(col1 > col2, col2, col1).astype(str)
         if col != 'self-isolating if ill':
-            mod_interventions[col3] = np.where(col1 < col3, col1, col1).astype(str)
+            mod_interventions['any government intervention'] = np.where(col1 < col3, col1, col1).astype(str)
 
-    mod_interventions.sort_values('Country', inplace=True)
+    countries = mod_interventions['Country'].to_list()
+    date_cols = [col for col in mod_interventions.columns.tolist() if col != 'Country']
+
+    ###Initialize covariates
+    covariate1 = []
+    covariate2 = []
+    covariate3 = []
+    covariate4 = []
+    covariate5 = []
+    covariate6 = []
+    covariate7 = []
+
+    for country in countries:
+        d1 = covid_up_to_date.loc[covid_up_to_date['countriesAndTerritories'] == country]
+        covariates1 = mod_interventions.loc[mod_interventions['Country'] == country][date_cols]
+        d1['Date'] = pd.to_datetime(d1['dateRep'], format='%d/%m/%Y').dt.date
+        ## No idea why they needed another date column
+
+        d1.sort_values(by=['Date'], inplace=True)
+        d1.reset_index(drop=True, inplace=True)
+
+        ## get first day with number of cases >0
+        index = (d1['cases'] > 0).idxmax()
+        index1 = (d1['deaths'].cumsum() >= 10).argmax()
+        index2 = index1 - 30
+
+        d1 = d1.loc[index2:]
+        for col in date_cols:
+            covid_date = pd.to_datetime(d1['dateRep'], format='%d/%m/%Y').dt.date
+            int_data = dt.strptime(covariates1[col].to_string(index=False).strip(), '%Y-%m-%d')
+            # int_date = pd.to_datetime(covariates1[col], format='%Y-%m-%d').dt.date
+            d1[col] = np.where(covid_date.apply(lambda x: x >= int_data.date()), 1, 0)
+
+        N = len(d1['cases'])
+        N2 = 75  ##from paper
+        forecast = N2 - N
+
+        if forecast < 0:
+            print("Country: ", country, " N: ", N)
+            print("Error!!!! N2 is increasing!")
+            N2 = N
+            forecast = N2 - N
+
+        covariates2 = d1[date_cols]
+        covariates2.reset_index(drop=True, inplace=True)
+        covariates2 = covariates2.to_numpy()
+        addlst = [covariates2[N - 1]] * (forecast)
+
+        covariates2 = np.append(covariates2, addlst, axis=0)
+
+        covariate1.append(covariates2[:, 0])  # school_universities
+        covariate2.append(covariates2[:, 7])  # travel_restrictions
+        covariate3.append(covariates2[:, 2])  # public_events
+        covariate4.append(covariates2[:, 6])  # sports
+        covariate5.append(covariates2[:, 4])  # lockdwon
+        covariate6.append(covariates2[:, 5])  # social_distancing
+        covariate7.append(covariates2[:, 1])  # self-isolating if ill
+
+    # converting to numpy array
+    covariate1 = np.array(covariate1).T
+    covariate2 = np.array(covariate2).T
+    covariate3 = np.array(covariate3).T
+    covariate4 = np.array(covariate4).T
+    covariate5 = np.array(covariate5).T
+    covariate6 = np.array(covariate6).T
+    covariate7 = np.array(covariate7).T
+
+    #covariate2 = 0 * covariate2  # remove travel ban
+    #covariate5 = 0 * covariate5  # remove sports
+    covariate2 = covariate7  # self-isolating if ill
+    covariate4 = np.where(covariate1 + covariate3 + covariate5 + covariate6 + covariate7 >= 1, 1, 0)  # any intervention
+
+    covariate7 = 0  # models should take only one covariate
 
     countries = sorted(['Denmark', 'Italy', 'Germany', 'Spain', 'United Kingdom', 'France', 'Norway', 'Belgium', 'Austria', 'Sweden', 'Switzerland'])
     print(countries)
@@ -60,7 +138,7 @@ def get_stan_parameters(save_new_csv=True):
     start_date_dict = {}
     start_date = datetime.date(2019,12,31)
 
-    with open(path, 'r') as file:
+    with open(covid_up_to_date, 'r') as file:
         reader = csv.reader(file, delimiter=',')
         next(reader)
 
@@ -133,14 +211,21 @@ def get_stan_parameters(save_new_csv=True):
 
     final_dict = {}
     final_dict['M'] = len(countries)
-    #final_dict['N0'] = 
+    #final_dict['N0'] = 6
     final_dict['N'] = np.asarray(len_list).astype(np.int)
     final_dict['N2'] = len_list[0]
     final_dict['x'] = np.arange(1, (datetime.date(2020,3,28)+datetime.timedelta(days=1)-start_date).days + 1)
     final_dict['cases'] = np.asarray(cases_list).T.astype(np.int)
     final_dict['deaths'] = np.asarray(deaths_list).T.astype(np.int)
     final_dict['EpidemicStart'] = np.asarray(start_date_int_list).astype(np.int)
-    final_dict['p'] = mod_interventions.to_numpy()
+    final_dict['p'] = len(mod_interventions.columns) - 2 #s.t government intervention is not included
+    final_dict['covariate1'] = covariate1
+    final_dict['covariate2'] = covariate2
+    final_dict['covariate3'] = covariate3
+    final_dict['covariate4'] = covariate4
+    final_dict['covariate5'] = covariate5
+    final_dict['covariate6'] = covariate6
+    final_dict['covariate7'] = covariate7
     return final_dict
 
     
