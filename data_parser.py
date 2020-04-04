@@ -100,7 +100,7 @@ def get_stan_parameters(save_new_csv=True):
 
         N = len(d1['cases'])
         N_arr.append(N)
-        N2 = 75  ##from paper
+        N2 = 65  ##from paper
         forecast = N2 - N
 
         if forecast < 0:
@@ -147,9 +147,6 @@ def get_stan_parameters(save_new_csv=True):
 
     covariate7 = 0  # models should take only one covariate
 
-    countries = sorted(['Denmark', 'Italy', 'Germany', 'Spain', 'United_Kingdom', 'France', 'Norway', 'Belgium', 'Austria', 'Sweden', 'Switzerland'])
-    print(f'Order of M: {countries}')
-
     final_dict = {}
     final_dict['M'] = len(countries)
     final_dict['N0'] = 6
@@ -167,7 +164,8 @@ def get_stan_parameters(save_new_csv=True):
     final_dict['covariate5'] = covariate5
     final_dict['covariate6'] = covariate6
     final_dict['covariate7'] = covariate7
-    return final_dict
+    return final_dict, countries
+
 
 
 def get_stan_parameters_our(num_counties):
@@ -261,7 +259,7 @@ def get_stan_parameters_our(num_counties):
         covariates2 = np.array(covariates2).T
 
         N = len(req_dates)
-        N2 = 75  ##from paper
+        N2 = 50  ##from paper
         forecast = N2 - N
 
         if forecast < 0:
