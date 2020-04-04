@@ -1,19 +1,12 @@
 import os
 import csv
+import sys
 
 import numpy as np
-import future.backports.datetime as datetime
 import pandas as pd
 
-imp_covid_dir = 'data/COVID-19-up-to-date.csv'
-path_cases_new = 'data/COVID-19-up-to-date-cases-clean.csv'
-path_deaths_new = 'data/COVID-19-up-to-date-deaths-clean.csv'
-imp_interventions_dir = 'data/interventions.csv'
+from future.backports import datetime
 
-#### Set directory for our data
-cases_path = '../disease_spread/data/infections_timeseries.csv'
-deaths_path = '../disease_spread/data/deaths_timeseries.csv'
-interventions_path = '../disease_spread/data/interventions.csv'
 
 def get_stan_parameters(save_new_csv=True):
     """
@@ -30,6 +23,11 @@ def get_stan_parameters(save_new_csv=True):
     covariate1, ...., covariate7
 
     """
+    imp_covid_dir = 'data/COVID-19-up-to-date.csv'
+    path_cases_new = 'data/COVID-19-up-to-date-cases-clean.csv'
+    path_deaths_new = 'data/COVID-19-up-to-date-deaths-clean.csv'
+    imp_interventions_dir = 'data/interventions.csv'
+    
     interventions = pd.read_csv(imp_interventions_dir, encoding='latin1')
     covid_up_to_date = pd.read_csv(imp_covid_dir, encoding='latin1')
 
@@ -89,7 +87,7 @@ def get_stan_parameters(save_new_csv=True):
         d1 = d1.loc[index2:]
         for col in date_cols:
             covid_date = pd.to_datetime(d1['dateRep'], format='%d/%m/%Y').dt.date
-            int_data = dt.strptime(covariates1[col].to_string(index=False).strip(), '%Y-%m-%d')
+            int_data = datetime.datetime.strptime(covariates1[col].to_string(index=False).strip(), '%Y-%m-%d')
             # int_date = pd.to_datetime(covariates1[col], format='%Y-%m-%d').dt.date
             d1[col] = np.where(covid_date.apply(lambda x: x >= int_data.date()), 1, 0)
 
@@ -135,7 +133,7 @@ def get_stan_parameters(save_new_csv=True):
     covariate7 = 0  # models should take only one covariate
 
     countries = sorted(['Denmark', 'Italy', 'Germany', 'Spain', 'United_Kingdom', 'France', 'Norway', 'Belgium', 'Austria', 'Sweden', 'Switzerland'])
-    print(countries)
+    print(f'Order of M: {countries}')
 
     countries_list = []
     cases_dict = {}
@@ -145,7 +143,7 @@ def get_stan_parameters(save_new_csv=True):
     start_date_dict = {}
     start_date = datetime.date(2019,12,31)
 
-    with open(covid_up_to_date, 'r', encoding='latin1') as file:
+    with open(imp_covid_dir, 'r') as file:
         reader = csv.reader(file, delimiter=',')
         next(reader)
 
@@ -235,6 +233,12 @@ def get_stan_parameters(save_new_csv=True):
 
 
 def get_stan_parameters_our(num_counties):
+    
+    #### Set directory for our data
+    cases_path = '../disease_spread/data/infections_timeseries.csv'
+    deaths_path = '../disease_spread/data/deaths_timeseries.csv'
+    interventions_path = '../disease_spread/data/interventions.csv'
+    
     # Pick counties with 20 most cases:
     df_cases = pd.read_csv(cases_path)
     df_deaths = pd.read_csv(deaths_path)
@@ -247,6 +251,10 @@ def get_stan_parameters_our(num_counties):
     df_cases = df_cases.sort_values(by=[last_day], ascending=False)
     df_cases = df_cases.iloc[:num_counties].copy()
     df_cases = df_cases.reset_index(drop=True)
+
+
+    counties = df_cases['Combined_Key'].to_list()
+    print(f'Order of M: {counties}')
     
     fips_list = df_cases['FIPS'].tolist()
     merge_df = pd.DataFrame({'merge':fips_list})
@@ -261,7 +269,7 @@ def get_stan_parameters_our(num_counties):
     int_cols = [col for col in interventions.columns.tolist() if col not in id_cols]
     interventions.fillna(1, inplace=True) ### to prevent NaN error
     for col in int_cols:
-        interventions[col] = interventions[col].apply(lambda x: dt.date.fromordinal(int(x))) ##changing date format
+        interventions[col] = interventions[col].apply(lambda x: datetime.date.fromordinal(int(x))) ##changing date format
     interventions = interventions.loc[interventions['FIPS'].isin(fips_list)] ### filtering out top counties
     interventions = pd.merge(merge_df, interventions, left_on='merge', right_on='FIPS', how='outer')
     interventions = interventions.reset_index(drop=True)
@@ -308,7 +316,7 @@ def get_stan_parameters_our(num_counties):
         req_dates = df_cases_dates[i2:]
         covariates2 = []
         req_dates = np.array(
-            [dt.datetime.strptime(x, '%m/%d/%y').date() for x in req_dates])  ##first case for each county
+            [datetime.datetime.strptime(x, '%m/%d/%y').date() for x in req_dates])  ##first case for each county
 
         for col in range(covariates1.shape[1]):
             covariates2.append(np.where(req_dates >= covariates1[i, col], 1, 0))
@@ -374,6 +382,6 @@ def get_stan_parameters_our(num_counties):
     
 if __name__ == '__main__':
     #pick 20 counties
-    #get_stan_parameters_our(20)
-    get_stan_parameters()
+    get_stan_parameters_our(20)
+    #get_stan_parameters()
 

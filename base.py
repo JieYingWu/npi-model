@@ -1,12 +1,13 @@
-from os.path import join, exists
 import sys
 import numpy as np
-from parser import get_stan_parameters
 
 import pystan
 import pandas as pd
+
+from os.path import join, exists
 from statsmodels.distributions.empirical_distribution import ECDF
 
+from data_parser import get_stan_parameters, get_stan_parameters_our
 
 ## Copied from https://towardsdatascience.com/an-introduction-to-bayesian-inference-in-pystan-c27078e58d53
 # sns.set()  # Nice plot aesthetic
@@ -110,6 +111,8 @@ print(stan_data.keys())
 #                 EpidemicStart = NULL) # N0 = 6 to make it consistent with Rayleigh
 #stan_data = {'M':len(countries), 'N':N, 'p':interventions.shape[1]-1,...}
 
+stan_data = get_stan_parameters(save_new_csv=False)
+# stan_data = get_stan_parameters_our(20)
 # Train the model and generate samples - returns a StanFit4Model
 fit = sm.sampling(data=stan_data, iter=200, chains=4, warmup=100, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
 
