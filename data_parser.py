@@ -1,12 +1,10 @@
 import os
 import csv
 import sys
-
 import numpy as np
 import pandas as pd
-
 from future.backports import datetime
-
+import datetime as dt
 
 def get_stan_parameters(save_new_csv=True):
     """
@@ -24,8 +22,6 @@ def get_stan_parameters(save_new_csv=True):
 
     """
     imp_covid_dir = 'data/COVID-19-up-to-date.csv'
-    path_cases_new = 'data/COVID-19-up-to-date-cases-clean.csv'
-    path_deaths_new = 'data/COVID-19-up-to-date-deaths-clean.csv'
     imp_interventions_dir = 'data/interventions.csv'
     
     interventions = pd.read_csv(imp_interventions_dir, encoding='latin-1')
@@ -159,7 +155,7 @@ def get_stan_parameters(save_new_csv=True):
     final_dict['N0'] = 6
     final_dict['N'] = np.asarray(N_arr).astype(np.int)
     final_dict['N2'] = N2
-    final_dict['x'] = np.arange(1, N2)
+    final_dict['x'] = np.arange(0, N2)
     final_dict['cases'] = cases
     final_dict['deaths'] = deaths
     final_dict['EpidemicStart'] = np.asarray(start_dates)
