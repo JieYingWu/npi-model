@@ -14,7 +14,7 @@ data_dir = sys.argv[1]
 
 countries = ['Denmark', 'Italy', 'Germany', 'Spain', 'United Kingdom', 'France', 'Norway', 'Belgium', 'Austria', 'Sweden', 'Switzerland']
 serial_interval = np.loadtxt(join(data_dir, 'serial_interval.csv'), skiprows=1, delimiter=',') # Time between primary infector showing symptoms and secondary infected showing symptoms - this is a probability distribution from 1 to 100 days
-SI = serial_interval[0:89,1]
+
 
 #interventions = np.loadtxt(join(data_dir, 'interventions.csv'))
 ## TODO: They check that if any measure has not been in place until lockdown, set that intervention date to lockdown
@@ -31,7 +31,12 @@ for i in range(weighted_fatalities.shape[0]):
 
 stan_data = get_stan_parameters()
 N2 = stan_data['N2']
+print(serial_interval.shape)
+print(stan_data['N2'])
+SI = serial_interval[0:stan_data['N2'],1]
 stan_data['SI'] = SI
+
+print(stan_data)
 
 ## TODO: turn rgammAlt, ecdf, and function thing into Python gamma distribution and convolution
 # infection to onset
@@ -77,7 +82,7 @@ print(stan_data.keys())
 #stan_data = {'M':len(countries), 'N':N, 'p':interventions.shape[1]-1,...}
 
 # Train the model and generate samples - returns a StanFit4Model
-fit = sm.sampling(data=stan_data, iter=200, chains=4, warmup=100, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
+fit = sm.sampling(data=stan_data, iter=200, chains=4, warmup=200, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
 
 ## TODO: Read out the data of the stan model
 # Seems like extract parameters by str of the parameter name: https://pystan.readthedocs.io/en/latest/api.html#stanfit4model
@@ -101,6 +106,6 @@ prediction = fit['prediction']
 estimated_deaths = fit['E_deaths']
 estimated_deaths_cf = fit['E_deaths0']
 
-
+print(mu, alpha, kappa, y, phi, tau, prediction, estimated_deaths, estimated_deaths_cf)
 ## TODO: Make pretty plots
 # Probably don't have to use Imperial data for this, just find similar looking Python packages
