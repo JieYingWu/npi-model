@@ -14,7 +14,7 @@ data_dir = sys.argv[1]
 
 countries = ['Denmark', 'Italy', 'Germany', 'Spain', 'United Kingdom', 'France', 'Norway', 'Belgium', 'Austria', 'Sweden', 'Switzerland']
 serial_interval = np.loadtxt(join(data_dir, 'serial_interval.csv'), skiprows=1, delimiter=',') # Time between primary infector showing symptoms and secondary infected showing symptoms - this is a probability distribution from 1 to 100 days
-SI = serial_interval[:,1]
+SI = serial_interval[0:89,1]
 
 #interventions = np.loadtxt(join(data_dir, 'interventions.csv'))
 ## TODO: They check that if any measure has not been in place until lockdown, set that intervention date to lockdown

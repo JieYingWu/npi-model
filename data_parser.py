@@ -92,7 +92,7 @@ def get_stan_parameters(save_new_csv=True):
             d1[col] = np.where(covid_date.apply(lambda x: x >= int_data.date()), 1, 0)
 
         N = len(d1['cases'])
-        N2 = 75  ##from paper
+        N2 = 89  ##from paper
         forecast = N2 - N
 
         if forecast < 0:
