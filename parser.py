@@ -5,12 +5,10 @@ import numpy as np
 import future.backports.datetime as datetime
 import pandas as pd
 
-data_dir = sys.argv[1]
-
-imp_covid_dir = os.path.join(data_dir, 'data/COVID-19-up-to-date.csv')
-path_cases_new = os.path.join(data_dir, 'data/COVID-19-up-to-date-cases-clean.csv')
-path_deaths_new = os.path.join(data_dir, 'data/COVID-19-up-to-date-deaths-clean.csv')
-imp_interventions_dir = os.path.join(data_dir, 'data/interventions.csv')
+imp_covid_dir = 'data/COVID-19-up-to-date.csv'
+path_cases_new = 'data/COVID-19-up-to-date-cases-clean.csv'
+path_deaths_new = 'data/COVID-19-up-to-date-deaths-clean.csv'
+imp_interventions_dir = 'data/interventions.csv'
 
 #### Set directory for our data
 cases_path = '../disease_spread/data/infections_timeseries.csv'
@@ -32,8 +30,8 @@ def get_stan_parameters(save_new_csv=True):
     covariate1, ...., covariate7
 
     """
-    interventions = pd.read_csv(imp_interventions_dir)
-    covid_up_to_date = pd.read_csv(imp_covid_dir)
+    interventions = pd.read_csv(imp_interventions_dir, encoding='latin1')
+    covid_up_to_date = pd.read_csv(imp_covid_dir, encoding='latin1')
 
     mod_interventions = pd.DataFrame(columns=['Country', 'school/uni closures', 'self-isolating if ill',
                                               'banning public events', 'any government intervention',
@@ -147,7 +145,7 @@ def get_stan_parameters(save_new_csv=True):
     start_date_dict = {}
     start_date = datetime.date(2019,12,31)
 
-    with open(covid_up_to_date, 'r') as file:
+    with open(covid_up_to_date, 'r', encoding='latin1') as file:
         reader = csv.reader(file, delimiter=',')
         next(reader)
 
@@ -204,13 +202,13 @@ def get_stan_parameters(save_new_csv=True):
         start_date_int_list.append(date)
 
 
-    with open(path_cases_new, 'w', newline='') as file:
+    with open(path_cases_new, 'w', newline='', encoding='latin1') as file:
         writer = csv.writer(file, delimiter=',')
         for i, country in enumerate(countries_list):
             row = [country] + [cases for cases in reversed(cases_dict[country])]
             writer.writerow(row)
 
-    with open(path_deaths_new, 'w', newline='') as file:
+    with open(path_deaths_new, 'w', newline='', encoding='latin1') as file:
         writer = csv.writer(file, delimiter=',')
         for i, country in enumerate(countries_list):
             row = [country] + [deaths for deaths in reversed(deaths_dict[country])]
@@ -225,7 +223,7 @@ def get_stan_parameters(save_new_csv=True):
     final_dict['cases'] = np.asarray(cases_list).T.astype(np.int)
     final_dict['deaths'] = np.asarray(deaths_list).T.astype(np.int)
     final_dict['EpidemicStart'] = np.asarray(start_date_int_list).astype(np.int)
-    final_dict['p'] = len(mod_interventions.columns) - 2 #s.t government intervention is not included
+#    final_dict['p'] = len(mod_interventions.columns) - 2 #s.t government intervention is not included
     final_dict['covariate1'] = covariate1
     final_dict['covariate2'] = covariate2
     final_dict['covariate3'] = covariate3
@@ -362,7 +360,7 @@ def get_stan_parameters_our(num_counties):
     final_dict['cases'] = df_cases.astype(np.int)
     final_dict['deaths'] = df_deaths.astype(np.int)
     final_dict['EpidemicStart'] = np.asarray(counter_list).astype(np.int)
-    final_dict['p'] = len(interventions_colnames) - 1 ### not sure whether to subtract 1 or not
+#    final_dict['p'] = len(interventions_colnames) - 1 ### not sure whether to subtract 1 or not
     final_dict['covariate1'] = covariate1
     final_dict['covariate2'] = covariate2
     final_dict['covariate3'] = covariate3
