@@ -162,6 +162,7 @@ def get_stan_parameters_our(num_counties):
     merge_df = pd.DataFrame({'merge':fips_list})
     df_deaths = df_deaths.loc[df_deaths['FIPS'].isin(fips_list)]
 
+    #Select the 20 counties in the same order from the deaths dataframe by merging
     df_deaths = pd.merge(merge_df, df_deaths, left_on='merge', right_on='FIPS', how='outer')
     df_deaths = df_deaths.reset_index(drop=True)
     
@@ -197,9 +198,6 @@ def get_stan_parameters_our(num_counties):
     return final_dict
 
             
-                
-
-
     
 if __name__ == '__main__':
     #pick 20 counties
