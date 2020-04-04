@@ -4,8 +4,6 @@ import numpy as np
 from parser import get_stan_parameters
 
 import pystan
-import matplotlib.pyplot as plt
-import seaborn as sn
 import pandas as pd
 from statsmodels.distributions.empirical_distribution import ECDF
 
@@ -68,11 +66,7 @@ for i in range(weighted_fatalities.shape[0]):
 ## TODO: I think we just need the weight fatailites column to calculate probability of death
 
 stan_data = get_stan_parameters()
-
-print(stan_data.keys())
-
-#N = 
-N2 = 75
+N2 = stan_data['N2']
 
 ## TODO: turn rgammAlt, ecdf, and function thing into Python gamma distribution and convolution
 # infection to onset
