@@ -47,7 +47,7 @@ def get_stan_parameters(save_new_csv=True):
     mod_interventions.sort_values('Country', inplace=True)
 
 
-    countries = sorted(['Denmark', 'Italy', 'Germany', 'Spain', 'United Kingdom', 'France', 'Norway', 'Belgium', 'Austria', 'Sweden', 'Switzerland'])
+    countries = sorted(['Denmark', 'Italy', 'Germany', 'Spain', 'United_Kingdom', 'France', 'Norway', 'Belgium', 'Austria', 'Sweden', 'Switzerland'])
     print(countries)
 
     countries_list = []
@@ -194,13 +194,12 @@ def get_stan_parameters_our(num_counties):
     final_dict['cases'] = df_cases.astype(np.int)
     final_dict['deaths'] = df_deaths.astype(np.int)
     final_dict['EpidemicStart'] = np.asarray(counter_list).astype(np.int)
-
     return final_dict
 
             
     
 if __name__ == '__main__':
     #pick 20 counties
-    get_stan_parameters_our(20)
-
+    #get_stan_parameters_our(20)
+    get_stan_parameters()
 
