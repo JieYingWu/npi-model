@@ -60,7 +60,7 @@ def get_stan_parameters(save_new_csv=True):
     countries = mod_interventions['Country'].to_list()
     date_cols = [col for col in mod_interventions.columns.tolist() if col != 'Country']
 
-    ###Initialize covariates
+    ###Initialize variables
     covariate1 = []
     covariate2 = []
     covariate3 = []
@@ -68,6 +68,11 @@ def get_stan_parameters(save_new_csv=True):
     covariate5 = []
     covariate6 = []
     covariate7 = []
+
+    cases = []
+    deaths = []
+    N_arr = []
+    start_dates = []
 
 
     for country in countries:
@@ -84,7 +89,13 @@ def get_stan_parameters(save_new_csv=True):
         index1 = (d1['deaths'].cumsum() >= 10).argmax()
         index2 = index1 - 30
 
+        start_dates.append(index1 + 1 - index2)
+
         d1 = d1.loc[index2:]
+        case = d1['cases'].to_numpy()
+        death = d1['deaths'].to_numpy()
+        print("{Country} has {num} days of data".format(Country=country, num=len(d1['cases'])))
+
         for col in date_cols:
             covid_date = pd.to_datetime(d1['dateRep'], format='%d/%m/%Y').dt.date
             int_data = datetime.datetime.strptime(covariates1[col].to_string(index=False).strip(), '%Y-%m-%d')
@@ -92,7 +103,8 @@ def get_stan_parameters(save_new_csv=True):
             d1[col] = np.where(covid_date.apply(lambda x: x >= int_data.date()), 1, 0)
 
         N = len(d1['cases'])
-        N2 = 89  ##from paper
+        N_arr.append(N)
+        N2 = 75  ##from paper
         forecast = N2 - N
 
         if forecast < 0:
@@ -105,8 +117,13 @@ def get_stan_parameters(save_new_csv=True):
         covariates2.reset_index(drop=True, inplace=True)
         covariates2 = covariates2.to_numpy()
         addlst = [covariates2[N - 1]] * (forecast)
+        add_1 = [-1] * forecast
 
         covariates2 = np.append(covariates2, addlst, axis=0)
+        case = np.append(case, add_1, axis=0)
+        death = np.append(death, add_1, axis=0)
+        cases.append(case)
+        deaths.append(death)
 
         covariate1.append(covariates2[:, 0])  # school_universities
         covariate2.append(covariates2[:, 7])  # travel_restrictions
@@ -116,7 +133,7 @@ def get_stan_parameters(save_new_csv=True):
         covariate6.append(covariates2[:, 5])  # social_distancing
         covariate7.append(covariates2[:, 1])  # self-isolating if ill
 
-    # converting to numpy array
+        # converting to numpy array
     covariate1 = np.array(covariate1).T
     covariate2 = np.array(covariate2).T
     covariate3 = np.array(covariate3).T
@@ -124,6 +141,8 @@ def get_stan_parameters(save_new_csv=True):
     covariate5 = np.array(covariate5).T
     covariate6 = np.array(covariate6).T
     covariate7 = np.array(covariate7).T
+    cases = np.array(cases).T
+    deaths = np.array(deaths).T
 
     #covariate2 = 0 * covariate2  # remove travel ban
     #covariate5 = 0 * covariate5  # remove sports
@@ -135,93 +154,16 @@ def get_stan_parameters(save_new_csv=True):
     countries = sorted(['Denmark', 'Italy', 'Germany', 'Spain', 'United_Kingdom', 'France', 'Norway', 'Belgium', 'Austria', 'Sweden', 'Switzerland'])
     print(f'Order of M: {countries}')
 
-    countries_list = []
-    cases_dict = {}
-    deaths_dict = {}
-    cases_dict_padded = {}
-    deaths_dict_padded = {}
-    start_date_dict = {}
-    start_date = datetime.date(2019,12,31)
-
-    with open(imp_covid_dir, 'r', encoding='latin-1') as file:
-        reader = csv.reader(file, delimiter=',')
-        next(reader)
-
-        for row in reader:
-            dateRep, day, month, year, cases, deaths, country, geoId,countryCode, pop = row
-            current_date = datetime.date(int(year), int(month), int(day))
-            if country not in countries:
-                continue
-            
-            if cases != '0':
-                start_date_dict[country] = current_date
-            if country not in countries_list:
-                countries_list.append(country)
-                cases_dict[country] = []
-                deaths_dict[country] = []
-                cases_dict_padded[country] = {} 
-                deaths_dict_padded[country] = {}
-                if current_date != datetime.date(2019,12,31):
-                    for i in range((current_date+datetime.timedelta(days=1)-start_date).days):
-                        new_date = start_date + datetime.timedelta(days=i)
-                        cases_dict_padded[country][str(new_date)] = 0
-                        deaths_dict_padded[country][str(new_date)] = 0
-            
-            cases_dict_padded[country][str(current_date)] = cases
-            deaths_dict_padded[country][str(current_date)] = deaths
-            cases_dict[country].append(cases)
-            deaths_dict[country].append(deaths)
-
-    # check that all countries have the same number of dates
-    len_list = []
-    for key, value in cases_dict.items():
-        len_list.append(len(value))
-
-    start_date_list = []
-    for key, value in start_date_dict.items():    
-        start_date_list.append(value)
-
-    #create final arrays:
-    cases_list = []
-    for idx, (country, cases_dict_list) in enumerate(cases_dict.items()):
-        cases_list.append([])
-        for cases in cases_dict_list:
-            cases_list[idx].append(cases)
-
-    deaths_list = []
-    for idx, (country, deaths_dict_list) in enumerate(deaths_dict.items()):
-        deaths_list.append([])
-        for deaths in deaths_dict_list:
-            deaths_list[idx].append(deaths)
-
-    start_date_int_list = []
-    for date in start_date_list:
-        date = ((date+datetime.timedelta(days=1)-start_date).days)
-        start_date_int_list.append(date)
-
-
-    with open(path_cases_new, 'w', newline='', encoding='latin-1') as file:
-        writer = csv.writer(file, delimiter=',')
-        for i, country in enumerate(countries_list):
-            row = [country] + [cases for cases in reversed(cases_dict[country])]
-            writer.writerow(row)
-
-    with open(path_deaths_new, 'w', newline='', encoding='latin-1') as file:
-        writer = csv.writer(file, delimiter=',')
-        for i, country in enumerate(countries_list):
-            row = [country] + [deaths for deaths in reversed(deaths_dict[country])]
-            writer.writerow(row)
-
     final_dict = {}
     final_dict['M'] = len(countries)
     final_dict['N0'] = 6
-    final_dict['N'] = np.asarray(len_list).astype(np.int)
-    final_dict['N2'] = len_list[0]
-    final_dict['x'] = np.arange(1, (datetime.date(2020,3,28)+datetime.timedelta(days=1)-start_date).days + 1)
-    final_dict['cases'] = np.asarray(cases_list).T.astype(np.int)
-    final_dict['deaths'] = np.asarray(deaths_list).T.astype(np.int)
-    final_dict['EpidemicStart'] = np.asarray(start_date_int_list).astype(np.int)
-#    final_dict['p'] = len(mod_interventions.columns) - 2 #s.t government intervention is not included
+    final_dict['N'] = np.asarray(N_arr).astype(np.int)
+    final_dict['N2'] = N2
+    final_dict['x'] = np.arange(1, N2)
+    final_dict['cases'] = cases
+    final_dict['deaths'] = deaths
+    final_dict['EpidemicStart'] = np.asarray(start_dates)
+    final_dict['p'] = len(mod_interventions.columns) - 2  # s.t government intervention is not included
     final_dict['covariate1'] = covariate1
     final_dict['covariate2'] = covariate2
     final_dict['covariate3'] = covariate3
@@ -382,6 +324,6 @@ def get_stan_parameters_our(num_counties):
     
 if __name__ == '__main__':
     #pick 20 counties
-    get_stan_parameters_our(20)
-    #get_stan_parameters()
+    #get_stan_parameters_our(20)
+    get_stan_parameters()
 
