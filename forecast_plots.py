@@ -102,7 +102,7 @@ def trial_run():
     # example usage
     plot_forecasts(df)
 
-df = pd.read_csv(r"./npi-model/summary_europe.csv", delimiter=';',index_col=0)
+df = pd.read_csv(r"./summary_europe.csv", delimiter=';',index_col=0)
 #print(df.head())
 row_names = list(df.index.tolist())
 #print(row_names)
