@@ -81,7 +81,6 @@ def plot_forecasts_wo_dates_quantiles(row2_5,row25,row50,row75,row97_5):
     #ax.plot(ticks, y1_upper50, '-g', alpha=0.1)
     ax.fill_between(ticks, y1_lower50, y1_upper50, alpha=0.2, color='b')
 
-
     plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
     ax.bar(ticks, row50, color='r', width=0.9, alpha=0.3)
     ax.set_ylabel("Daily number of infections")
