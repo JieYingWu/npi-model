@@ -2,10 +2,14 @@ from os.path import join, exists
 import sys
 import numpy as np
 from data_parser import get_stan_parameters, get_stan_parameters_our
-
 import pystan
 import pandas as pd
 from statsmodels.distributions.empirical_distribution import ECDF
+import pickle
+import datetime
+from forecast_plots import plot_forecasts
+
+assert len(sys.argv) == 2
 
 # Compile the model
 sm = pystan.StanModel(file='stan-models/base.stan')
@@ -83,16 +87,18 @@ stan_data['f'] = all_f
 
 # Train the model and generate samples - returns a StanFit4Model
 fit = sm.sampling(data=stan_data, iter=200, chains=4, warmup=100, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
+# fit = sm.sampling(data=stan_data, iter=20, chains=4, warmup=10, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
 
 ## TODO: Read out the data of the stan model
 # Seems like extract parameters by str of the parameter name: https://pystan.readthedocs.io/en/latest/api.html#stanfit4model
 # Check that Rhat is close to 1 to see if the model's converged
 
-
 #alpha_mean, beta_mean = df['mean']['alpha'], df['mean']['beta']
 
+# Save model fit dictionary
+
 # All the parameters in the stan model
-    
+
 mu = fit['mu']
 alpha = fit['alpha']
 kappa = fit['kappa']
@@ -108,5 +114,9 @@ df = pd.DataFrame(summary_dict['summary'],
                  columns=summary_dict['summary_colnames'], 
                  index=summary_dict['summary_rownames'])
 df.to_csv(r'summary.csv')
+# print(mu, alpha, kappa, y, phi, tau, prediction, estimated_deaths, estimated_deaths_cf)
+
 ## TODO: Make pretty plots
 # Probably don't have to use Imperial data for this, just find similar looking Python packages
+# data_country = pd.DataFrame({'time': s, 'deaths': })
+# plot_forecasts()
