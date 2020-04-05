@@ -100,7 +100,7 @@ def get_stan_parameters(save_new_csv=True):
 
         N = len(d1['cases'])
         N_arr.append(N)
-        N2 = 65  ##from paper
+        N2 = 75  ##from paper
         forecast = N2 - N
 
         if forecast < 0:

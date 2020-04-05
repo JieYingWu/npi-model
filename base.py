@@ -41,17 +41,21 @@ stan_data['SI'] = SI
 # infection to onset
 mean1 = 5.1
 cv1 = 0.86
+alpha1 = cv1**-2
+beta1 = mean1/alpha1
 # onset to death
 mean2 = 18.8
-cv2 = 0.45 
+cv2 = 0.45
+alpha2 = cv2**-2
+beta2 = mean2/alpha2
 
 all_f = np.zeros((N2, len(countries)))
 for c in range(len(countries)):
     ifr = ifrs[countries[c]]
     
     ## assume that IFR is probability of dying given infection
-    x1 = np.random.gamma(mean1, cv1, 5000000)*cv1**(mean1-2) # infection-to-onset -> do all people who are infected get to onset?
-    x2 = np.random.gamma(mean2, cv2, 5000000)*cv2**(mean2-2) # onset-to-death
+    x1 = np.random.gamma(alpha1, beta1, 5000000) # infection-to-onset -> do all people who are infected get to onset?
+    x2 = np.random.gamma(alpha2, beta2, 5000000) # onset-to-death
     f = ECDF(x1+x2)
     def conv(u): # IFR is the country's probability of death
         return ifr * f(u)
@@ -89,18 +93,12 @@ fit = sm.sampling(data=stan_data, iter=200, chains=4, warmup=100, thin=4, seed=1
 # Seems like extract parameters by str of the parameter name: https://pystan.readthedocs.io/en/latest/api.html#stanfit4model
 # Check that Rhat is close to 1 to see if the model's converged
 
-#summary_dict = fit.summary()
-#df = pd.DataFrame(summary_dict['summary'], 
-#                  columns=summary_dict['summary_colnames'], 
-#                  index=summary_dict['summary_rownames'])
 
 #alpha_mean, beta_mean = df['mean']['alpha'], df['mean']['beta']
 
 # Save model fit dictionary
 
 # All the parameters in the stan model
-
-# print(fit)
 
 mu = fit['mu']
 alpha = fit['alpha']
@@ -112,6 +110,12 @@ prediction = fit['prediction']
 estimated_deaths = fit['E_deaths']
 estimated_deaths_cf = fit['E_deaths0']
 
+summary_dict = fit.summary()
+df = pd.DataFrame(summary_dict['summary'], 
+                 columns=summary_dict['summary_colnames'], 
+                 index=summary_dict['summary_rownames'])
+df.to_csv(r'summary.csv')
+=======
 # print(mu, alpha, kappa, y, phi, tau, prediction, estimated_deaths, estimated_deaths_cf)
 
 # Get means and std of the sampled values
