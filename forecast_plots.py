@@ -9,6 +9,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import numpy as np
 
+import datetime
+
 
 def plot_forecast_by_cols(Xconf, Yconf, Xpred, Ypred):
     '''
@@ -41,6 +43,8 @@ def plot_forecasts(data_country):
     '''
     :param data_country: pandas DF that contains column 'deaths' and 'time'
     '''
+    df = data_country
+
     y1_upper = np.asarray(df['deaths'] * 1.25)
     y1_lower = np.asarray(df['deaths'] * 0.75)
     fig = plt.figure()
@@ -56,22 +60,29 @@ def plot_forecasts(data_country):
     ax.set_ylabel("Deaths")
     ax.set_xlabel("Date")
 
+    save_location = './results/plots/uk.jpg'
+    plt.savefig(fname = save_location)
+
+    
+
     plt.show()
 
+def main():
+    # fill with dumb data
+    dates = ['2020-03-16', '2020-03-17', '2020-03-18',
+            '2020-03-19', '2020-03-20', '2020-03-21',
+            '2020-03-22', '2020-03-23', '2020-03-24',
+            '2020-03-25', '2020-03-26', '2020-03-27']
 
+    deaths_predicted = [1, 5, 10, 20, 100, 200, 250, 380, 500, 510, 520, 550]
+    deaths_confirmed = [1, 5, 10, 20, 100, 190, 220]
+    data_country = {'time':	dates,
+                    'deaths': deaths_predicted}
 
-# fill with dumb data
-dates = ['2020-03-16', '2020-03-17', '2020-03-18',
-         '2020-03-19', '2020-03-20', '2020-03-21',
-         '2020-03-22', '2020-03-23', '2020-03-24',
-         '2020-03-25', '2020-03-26', '2020-03-27']
+    df = pd.DataFrame(data=data_country)
 
-deaths_predicted = [1, 5, 10, 20, 100, 200, 250, 380, 500, 510, 520, 550]
-deaths_confirmed = [1, 5, 10, 20, 100, 190, 220]
-data_country = {'time':	dates,
-                'deaths': deaths_predicted}
-
-df = pd.DataFrame(data=data_country)
-
-# example usage
-plot_forecasts(df)
+    # example usage
+    plot_forecasts(df)
+ 
+if __name__ == '__main__':
+     main()

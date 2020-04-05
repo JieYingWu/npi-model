@@ -2,10 +2,14 @@ from os.path import join, exists
 import sys
 import numpy as np
 from data_parser import get_stan_parameters, get_stan_parameters_our
-
 import pystan
 import pandas as pd
 from statsmodels.distributions.empirical_distribution import ECDF
+import pickle
+import datetime
+from forecast_plots import plot_forecasts
+
+assert len(sys.argv) == 2
 
 # Compile the model
 sm = pystan.StanModel(file='stan-models/base.stan')
@@ -79,6 +83,7 @@ stan_data['f'] = all_f
 
 # Train the model and generate samples - returns a StanFit4Model
 fit = sm.sampling(data=stan_data, iter=200, chains=4, warmup=100, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
+# fit = sm.sampling(data=stan_data, iter=20, chains=4, warmup=10, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
 
 ## TODO: Read out the data of the stan model
 # Seems like extract parameters by str of the parameter name: https://pystan.readthedocs.io/en/latest/api.html#stanfit4model
@@ -91,8 +96,12 @@ fit = sm.sampling(data=stan_data, iter=200, chains=4, warmup=100, thin=4, seed=1
 
 #alpha_mean, beta_mean = df['mean']['alpha'], df['mean']['beta']
 
+# Save model fit dictionary
+
 # All the parameters in the stan model
-print(fit)
+
+# print(fit)
+
 mu = fit['mu']
 alpha = fit['alpha']
 kappa = fit['kappa']
@@ -103,6 +112,18 @@ prediction = fit['prediction']
 estimated_deaths = fit['E_deaths']
 estimated_deaths_cf = fit['E_deaths0']
 
-print(mu, alpha, kappa, y, phi, tau, prediction, estimated_deaths, estimated_deaths_cf)
+# print(mu, alpha, kappa, y, phi, tau, prediction, estimated_deaths, estimated_deaths_cf)
+
+# Get means and std of the sampled values
+mean_deaths = np.mean(estimated_deaths, axis=0)
+uk_deaths = mean_deaths[:, countries.index('United_Kingdom')].tolist()
+start_date = datetime.date(2020, 1, 1)
+dates = [str(start_date + datetime.timedelta(days = int(idx))) for idx in stan_data['x']]
+
+us_df = pd.DataFrame({'time': dates, 'deaths' : uk_deaths})
+plot_forecasts(us_df)
+
 ## TODO: Make pretty plots
 # Probably don't have to use Imperial data for this, just find similar looking Python packages
+# data_country = pd.DataFrame({'time': s, 'deaths': })
+# plot_forecasts()
