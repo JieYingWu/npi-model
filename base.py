@@ -116,15 +116,6 @@ df = pd.DataFrame(summary_dict['summary'],
 df.to_csv(r'summary.csv')
 # print(mu, alpha, kappa, y, phi, tau, prediction, estimated_deaths, estimated_deaths_cf)
 
-# Get means and std of the sampled values
-mean_deaths = np.mean(estimated_deaths, axis=0)
-uk_deaths = mean_deaths[:, countries.index('United_Kingdom')].tolist()
-start_date = datetime.date(2020, 1, 1)
-dates = [str(start_date + datetime.timedelta(days = int(idx))) for idx in stan_data['x']]
-
-us_df = pd.DataFrame({'time': dates, 'deaths' : uk_deaths})
-plot_forecasts(us_df)
-
 ## TODO: Make pretty plots
 # Probably don't have to use Imperial data for this, just find similar looking Python packages
 # data_country = pd.DataFrame({'time': s, 'deaths': })
