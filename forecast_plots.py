@@ -86,6 +86,31 @@ def plot_forecasts_without_dates(row):
     plt.show()
 
 
+def plot_forecasts_with_actual_uncertainity(row, std):
+    '''
+    :param data_country: pandas DF that contains column 'deaths' and 'time'
+    '''
+    ticks = range(0, np.shape(row)[0])
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+
+    adjusted = [1.96*v for v in std]
+    y1_lower = row - adjusted
+    y1_upper = row + adjusted
+
+    ax.plot(ticks, row, '-g', alpha=0.6)  # solid green
+    ax.plot(ticks, y1_lower, '-c', alpha=0.2)
+    ax.plot(ticks, y1_upper, '-c', alpha=0.2)
+    ax.fill_between(ticks, y1_lower, y1_upper, alpha=0.2)
+    plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
+
+    ax.bar(ticks, row, color='g', width=0.8, alpha=0.3)
+    ax.set_ylabel("Deaths")
+    ax.set_xlabel("Date")
+
+    plt.show()
+
+
 def trial_run():
     # fill with dumb data
     dates = ['2020-03-16', '2020-03-17', '2020-03-18',
@@ -102,17 +127,25 @@ def trial_run():
     # example usage
     plot_forecasts(df)
 
-df = pd.read_csv(r"D:\JHU\corona\npi-model\npi-model\summary_europe.csv", delimiter=';',index_col=0)
-#print(df.head())
-row_names = list(df.index.tolist())
-#print(row_names)
-prediction_list = []
-county_number = '1]'
-for name in row_names:
-    if "prediction[" in name:
-        if name.split(",")[1] == county_number:
-            print(name)
-            rowData = df.loc[name, :]
-            prediction_list.append(rowData['mean'])
-prediction_list = np.array(prediction_list)
-plot_forecasts_without_dates(prediction_list)
+def main():
+    df = pd.read_csv(r"./summary_europe.csv", delimiter=';',index_col=0)
+    #print(df.head())
+    row_names = list(df.index.tolist())
+    #print(row_names)
+    prediction_list = []
+    std = []
+    county_number = '1]'
+    for name in row_names:
+        if "prediction[" in name:
+            if name.split(",")[1] == county_number:
+                print(name)
+                rowData = df.loc[name, :]
+                prediction_list.append(rowData['mean'])
+                std.append(rowData['sd'])
+    prediction_list = np.array(prediction_list)
+    # plot_forecasts_without_dates(prediction_list)
+    plot_forecasts_with_actual_uncertainity(row = prediction_list, std = std)
+
+if __name__ == '__main__':
+    main()
+
