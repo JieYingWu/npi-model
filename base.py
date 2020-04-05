@@ -84,15 +84,11 @@ fit = sm.sampling(data=stan_data, iter=200, chains=4, warmup=100, thin=4, seed=1
 # Seems like extract parameters by str of the parameter name: https://pystan.readthedocs.io/en/latest/api.html#stanfit4model
 # Check that Rhat is close to 1 to see if the model's converged
 
-#summary_dict = fit.summary()
-#df = pd.DataFrame(summary_dict['summary'], 
-#                  columns=summary_dict['summary_colnames'], 
-#                  index=summary_dict['summary_rownames'])
 
 #alpha_mean, beta_mean = df['mean']['alpha'], df['mean']['beta']
 
 # All the parameters in the stan model
-print(fit)
+    
 mu = fit['mu']
 alpha = fit['alpha']
 kappa = fit['kappa']
@@ -103,6 +99,10 @@ prediction = fit['prediction']
 estimated_deaths = fit['E_deaths']
 estimated_deaths_cf = fit['E_deaths0']
 
-print(mu, alpha, kappa, y, phi, tau, prediction, estimated_deaths, estimated_deaths_cf)
+summary_dict = fit.summary()
+df = pd.DataFrame(summary_dict['summary'], 
+                 columns=summary_dict['summary_colnames'], 
+                 index=summary_dict['summary_rownames'])
+df.to_csv(r'summary.csv')
 ## TODO: Make pretty plots
 # Probably don't have to use Imperial data for this, just find similar looking Python packages
