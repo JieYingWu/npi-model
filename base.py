@@ -93,7 +93,6 @@ fit = sm.sampling(data=stan_data, iter=200, chains=4, warmup=100, thin=4, seed=1
 # Seems like extract parameters by str of the parameter name: https://pystan.readthedocs.io/en/latest/api.html#stanfit4model
 # Check that Rhat is close to 1 to see if the model's converged
 
-
 #alpha_mean, beta_mean = df['mean']['alpha'], df['mean']['beta']
 
 # Save model fit dictionary
@@ -115,7 +114,6 @@ df = pd.DataFrame(summary_dict['summary'],
                  columns=summary_dict['summary_colnames'], 
                  index=summary_dict['summary_rownames'])
 df.to_csv(r'summary.csv')
-=======
 # print(mu, alpha, kappa, y, phi, tau, prediction, estimated_deaths, estimated_deaths_cf)
 
 # Get means and std of the sampled values
