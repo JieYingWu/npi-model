@@ -167,7 +167,6 @@ def get_stan_parameters(save_new_csv=True):
     return final_dict, countries
 
 
-
 def get_stan_parameters_our(num_counties):
     
     #### Set directory for our data
@@ -314,8 +313,7 @@ def get_stan_parameters_our(num_counties):
     final_dict['covariate7'] = covariate7
     return final_dict
 
-            
-    
+                
 if __name__ == '__main__':
     #pick 20 counties
     #get_stan_parameters_our(20)

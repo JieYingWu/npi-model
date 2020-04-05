@@ -9,6 +9,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import numpy as np
 
+import datetime
+
 
 def plot_forecast_by_cols(Xconf, Yconf, Xpred, Ypred):
     '''
@@ -41,6 +43,8 @@ def plot_forecasts(data_country):
     '''
     :param data_country: pandas DF that contains column 'deaths' and 'time'
     '''
+    df = data_country
+
     y1_upper = np.asarray(df['deaths'] * 1.25)
     y1_lower = np.asarray(df['deaths'] * 0.75)
     fig = plt.figure()
@@ -56,8 +60,8 @@ def plot_forecasts(data_country):
     ax.set_ylabel("Deaths")
     ax.set_xlabel("Date")
 
-    plt.show()
-
+    save_location = './results/plots/uk.jpg'
+    plt.savefig(fname = save_location)
 
 def plot_forecasts_wo_dates_quantiles(row2_5,row25,row50,row75,row97_5):
     '''
@@ -90,6 +94,7 @@ def plot_forecasts_wo_dates_quantiles(row2_5,row25,row50,row75,row97_5):
     plt.show()
 
 
+
 def plot_daily_infections_num(path, num_of_country, days_to_predict):
     df = pd.read_csv(path, delimiter=';',index_col=0)
     row_names = list(df.index.tolist())
@@ -118,3 +123,21 @@ path = r"D:\JHU\corona\npi-model\npi-model\summary_europe.csv"
 num_of_country = 1
 days_to_predict = 35
 plot_daily_infections_num(path,num_of_country,days_to_predict)
+
+'''
+df = pd.read_csv(r"D:\JHU\corona\npi-model\npi-model\summary_europe.csv", delimiter=';',index_col=0)
+#print(df.head())
+row_names = list(df.index.tolist())
+#print(row_names)
+prediction_list = []
+county_number = '1]'
+for name in row_names:
+    if "prediction[" in name:
+        if name.split(",")[1] == county_number:
+            print(name)
+            rowData = df.loc[name, :]
+            prediction_list.append(rowData['mean'])
+prediction_list = np.array(prediction_list)
+plot_forecasts_without_dates(prediction_list)
+
+'''
