@@ -5,8 +5,9 @@ import numpy as np
 import pandas as pd
 from future.backports import datetime
 import datetime as dt
+from os.path import join, exists
 
-def get_stan_parameters(save_new_csv=True):
+def get_stan_parameters(data_dir, save_new_csv=False):
     """
     Returns in a dict:
     M; // number of countries
@@ -21,8 +22,8 @@ def get_stan_parameters(save_new_csv=True):
     covariate1, ...., covariate7
 
     """
-    imp_covid_dir = 'data/COVID-19-up-to-date.csv'
-    imp_interventions_dir = 'data/interventions.csv'
+    imp_covid_dir = join(data_dir, 'COVID-19-up-to-date.csv')
+    imp_interventions_dir = join(data_dir, 'interventions.csv')
     
     interventions = pd.read_csv(imp_interventions_dir, encoding='latin-1')
     covid_up_to_date = pd.read_csv(imp_covid_dir, encoding='latin-1')
@@ -167,12 +168,12 @@ def get_stan_parameters(save_new_csv=True):
     return final_dict, countries
 
 
-def get_stan_parameters_our(num_counties):
+def get_stan_parameters_our(num_counties, data_dir):
     
     #### Set directory for our data
-    cases_path = '../disease_spread/data/infections_timeseries.csv'
-    deaths_path = '../disease_spread/data/deaths_timeseries.csv'
-    interventions_path = '../disease_spread/data/interventions.csv'
+    cases_path = join(data_dir, 'infections_timeseries.csv')
+    deaths_path = join(data_dir, 'deaths_timeseries.csv')
+    interventions_path = join(data_dir, 'interventions.csv')
     
     # Pick counties with 20 most cases:
     df_cases = pd.read_csv(cases_path)
@@ -258,7 +259,7 @@ def get_stan_parameters_our(num_counties):
         covariates2 = np.array(covariates2).T
 
         N = len(req_dates)
-        N2 = 50  ##from paper
+        N2 = 100  ##from paper
         forecast = N2 - N
 
         if forecast < 0:
@@ -311,7 +312,7 @@ def get_stan_parameters_our(num_counties):
     final_dict['covariate5'] = covariate5
     final_dict['covariate6'] = covariate6
     final_dict['covariate7'] = covariate7
-    return final_dict
+    return final_dict, fips_list
 
                 
 if __name__ == '__main__':
