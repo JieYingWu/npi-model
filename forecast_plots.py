@@ -9,107 +9,118 @@ import numpy as np
 import matplotlib.pyplot as plt
 import numpy as np
 
+import datetime
+import getpass
 
-def plot_forecast_by_cols(Xconf, Yconf, Xpred, Ypred):
-    '''
-    :param Xconf: datestamps of confirmed cases
-    :param Yconf: values of confirmed cases
-    :param Xpred: datestamps of predicted cases
-    :param Ypred: values of predicted cases
-    '''
+dict_of_start_dates = {1: '02/24/2020', 2: '03/17/2020', 3: '02/24/2020'}
 
-    # plot prediction with 50 of assurance intervall
-    y1_upper = np.asarray(Ypred) * 1.25
-    y1_lower = np.asarray(Ypred) * 0.75
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-
-    ax.plot(Xpred, Ypred, '-g', alpha=0.6)  # solid green
-    ax.plot(Xpred, y1_lower, '-c', alpha=0.2)
-    ax.plot(Xpred, y1_upper, '-c', alpha=0.2)
-    ax.fill_between(Xconf, y1_lower, y1_upper, alpha=0.2)
-    plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
-
-    # plot confirmed as a barplot
-    ax.bar(Xconf, Yconf, color='g', width=0.3, alpha=0.3)
-    ax.set_ylabel("Deaths")
-    ax.set_xlabel("Date")
-    plt.show()
+num_of_country = 1
+days_to_predict = 35
+plot_choice = 1  # 1 for deaths forecast; 0 for infections forecast
 
 
-def plot_forecasts(data_country):
+def plot_forecasts_wo_dates_quantiles(row2_5, row25, row50, row75, row97_5, confirmed_cases, plot_choice, save_image = False):
     '''
     :param data_country: pandas DF that contains column 'deaths' and 'time'
     '''
-    y1_upper = np.asarray(df['deaths'] * 1.25)
-    y1_lower = np.asarray(df['deaths'] * 0.75)
+    if plot_choice == 0:
+        metric = "infections"
+    elif plot_choice == 1:
+        metric = "deaths"
+
+    base = datetime.datetime.strptime(dict_of_start_dates[num_of_country], '%m/%d/%Y')
+    date_list = [base + datetime.timedelta(days=x) for x in range(days_to_predict)]
+    barplot_missing_values = np.zeros(days_to_predict - np.shape(confirmed_cases)[0])
+    barplot_values = list(confirmed_cases)+list(barplot_missing_values)
+
+
+    ticks = date_list
+    y1_upper50 = np.asarray(row75)
+    y1_lower50 = np.asarray(row25)
+    y1_upper25 = np.asarray(row97_5)
+    y1_lower25 = np.asarray(row2_5)
+
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    ax.plot(data_country['time'],data_country['deaths'],'-g', alpha=0.6)  # solid green
-    ax.plot(data_country['time'],y1_lower,'-c', alpha=0.2)
-    ax.plot(data_country['time'],y1_upper,'-c', alpha=0.2)
-    ax.fill_between(data_country['time'], y1_lower, y1_upper, alpha=0.2)
+    ax.plot(ticks, row50, '-b', alpha=0.5)
+    ax.fill_between(ticks, y1_lower25, y1_upper25, alpha=0.25,color='b')
+    ax.fill_between(ticks, y1_lower50, y1_upper50, alpha=0.2, color='b')
+
     plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
-
-    ax.bar(data_country['time'],data_country['deaths'],color='g',width=0.8,alpha=0.3)
-    ax.set_ylabel("Deaths")
+    # insert here confirmed cases confirmed_cases
+    ax.bar(ticks, barplot_values, color='r', width=0.9, alpha=0.3)
+    ax.set_ylabel("Daily number of {}".format(metric))
     ax.set_xlabel("Date")
+    ax.title.set_text("Europe Geography "+str(num_of_country))
 
+    ax.xaxis_date()
+    fig.autofmt_xdate()
+    if save_image:
+        plt.savefig('./results/plots/{}.jpg'.format(metric))
     plt.show()
 
 
-def plot_forecasts_without_dates(row):
-    '''
-    :param data_country: pandas DF that contains column 'deaths' and 'time'
-    '''
-    ticks = range(0, np.shape(row)[0])
-    y1_upper = np.asarray(row * 1.25)
-    y1_lower = np.asarray(row * 0.75)
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
+def plot_daily_infections_num(path, num_of_country, confirmed_cases, days_to_predict, plot_choice, base_model):
+    # 1 for deaths; 0 for infections
+    plot_name = ""
+    if plot_choice == 0:
+        plot_name += "prediction"
+    elif plot_choice == 1:
+        plot_name += "E_deaths"
 
-    ax.plot(ticks, row, '-g', alpha=0.6)  # solid green
-    ax.plot(ticks, y1_lower, '-c', alpha=0.2)
-    ax.plot(ticks, y1_upper, '-c', alpha=0.2)
-    ax.fill_between(ticks, y1_lower, y1_upper, alpha=0.2)
-    plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
+    # True for prediction/E_deaths, False for prediction0/E_deaths0
+    if not base_model:
+        plot_name += "0["
+    else:
+        plot_name += "["
 
-    ax.bar(ticks, row, color='g', width=0.8, alpha=0.3)
-    ax.set_ylabel("Deaths")
-    ax.set_xlabel("Date")
+    df = pd.read_csv(path, delimiter=';', index_col=0)
+    row_names = list(df.index.tolist())
+    prediction_list = []
+    list2_5, list25, list50, list75, list97_5 = [], [], [], [], []
+    county_number = str(num_of_country)+']'
+    print(county_number)
 
-    plt.show()
+    for name in row_names:
+        if plot_name in name:
+            if name.split(",")[1] == county_number:
+                rowData = df.loc[name, :]
+                prediction_list.append(rowData['mean'])
+                list2_5.append(rowData['2.5%'])
+                list25.append(rowData['25%'])
+                list50.append(rowData['50%'])
+                list75.append(rowData['75%'])
+                list97_5.append(rowData['97.5%'])
 
-
-def trial_run():
-    # fill with dumb data
-    dates = ['2020-03-16', '2020-03-17', '2020-03-18',
-         '2020-03-19', '2020-03-20', '2020-03-21',
-         '2020-03-22', '2020-03-23', '2020-03-24',
-         '2020-03-25', '2020-03-26', '2020-03-27']
-
-    deaths_predicted = [1, 5, 10, 20, 100, 200, 250, 380, 500, 510, 520, 550]
-    deaths_confirmed = [1, 5, 10, 20, 100, 190, 220]
-    data_country = {'time':	dates,
-                'deaths': deaths_predicted}
-
-    df = pd.DataFrame(data=data_country)
-    # example usage
-    plot_forecasts(df)
+                if name.split(",")[0] == (plot_name + str(days_to_predict)):
+                    break
+    plot_forecasts_wo_dates_quantiles(list2_5, list25, list50, list75, list97_5, confirmed_cases, plot_choice)
 
 
-df = pd.read_csv(r"D:\JHU\corona\npi-model\npi-model\summary_europe.csv", delimiter=';',index_col=0)
-#print(df.head())
-row_names = list(df.index.tolist())
-#print(row_names)
-prediction_list = []
-county_number = '1]'
-for name in row_names:
-    if "prediction[" in name:
-        if name.split(",")[1] == county_number:
-            print(name)
-            rowData = df.loc[name, :]
-            prediction_list.append(rowData['mean'])
-prediction_list = np.array(prediction_list)
-plot_forecasts_without_dates(prediction_list)
+def read_true_cases_europe(filepath):
+     # 1 for deaths forecast; 0 for infections forecast
+    if plot_choice == 0:
+        filepath = r"D:\JHU\corona\npi-model\npi-model\data\COVID-19-up-to-date-cases-clean.csv"
+    else:
+        filepath = r"D:\JHU\corona\npi-model\npi-model\data\COVID-19-up-to-date-deaths-clean.csv"
+
+    df = pd.read_csv(filepath, delimiter=',',header=None)
+    # will be a variable  # align to correct start date - between 31 Dec and 1st March there is 62 days
+    confirmed_cases = df.iloc[num_of_country-1, 62:]
+    print(np.shape(confirmed_cases))
+    return confirmed_cases
+
+
+
+def main():
+    path = r"D:\JHU\corona\npi-model\npi-model\summary_europe.csv"
+    #path = r"D:\JHU\corona\npi-model\npi-model\US_summary.csv"
+    base_model = True  # True for prediction/E_deaths, False for prediction0/E_deaths0
+    confirmed_cases = read_true_cases_europe(path_confirmed_infections)
+    plot_daily_infections_num(path, num_of_country,confirmed_cases, days_to_predict, plot_choice, base_model)
+
+
+if __name__ == '__main__':
+    main()
+
