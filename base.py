@@ -15,7 +15,6 @@ assert len(sys.argv) == 3
 sm = pystan.StanModel(file='stan-models/base.stan')
 
 data_dir = sys.argv[1]
-
 weighted_fatalities = np.loadtxt(join(data_dir, 'weighted_fatality.csv'), skiprows=1, delimiter=',', dtype=str)
 ifrs = {}
 
@@ -31,16 +30,13 @@ elif sys.argv[2] == 'US':
         ifrs[str(weighted_fatalities[i,0])] = weighted_fatalities[i,-1]
 
 
-
-
 N2 = stan_data['N2']
-serial_interval = np.loadtxt(join(data_dir, 'serial_interval.csv'), skiprows=1, delimiter=',') # Time between primary infector showing symptoms and secondary infected showing symptoms - this is a probability distribution from 1 to 100 days
-
+serial_interval = np.loadtxt(join(data_dir, 'serial_interval.csv'), skiprows=1, delimiter=',')
+# Time between primary infector showing symptoms and secondary infected showing symptoms - this is a probability distribution from 1 to 100 days
 
 SI = serial_interval[0:stan_data['N2'],1]
 stan_data['SI'] = SI
 
-## TODO: turn rgammAlt, ecdf, and function thing into Python gamma distribution and convolution
 # infection to onset
 mean1 = 5.1
 cv1 = 0.86
