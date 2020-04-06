@@ -159,6 +159,7 @@ def get_stan_parameters(data_dir, save_new_csv=False):
     covariate7 = 0  # models should take only one covariate
 
     final_dict = {}
+    plot_dict = {}
     final_dict['M'] = len(countries)
     final_dict['N0'] = 6
     final_dict['N'] = np.asarray(N_arr).astype(np.int)
@@ -175,10 +176,10 @@ def get_stan_parameters(data_dir, save_new_csv=False):
     final_dict['covariate5'] = covariate5
     final_dict['covariate6'] = covariate6
     final_dict['covariate7'] = covariate7
-    final_dict['start_deaths'] = dict_of_start_dates
-    final_dict['country_code'] = dict_of_geo
+    plot_dict['start_deaths'] = dict_of_start_dates
+    plot_dict['country_code'] = dict_of_geo
 
-    return final_dict, countries
+    return final_dict, plot_dict, countries
 
 
 def get_stan_parameters_our(num_counties, data_dir):
@@ -316,6 +317,7 @@ def get_stan_parameters_our(num_counties, data_dir):
     deaths = np.array(deaths).T
 
     final_dict = {}
+    plot_dict = {}
     final_dict['M'] = num_counties
     final_dict['N0'] = 6
     final_dict['N'] = np.asarray(N_arr, dtype=np.int)
@@ -332,9 +334,9 @@ def get_stan_parameters_our(num_counties, data_dir):
     final_dict['covariate5'] = covariate5
     final_dict['covariate6'] = covariate6
     final_dict['covariate7'] = covariate7
-    final_dict['start_deaths'] = dict_of_start_dates
-    final_dict['country_code'] = dict_of_geo
-    return final_dict, fips_list
+    plot_dict['start_deaths'] = dict_of_start_dates
+    plot_dict['country_code'] = dict_of_geo
+    return final_dict, plot_dict, fips_list
              
 if __name__ == '__main__':
 

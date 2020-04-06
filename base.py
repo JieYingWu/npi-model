@@ -20,12 +20,12 @@ ifrs = {}
 
 
 if sys.argv[2] == 'europe':
-    stan_data, countries = get_stan_parameters(data_dir)
+    stan_data, plot_data, countries = get_stan_parameters(data_dir)
     for i in range(weighted_fatalities.shape[0]):
         ifrs[weighted_fatalities[i,1]] = float(weighted_fatalities[i,-2])
 
 elif sys.argv[2] == 'US':
-    stan_data, countries = get_stan_parameters_our(20, data_dir)
+    stan_data, plot_data, countries = get_stan_parameters_our(20, data_dir)
     for i in range(weighted_fatalities.shape[0]):
         ifrs[str(weighted_fatalities[i,0])] = weighted_fatalities[i,-1]
 
@@ -102,6 +102,7 @@ df = pd.DataFrame(summary_dict['summary'],
 df.to_csv(r'summary.csv', sep=';')
 
 ## TODO: Make pretty plots
+## use plot_data to get start_dates and geocode data for plotting
 # Probably don't have to use Imperial data for this, just find similar looking Python packages
 # data_country = pd.DataFrame({'time': s, 'deaths': })
 # plot_forecasts()
