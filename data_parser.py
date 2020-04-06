@@ -309,7 +309,7 @@ def get_stan_parameters_our(num_counties, data_dir):
     final_dict['N0'] = 6
     final_dict['N'] = np.asarray(num_counties* [observed_days]).astype(np.int)
     final_dict['N2'] = N2
-    final_dict['x'] = np.arange(1, observed_days + 1).astype(np.int)
+    final_dict['x'] = np.arange(0, N2)
     final_dict['cases'] = cases
     final_dict['deaths'] = deaths
     final_dict['EpidemicStart'] = np.asarray(counter_list).astype(np.int)
