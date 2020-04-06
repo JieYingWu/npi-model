@@ -71,6 +71,8 @@ def get_stan_parameters(data_dir, save_new_csv=False):
     N_arr = []
     start_dates = []
 
+    dict_of_start_dates = {}
+    dict_of_geo = {}
 
     for country in countries:
         d1 = covid_up_to_date.loc[covid_up_to_date['countriesAndTerritories'] == country]
@@ -85,6 +87,10 @@ def get_stan_parameters(data_dir, save_new_csv=False):
         index = (d1['cases'] > 0).idxmax()
         index1 = (d1['deaths'].cumsum() >= 10).argmax()
         index2 = index1 - 30
+
+        idx = countries.index(country)
+        dict_of_geo[idx] = country
+        dict_of_start_dates[idx] = dt.datetime.strftime(d1['Date'].loc[index2], format='%m-%d-%Y')
 
         start_dates.append(index1 + 1 - index2)
 
@@ -165,6 +171,10 @@ def get_stan_parameters(data_dir, save_new_csv=False):
     final_dict['covariate5'] = covariate5
     final_dict['covariate6'] = covariate6
     final_dict['covariate7'] = covariate7
+    final_dict['start_deaths'] = dict_of_start_dates
+    final_dict['country_code'] = dict_of_geo
+
+    print(final_dict['start_deaths'])
     return final_dict, countries
 
 
@@ -238,6 +248,7 @@ def get_stan_parameters_our(num_counties, data_dir):
     cum_sum = np.cumsum(df_deaths, axis=0) >= 10
     index1 = np.where(np.argmax(cum_sum, axis=0) != 0, np.argmax(cum_sum, axis=0), cum_sum.shape[0])
     index2 = index1 - 30
+    start_dates = index1 + 1 - index2
 
     covariate1 = []
     covariate2 = []
@@ -250,7 +261,6 @@ def get_stan_parameters_our(num_counties, data_dir):
     cases = []
     deaths = []
     N_arr = []
-    start_dates = []
 
     for i in range(len(fips_list)):
         i2 = index2[i]  ## get index2 for every county
@@ -312,7 +322,7 @@ def get_stan_parameters_our(num_counties, data_dir):
     final_dict['x'] = np.arange(0, N2)
     final_dict['cases'] = cases
     final_dict['deaths'] = deaths
-    final_dict['EpidemicStart'] = np.asarray(counter_list).astype(np.int)
+    final_dict['EpidemicStart'] = np.asarray(start_dates).astype(np.int)
 #    final_dict['p'] = len(interventions_colnames) - 1 ### not sure whether to subtract 1 or not
     final_dict['covariate1'] = covariate1
     final_dict['covariate2'] = covariate2
@@ -321,13 +331,14 @@ def get_stan_parameters_our(num_counties, data_dir):
     final_dict['covariate5'] = covariate5
     final_dict['covariate6'] = covariate6
     final_dict['covariate7'] = covariate7
-
     return final_dict, fips_list
 
                 
 if __name__ == '__main__':
-    #pick 20 counties
-    data_dir = 'C:/D-drive-18921/Covid 19/npi-model/us_data'
-    get_stan_parameters_our(20, data_dir)
-    #get_stan_parameters()
+    ## US data
+    data_dir = 'C:/D-drive-18921/Covid 19/npi-model/data'
+    #get_stan_parameters_our(20, data_dir)
+    ## Europe data
+    #get_stan_parameters(data_dir)
+
 
