@@ -11,12 +11,16 @@ import numpy as np
 import datetime
 
 # this is for Europe
-#start_day_of_confirmed ='12-31-2019'
+start_day_of_confirmed ='12-31-2019'
 # this is for states
-start_day_of_confirmed = '01-22-2020'
+#start_day_of_confirmed = '01-22-2020'
+
+#Todo - save in folder
+#todo - auto change to europe/us
 
 # input here variables for different plotting options
 base_model = True  # True for prediction/E_deaths, False for prediction0/E_deaths0
+# for europe matches with condition True
 last_day_to_plot = '03-31-2020'  # predict to this date
 
 
@@ -43,8 +47,10 @@ def plot_forecasts_wo_dates_quantiles(row2_5, row25, row50, row75, row97_5, conf
 
     barplot_missing_values = np.zeros(days_to_predict - np.shape(confirmed_cases)[0])
     barplot_values = list(confirmed_cases)+list(barplot_missing_values)
-
+    #print(barplot_values)
     ticks = date_list
+    #print(row50)
+
     y1_upper50 = np.asarray(row75)
     y1_lower50 = np.asarray(row25)
     y1_upper25 = np.asarray(row97_5)
@@ -71,8 +77,7 @@ def plot_forecasts_wo_dates_quantiles(row2_5, row25, row50, row75, row97_5, conf
 
     if save_image:
         name = str(metric)+str(dict_of_eu_geog[num_of_country])
-        fig.savefig('./results/plots/usa/{}.jpg'.format(name))
-        #plt.show()
+        fig.savefig('./results/plots/europe/{}.jpg'.format(name))
         fig.clf()
     else:
         plt.show()
@@ -122,17 +127,18 @@ def read_true_cases_europe(plot_choice, num_of_country, dict_of_start_dates, dic
     0 for infections forecast
     '''
     if plot_choice == 0:
-        filepath = r"D:\JHU\corona\npi-model\npi-model\data\COVID-19-up-to-date-cases-clean.csv"
+        filepath = "./data/COVID-19-up-to-date-cases-clean.csv"
     else:
-        filepath = r"D:\JHU\corona\npi-model\npi-model\data\COVID-19-up-to-date-deaths-clean.csv"
+        filepath = "./data/COVID-19-up-to-date-deaths-clean.csv"
 
     df = pd.read_csv(filepath, delimiter=',',header=None)
 
     confirmed_start_date = datetime.datetime.strptime(start_day_of_confirmed, '%m-%d-%Y')
     forecast_start_date = datetime.datetime.strptime(dict_of_start_dates[num_of_country], '%m-%d-%Y')
     diff = (forecast_start_date - confirmed_start_date).days + 1
+    print("forecast start date", forecast_start_date)
+    confirmed_cases = list(df.iloc[num_of_country, diff:])
 
-    confirmed_cases = df.iloc[num_of_country-1, diff:]
     return confirmed_cases
 
 
@@ -153,7 +159,6 @@ def read_true_cases_us(plot_choice, num_of_country,dict_of_start_dates,dict_of_e
 
     confirmed_cases = list(df.loc[fips][diff:])
     county_name = df.loc[fips][0]
-    print(confirmed_cases)
     return confirmed_cases, county_name
 
 
@@ -192,9 +197,9 @@ def make_all_eu_plots():
     start_day_of_confirmed ='12-31-2019'  # this will be different for US and Europe
 
     for plot_choice in range(0,2):
-        print(plot_choice)
+        print("plot choice", plot_choice)
         for num_of_country in dict_of_eu_geog.keys():
-            print(num_of_country)
+            print("num of country", num_of_country)
             confirmed_cases = read_true_cases_europe(plot_choice, num_of_country, dict_of_start_dates, dict_of_eu_geog)
             plot_daily_infections_num(path, confirmed_cases, "", plot_choice, num_of_country, dict_of_start_dates, dict_of_eu_geog)
     return
@@ -202,9 +207,9 @@ def make_all_eu_plots():
 
 def main():
     # This is for USA
-    make_all_us_plots()
+    #make_all_us_plots()
     # This is for Europe
-    #make_all_eu_plots()
+    make_all_eu_plots()
 
 
 if __name__ == '__main__':
