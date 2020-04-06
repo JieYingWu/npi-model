@@ -129,7 +129,7 @@ def trial_run():
     plot_forecasts(df)
     
 
-def plot_forecasts_wo_dates_quantiles(row2_5,row25,row50,row75,row97_5):
+def plot_forecasts_wo_dates_quantiles(row2_5,row25,row50,row75,row97_5, metric = 'infections'):
     '''
     :param data_country: pandas DF that contains column 'deaths' and 'time'
     '''
@@ -153,7 +153,7 @@ def plot_forecasts_wo_dates_quantiles(row2_5,row25,row50,row75,row97_5):
 
     plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
     ax.bar(ticks, row50, color='r', width=0.9, alpha=0.3)
-    ax.set_ylabel("Daily number of infections")
+    ax.set_ylabel("Daily number of {}".format(metric))
     ax.set_xlabel("Date")
 
     plt.show()
@@ -181,28 +181,55 @@ def plot_daily_infections_num(path, num_of_country, days_to_predict):
                 if name.split(",")[0] == ("prediction[" + str(days_to_predict)):
                     break
     plot_forecasts_wo_dates_quantiles(list2_5, list25, list50, list75, list97_5)
-    
-def main():
-  # Aniruddha's version of main()
-    if getpass.getuser() == 'aniruddha':
-        df = pd.read_csv(r"./summary_europe.csv", delimiter=';',index_col=0)
-        #print(df.head())
-        row_names = list(df.index.tolist())
-        #print(row_names)
-        prediction_list = []
-        std = []
-        county_number = '1]'
-        for name in row_names:
-            if "prediction[" in name:
+
+def plot_daily_deaths_num(path, num_of_country, days_to_predict, base_model = False):
+    df = pd.read_csv(path, delimiter=';',index_col=0)
+    row_names = list(df.index.tolist())
+    prediction_list = []
+    list2_5, list25, list50, list75, list97_5 = [],[],[],[],[]
+    county_number = str(num_of_country)+']'
+    model_name = 'E_deaths'
+    if base_model:
+        model_name += '0'
+    for name in row_names:
+        if not base_model:
+            if "E_deaths[" in name:
                 if name.split(",")[1] == county_number:
                     print(name)
                     rowData = df.loc[name, :]
                     prediction_list.append(rowData['mean'])
-                    std.append(rowData['sd'])
-        prediction_list = np.array(prediction_list)
-        # plot_forecasts_without_dates(prediction_list)
-        plot_forecasts_with_actual_uncertainity(row = prediction_list, std = std)
+                    list2_5.append(rowData['2.5%'])
+                    list25.append(rowData['25%'])
+                    list50.append(rowData['50%'])
+                    list75.append(rowData['75%'])
+                    list97_5.append(rowData['97.5%'])
 
+                    if name.split(",")[0] == ("E_deaths[" + str(days_to_predict)):
+                        break
+        else:
+            if "E_deaths0[" in name:
+                if name.split(",")[1] == county_number:
+                    print(name)
+                    rowData = df.loc[name, :]
+                    prediction_list.append(rowData['mean'])
+                    list2_5.append(rowData['2.5%'])
+                    list25.append(rowData['25%'])
+                    list50.append(rowData['50%'])
+                    list75.append(rowData['75%'])
+                    list97_5.append(rowData['97.5%'])
+
+                    if name.split(",")[0] == ("E_deaths0[" + str(days_to_predict)):
+                        break
+
+    plot_forecasts_wo_dates_quantiles(list2_5, list25, list50, list75, list97_5, metric=model_name)
+    
+def main():
+  # Aniruddha's version of main()
+    if getpass.getuser() == 'aniruddha':
+        path = './summary_europe.csv'
+        num_of_country = 1
+        days_to_predict = 35
+        plot_daily_deaths_num(path= path, num_of_country= num_of_country, days_to_predict= days_to_predict, base_model= True)
 # Anna's version of main()
     else:
         path = r"D:\JHU\corona\npi-model\npi-model\summary_europe.csv"
