@@ -247,19 +247,26 @@ def get_stan_parameters_our(num_counties, data_dir):
     covariate6 = []
     covariate7 = []
 
+    cases = []
+    deaths = []
+    N_arr = []
+    start_dates = []
+
     for i in range(len(fips_list)):
-        i2 = index2[i]
+        i2 = index2[i]  ## get index2 for every county
+        case = df_cases[i2:, i]
+        death = df_deaths[i2:, i]
+        assert len(case) == len(death)
         req_dates = df_cases_dates[i2:]
         covariates2 = []
-        req_dates = np.array(
-            [datetime.datetime.strptime(x, '%m/%d/%y').date() for x in req_dates])  ##first case for each county
+        req_dates = np.array([dt.datetime.strptime(x, '%m/%d/%y').date() for x in req_dates])
 
         for col in range(covariates1.shape[1]):
             covariates2.append(np.where(req_dates >= covariates1[i, col], 1, 0))
         covariates2 = np.array(covariates2).T
-
-        N = len(req_dates)
-        N2 = 100  ##from paper
+        N = len(case)
+        N_arr.append(N)
+        N2 = 100
         forecast = N2 - N
 
         if forecast < 0:
@@ -269,6 +276,13 @@ def get_stan_parameters_our(num_counties, data_dir):
             forecast = N2 - N
 
         addlst = [covariates2[N - 1]] * (forecast)
+        add_1 = [-1] * forecast
+
+        case = np.append(case, add_1, axis=0)
+        death = np.append(death, add_1, axis=0)
+        cases.append(case)
+        deaths.append(death)
+
         covariates2 = np.append(covariates2, addlst, axis=0)
         covariate1.append(covariates2[:, 0])  # stay at home
         covariate2.append(covariates2[:, 1])  # >50 gatherings
@@ -287,22 +301,17 @@ def get_stan_parameters_our(num_counties, data_dir):
     covariate5 = np.array(covariate5).T
     covariate6 = np.array(covariate6).T
     covariate7 = np.array(covariate7).T
-
-    # covariate2 = covariate7
-
-    # covariate4 = np.where( (covariate1 + covariate3 + covariate5 + covariate6 + covariate7) >=1, 1, 0) #any intervention
-    # covariate5 = covariate5
-    # covariate6 = covariate6
-    # covariate7 = 0 #models should take only one covariate
+    cases = np.array(cases).T
+    deaths = np.array(deaths).T
 
     final_dict = {}
     final_dict['M'] = num_counties
     final_dict['N0'] = 6
     final_dict['N'] = np.asarray(num_counties* [observed_days]).astype(np.int)
-    final_dict['N2'] = observed_days
+    final_dict['N2'] = N2
     final_dict['x'] = np.arange(1, observed_days + 1).astype(np.int)
-    final_dict['cases'] = df_cases.astype(np.int)
-    final_dict['deaths'] = df_deaths.astype(np.int)
+    final_dict['cases'] = cases
+    final_dict['deaths'] = deaths
     final_dict['EpidemicStart'] = np.asarray(counter_list).astype(np.int)
 #    final_dict['p'] = len(interventions_colnames) - 1 ### not sure whether to subtract 1 or not
     final_dict['covariate1'] = covariate1
@@ -312,11 +321,13 @@ def get_stan_parameters_our(num_counties, data_dir):
     final_dict['covariate5'] = covariate5
     final_dict['covariate6'] = covariate6
     final_dict['covariate7'] = covariate7
+
     return final_dict, fips_list
 
                 
 if __name__ == '__main__':
     #pick 20 counties
-    #get_stan_parameters_our(20)
-    get_stan_parameters()
+    data_dir = 'C:/D-drive-18921/Covid 19/npi-model/us_data'
+    get_stan_parameters_our(20, data_dir)
+    #get_stan_parameters()
 
