@@ -246,7 +246,9 @@ def get_stan_parameters_our(num_counties, data_dir):
     covariate5 = []
     covariate6 = []
     covariate7 = []
+    N2 = 100  ##from paper
 
+    
     for i in range(len(fips_list)):
         i2 = index2[i]
         req_dates = df_cases_dates[i2:]
@@ -257,17 +259,13 @@ def get_stan_parameters_our(num_counties, data_dir):
         for col in range(covariates1.shape[1]):
             covariates2.append(np.where(req_dates >= covariates1[i, col], 1, 0))
         covariates2 = np.array(covariates2).T
-
         N = len(req_dates)
-        N2 = 100  ##from paper
         forecast = N2 - N
 
         if forecast < 0:
             print("FIPS: ", fips_list[i], " N: ", N)
             print("Error!!!! N2 is increasing!")
             N2 = N
-            forecast = N2 - N
-
         addlst = [covariates2[N - 1]] * (forecast)
         covariates2 = np.append(covariates2, addlst, axis=0)
         covariate1.append(covariates2[:, 0])  # stay at home
@@ -277,7 +275,6 @@ def get_stan_parameters_our(num_counties, data_dir):
         covariate5.append(covariates2[:, 4])  # restaurant dine-in
         covariate6.append(covariates2[:, 5])  # entertainment/gym
         covariate7.append(covariates2[:, 6])  # federal guidelines
-        # covariate8.append(covariates2[:, 6]) #foreign travel ban (excluded)
 
     # converting to numpy array
     covariate1 = np.array(covariate1).T
@@ -288,23 +285,15 @@ def get_stan_parameters_our(num_counties, data_dir):
     covariate6 = np.array(covariate6).T
     covariate7 = np.array(covariate7).T
 
-    # covariate2 = covariate7
-
-    # covariate4 = np.where( (covariate1 + covariate3 + covariate5 + covariate6 + covariate7) >=1, 1, 0) #any intervention
-    # covariate5 = covariate5
-    # covariate6 = covariate6
-    # covariate7 = 0 #models should take only one covariate
-
     final_dict = {}
     final_dict['M'] = num_counties
     final_dict['N0'] = 6
     final_dict['N'] = np.asarray(num_counties* [observed_days]).astype(np.int)
-    final_dict['N2'] = observed_days
-    final_dict['x'] = np.arange(1, observed_days + 1).astype(np.int)
+    final_dict['N2'] = N2
+    final_dict['x'] = np.arange(0, N2)
     final_dict['cases'] = df_cases.astype(np.int)
     final_dict['deaths'] = df_deaths.astype(np.int)
     final_dict['EpidemicStart'] = np.asarray(counter_list).astype(np.int)
-#    final_dict['p'] = len(interventions_colnames) - 1 ### not sure whether to subtract 1 or not
     final_dict['covariate1'] = covariate1
     final_dict['covariate2'] = covariate2
     final_dict['covariate3'] = covariate3
