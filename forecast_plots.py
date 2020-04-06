@@ -129,7 +129,7 @@ def trial_run():
     plot_forecasts(df)
     
 
-def plot_forecasts_wo_dates_quantiles(row2_5,row25,row50,row75,row97_5, metric = 'infections'):
+def plot_forecasts_wo_dates_quantiles(row2_5,row25,row50,row75,row97_5, metric = 'infections', save_image = False):
     '''
     :param data_country: pandas DF that contains column 'deaths' and 'time'
     '''
@@ -155,6 +155,9 @@ def plot_forecasts_wo_dates_quantiles(row2_5,row25,row50,row75,row97_5, metric =
     ax.bar(ticks, row50, color='r', width=0.9, alpha=0.3)
     ax.set_ylabel("Daily number of {}".format(metric))
     ax.set_xlabel("Date")
+
+    if save_image:
+        plt.savefig('./results/plots/{}.jpg'.format(metric))
 
     plt.show()
 
@@ -221,7 +224,7 @@ def plot_daily_deaths_num(path, num_of_country, days_to_predict, base_model = Fa
                     if name.split(",")[0] == ("E_deaths0[" + str(days_to_predict)):
                         break
 
-    plot_forecasts_wo_dates_quantiles(list2_5, list25, list50, list75, list97_5, metric=model_name)
+    plot_forecasts_wo_dates_quantiles(list2_5, list25, list50, list75, list97_5, metric=model_name, save_image= True)
     
 def main():
   # Aniruddha's version of main()
@@ -229,7 +232,7 @@ def main():
         path = './summary_europe.csv'
         num_of_country = 1
         days_to_predict = 35
-        plot_daily_deaths_num(path= path, num_of_country= num_of_country, days_to_predict= days_to_predict, base_model= True)
+        plot_daily_deaths_num(path= path, num_of_country= num_of_country, days_to_predict= days_to_predict, base_model= False)
 # Anna's version of main()
     else:
         path = r"D:\JHU\corona\npi-model\npi-model\summary_europe.csv"
