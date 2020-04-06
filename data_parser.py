@@ -6,6 +6,7 @@ import pandas as pd
 from future.backports import datetime
 import datetime as dt
 from os.path import join, exists
+from scipy.ndimage.interpolation import shift
 
 def get_stan_parameters(data_dir, save_new_csv=False):
     """
@@ -222,18 +223,50 @@ def get_stan_parameters_our(num_counties, data_dir):
                 counter += 1
         counter_list.append(counter)
 
+    N2 = 100
+    cases = []
+    deaths = []
+    start_dates = []
+    N_arr = []
+    index2_arr = []
     df_cases = df_cases.drop(['FIPS', 'Combined_Key'], axis=1)
+    df_deaths = df_deaths.drop(['merge','FIPS', 'Combined_Key'], axis=1)
+    for i in range(num_counties):
+        d1 = df_cases.iloc[i]
+        d2 = df_deaths.iloc[i]
+        index = (d1 > 0).idxmax()
+        index1 = (d2.cumsum() >= 10).argmax()
+        index2 = index1 - 30
+        index2_arr.append(index2)
+
+        start_dates.append(index1 + 1 - index2)
+        d1 = d1[index2:]
+        d2 = d2[index2:]
+
+        case = d1.to_numpy()
+        death = d2.to_numpy()
+        forecast = N2 - len(d1)
+        N_arr.append(len(d1))
+        add_1 = forecast * [-1]
+        case = np.append(case, add_1, axis=0)
+        death = np.append(death, add_1, axis=0)
+        cases.append(case)
+        deaths.append(death)
+
+    
+    cases = np.asarray(cases, dtype=np.int).T
+    deaths = np.asarray(deaths, dtype = np.int).T
+
     df_cases = df_cases.T
     df_cases_dates = np.array(df_cases.index)
     df_cases = df_cases.to_numpy()
     
-    df_deaths = df_deaths.drop(['merge','FIPS', 'Combined_Key'], axis=1)
     df_deaths = df_deaths.T
     df_deaths_dates = np.array(df_deaths.index)
     df_deaths = df_deaths.to_numpy()
 
     covariates1 = interventions.to_numpy()
-
+    
     index = np.argmax(df_cases > 0, axis=0)
     cum_sum = np.cumsum(df_deaths, axis=0) >= 10
     index1 = np.where(np.argmax(cum_sum, axis=0) != 0, np.argmax(cum_sum, axis=0), cum_sum.shape[0])
@@ -247,8 +280,6 @@ def get_stan_parameters_our(num_counties, data_dir):
     covariate5 = []
     covariate6 = []
     covariate7 = []
-    N2 = 100  ##from paper
-
 
     cases = []
     deaths = []
@@ -306,17 +337,16 @@ def get_stan_parameters_our(num_counties, data_dir):
     cases = np.array(cases).T
     deaths = np.array(deaths).T
 
-
     final_dict = {}
     final_dict['M'] = num_counties
     final_dict['N0'] = 6
-    final_dict['N'] = np.asarray(num_counties* [observed_days]).astype(np.int)
+    final_dict['N'] = np.asarray(N_arr, dtype=np.int)
     final_dict['N2'] = N2
     final_dict['x'] = np.arange(0, N2)
     final_dict['cases'] = cases
     final_dict['deaths'] = deaths
-    final_dict['cases'] = df_cases.astype(np.int)
-    final_dict['deaths'] = df_deaths.astype(np.int)
+    final_dict['cases'] = cases
+    final_dict['deaths'] = deaths
     final_dict['EpidemicStart'] = np.asarray(start_dates).astype(np.int)
     final_dict['covariate1'] = covariate1
     final_dict['covariate2'] = covariate2
@@ -327,10 +357,10 @@ def get_stan_parameters_our(num_counties, data_dir):
     final_dict['covariate7'] = covariate7
 
     return final_dict, fips_list
+             
+if __name__ == '__main__':
+    #pick 20 counties
+    # get_stan_parameters('data')
+    get_stan_parameters_our(20, '../disease_spread/data')
 
-                
-# if __name__ == '__main__':
-#     #pick 20 counties
-#     get_stan_parameters_our(20, data_dir)
-#     #get_stan_parameters()
 
