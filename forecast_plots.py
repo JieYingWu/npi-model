@@ -13,11 +13,13 @@ import datetime
 import getpass
 
 dict_of_start_dates = {1: '02/24/2020', 2: '03/17/2020', 3: '02/24/2020'}
+
 num_of_country = 1
-days_to_predict = 40
+days_to_predict = 35
+plot_choice = 1  # 1 for deaths forecast; 0 for infections forecast
 
 
-def plot_forecasts_wo_dates_quantiles(row2_5,row25,row50,row75,row97_5, plot_choice, save_image = False):
+def plot_forecasts_wo_dates_quantiles(row2_5, row25, row50, row75, row97_5, confirmed_cases, plot_choice, save_image = False):
     '''
     :param data_country: pandas DF that contains column 'deaths' and 'time'
     '''
@@ -28,10 +30,10 @@ def plot_forecasts_wo_dates_quantiles(row2_5,row25,row50,row75,row97_5, plot_cho
 
     base = datetime.datetime.strptime(dict_of_start_dates[num_of_country], '%m/%d/%Y')
     date_list = [base + datetime.timedelta(days=x) for x in range(days_to_predict)]
+    barplot_missing_values = np.zeros(days_to_predict - np.shape(confirmed_cases)[0])
+    barplot_values = list(confirmed_cases)+list(barplot_missing_values)
 
-    print(date_list)
 
-    #ticks = range(0, np.shape(row50)[0])
     ticks = date_list
     y1_upper50 = np.asarray(row75)
     y1_lower50 = np.asarray(row25)
@@ -46,9 +48,11 @@ def plot_forecasts_wo_dates_quantiles(row2_5,row25,row50,row75,row97_5, plot_cho
     ax.fill_between(ticks, y1_lower50, y1_upper50, alpha=0.2, color='b')
 
     plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
-    ax.bar(ticks, row50, color='r', width=0.9, alpha=0.3)
+    # insert here confirmed cases confirmed_cases
+    ax.bar(ticks, barplot_values, color='r', width=0.9, alpha=0.3)
     ax.set_ylabel("Daily number of {}".format(metric))
     ax.set_xlabel("Date")
+    ax.title.set_text("Europe Geography "+str(num_of_country))
 
     ax.xaxis_date()
     fig.autofmt_xdate()
@@ -57,7 +61,7 @@ def plot_forecasts_wo_dates_quantiles(row2_5,row25,row50,row75,row97_5, plot_cho
     plt.show()
 
 
-def plot_daily_infections_num(path, num_of_country, days_to_predict, plot_choice, base_model):
+def plot_daily_infections_num(path, num_of_country, confirmed_cases, days_to_predict, plot_choice, base_model):
     # 1 for deaths; 0 for infections
     plot_name = ""
     if plot_choice == 0:
@@ -91,14 +95,30 @@ def plot_daily_infections_num(path, num_of_country, days_to_predict, plot_choice
 
                 if name.split(",")[0] == (plot_name + str(days_to_predict)):
                     break
-    plot_forecasts_wo_dates_quantiles(list2_5, list25, list50, list75, list97_5, plot_choice)
+    plot_forecasts_wo_dates_quantiles(list2_5, list25, list50, list75, list97_5, confirmed_cases, plot_choice)
+
+
+def read_true_cases_europe(filepath):
+     # 1 for deaths forecast; 0 for infections forecast
+    if plot_choice == 0:
+        filepath = r"D:\JHU\corona\npi-model\npi-model\data\COVID-19-up-to-date-cases-clean.csv"
+    else:
+        filepath = r"D:\JHU\corona\npi-model\npi-model\data\COVID-19-up-to-date-deaths-clean.csv"
+
+    df = pd.read_csv(filepath, delimiter=',',header=None)
+    # will be a variable  # align to correct start date - between 31 Dec and 1st March there is 62 days
+    confirmed_cases = df.iloc[num_of_country-1, 62:]
+    print(np.shape(confirmed_cases))
+    return confirmed_cases
+
 
 
 def main():
     path = r"D:\JHU\corona\npi-model\npi-model\summary_europe.csv"
-    plot_choice = 1  # 1 for deaths forecast; 0 for infections forecast
-    base_model = False  # True for prediction/E_deaths, False for prediction0/E_deaths0
-    plot_daily_infections_num(path, num_of_country, days_to_predict, plot_choice, base_model)
+    #path = r"D:\JHU\corona\npi-model\npi-model\US_summary.csv"
+    base_model = True  # True for prediction/E_deaths, False for prediction0/E_deaths0
+    confirmed_cases = read_true_cases_europe(path_confirmed_infections)
+    plot_daily_infections_num(path, num_of_country,confirmed_cases, days_to_predict, plot_choice, base_model)
 
 
 if __name__ == '__main__':
