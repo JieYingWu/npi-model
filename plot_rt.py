@@ -81,7 +81,7 @@ def plot_rt(simulation_file, interventions_file, country_number, num_days=75, st
     plt.ylabel('Time-dependent Reproduction Number')
 
     if save_img:
-        plt.savefig('./results/plots/Rt_{}.png'.format(countries[country_number - 1]), bbox_extra_artists=(lgd,), bbox_inches='tight')
+        plt.savefig('./europe_results/plots/Rt_{}.png'.format(countries[country_number - 1]), bbox_extra_artists=(lgd,), bbox_inches='tight')
 
     plt.show()
 
