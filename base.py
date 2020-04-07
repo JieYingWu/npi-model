@@ -15,32 +15,28 @@ assert len(sys.argv) == 3
 sm = pystan.StanModel(file='stan-models/base.stan')
 
 data_dir = sys.argv[1]
-
 weighted_fatalities = np.loadtxt(join(data_dir, 'weighted_fatality.csv'), skiprows=1, delimiter=',', dtype=str)
 ifrs = {}
 
 
 if sys.argv[2] == 'europe':
-    stan_data, countries = get_stan_parameters(data_dir)
+    stan_data, plot_data, countries = get_stan_parameters(data_dir)
     for i in range(weighted_fatalities.shape[0]):
         ifrs[weighted_fatalities[i,1]] = float(weighted_fatalities[i,-2])
 
 elif sys.argv[2] == 'US':
-    stan_data, countries = get_stan_parameters_our(20, data_dir)
+    stan_data, plot_data, countries = get_stan_parameters_our(20, data_dir)
     for i in range(weighted_fatalities.shape[0]):
         ifrs[str(weighted_fatalities[i,0])] = weighted_fatalities[i,-1]
 
 
-
-
 N2 = stan_data['N2']
-serial_interval = np.loadtxt(join(data_dir, 'serial_interval.csv'), skiprows=1, delimiter=',') # Time between primary infector showing symptoms and secondary infected showing symptoms - this is a probability distribution from 1 to 100 days
-
+serial_interval = np.loadtxt(join(data_dir, 'serial_interval.csv'), skiprows=1, delimiter=',')
+# Time between primary infector showing symptoms and secondary infected showing symptoms - this is a probability distribution from 1 to 100 days
 
 SI = serial_interval[0:stan_data['N2'],1]
 stan_data['SI'] = SI
 
-## TODO: turn rgammAlt, ecdf, and function thing into Python gamma distribution and convolution
 # infection to onset
 mean1 = 5.1
 cv1 = 0.86
@@ -108,6 +104,7 @@ df = pd.DataFrame(summary_dict['summary'],
 df.to_csv(sys.argv[2] + '_summary.csv', sep=';')
 
 ## TODO: Make pretty plots
+## use plot_data to get start_dates and geocode data for plotting
 # Probably don't have to use Imperial data for this, just find similar looking Python packages
 # data_country = pd.DataFrame({'time': s, 'deaths': })
 # plot_forecasts()
