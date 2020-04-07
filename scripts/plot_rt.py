@@ -199,6 +199,7 @@ def get_interventions_europe(interventions_file):
     return countries, date_cols, mod_interventions
 
 
+# copied from data_parser
 def get_interventions_US(interventions_file, num_counties=100):
 
     interventions = pd.read_csv(interventions_file)
@@ -210,8 +211,9 @@ def get_interventions_US(interventions_file, num_counties=100):
     for col in int_cols: ### convert date from given format
         interventions[col] = interventions[col].apply(lambda x: dt.date.fromordinal(int(x)))
 
-    fips = [36061, 36119, 36059, 36103, 17031, 26163, 36087, 34003, 53033, 6037, 22071, 36071, 9001, 34013, 12086,
-            26125, 25017, 34017, 25025, 34023]
+    # this needs to be updated if any changes are made to the data parser
+    fips = [36061, 36119, 36059, 36103, 17031, 26163, 6037, 34003, 36087, 53033, 22071, 34013, 12086, 9001, 26125,
+            34017, 36071, 42101, 34039, 25025]
 
     interventions_list = list(interventions.columns.values)[3:]
 
@@ -221,22 +223,24 @@ def get_interventions_US(interventions_file, num_counties=100):
 if __name__ == '__main__':
 
     ### EUROPE ###
-    # simulation_file = r'results\europe_summary.csv'
-    # interventions_file = r'data\europe_data\interventions.csv'
-    # country_numbers = np.arange(1, 12)
-    # start_dates = ['02-22-2020', '02-18-2020', '02-21-2020', '02-07-2020', '02-15-2020', '01-27-2020', '02-24-2020', '02-09-2020', '02-18-2020', '02-14-2020', '02-12-2020']
-    #
-    # for country, date in zip(country_numbers, start_dates):
-    #     plot_rt_europe(simulation_file, interventions_file, country, date, save_img=True)
+    simulation_file = r'results\europe_summary.csv'
+    interventions_file = r'data\europe_data\interventions.csv'
+    country_numbers = np.arange(1, 12)
+    start_dates = ['02-22-2020', '02-18-2020', '02-21-2020', '02-07-2020', '02-15-2020', '01-27-2020', '02-24-2020', '02-09-2020', '02-18-2020', '02-14-2020', '02-12-2020']
+
+    for country, date in zip(country_numbers, start_dates):
+        plot_rt_europe(simulation_file, interventions_file, country, date, save_img=True)
 
     ### USA ###
     simulation_file = r'results\US_summary.csv'
     interventions_file = r'data\us_data\interventions.csv'
     cases_file = r'data\us_data\infections_timeseries.csv'
     county_numbers = np.arange(1, 21)
-    start_dates = ['2-16-2020', '2-26-2020', '2-20-2020', '2-18-2020', '02-21-2020', '2-21-2020', '2-22-2020',
-                   '2-17-2020', '2-02-2020', '02-18-2020', '2-16-2020', '2-27-2020', '2-20-2020', '2-21-2020',
-                   '02-28-2020', '2-22-2020', '2-25-2020', '2-25-2020', '2-26-2020', '2-27-2020']
+
+    start_dates = ['2-16-2020', '2-27-2020', '2-20-2020', '2-18-2020', '2-21-2020', '2-22-2020',
+                   '2-18-2020', '2-17-2020', '2-22-2020', '2-02-2020', '2-16-2020', '2-21-2020',
+                   '3-01-2020', '2-20-2020', '2-23-2020', '2-26-2020', '2-28-2020', '2-28-2020',
+                   '2-29-2020', '2-26-2020']
 
     for county, date in zip(county_numbers, start_dates):
         plot_rt_US(simulation_file, interventions_file, county, date, save_img=True)
