@@ -40,7 +40,7 @@ def plot_rt(simulation_file, interventions_file, country_number, num_days=75, st
     # 95% conf interval
     upper = Rt_data['97.5%']
     lower = Rt_data['2.5%']
-    plt.fill_between(time_data, lower, upper, step='post', alpha=0.4, color='lightgreen', label='95% conf interval')
+    plt.fill_between(time_data, lower, upper, step='post', alpha=0.4, color='lightgreen', label='95% conf. interval')
 
     init_height = 1.2 * plt.gca().get_ylim()[1]
     plt.ylim([0, init_height])
