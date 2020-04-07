@@ -225,10 +225,9 @@ def get_stan_parameters_us(num_counties, data_dir, show):
     interventions.drop(id_cols, axis=1, inplace=True)
     interventions_colnames = interventions.columns.values
     covariates1 = interventions.to_numpy()
-    
-    index = np.argmax(df_cases > 0, axis=0)
-    cum_sum = np.cumsum(df_deaths, axis=0) >= 10
-    index1 = np.where(np.argmax(cum_sum, axis=0) != 0, np.argmax(cum_sum, axis=0), cum_sum.shape[0])
+
+    #### cases and deaths are already cumulative
+    index1 = np.argmax(df_deaths > 0, axis=0)
     index2 = index1 - 30
     start_dates = index1 + 1 - index2
     dict_of_start_dates = {}
@@ -248,8 +247,8 @@ def get_stan_parameters_us(num_counties, data_dir, show):
     for i in range(len(fips_list)):
         i2 = index2[i]
         dict_of_start_dates[i] = df_cases_dates[i2]
-        case = df_cases[i2:, i]
-        death = df_deaths[i2:, i]
+        case = df_cases[i2:, i] - df_cases[i2 - 1:len(df_cases) - 1, i]  ### original data is cumulative
+        death = df_deaths[i2:, i] - df_deaths[i2 - 1:len(df_deaths) - 1, i]
         assert len(case) == len(death)
 
         req_dates = df_cases_dates[i2:]
@@ -322,14 +321,14 @@ def get_stan_parameters_us(num_counties, data_dir, show):
     final_dict['covariate7'] = covariate7
     plot_dict['start_deaths'] = dict_of_start_dates
     plot_dict['country_code'] = dict_of_geo
-    return final_dict, plot_dict, fips_list
-             
+    sreturn final_dict, plot_dict, fips_list
+#
 # if __name__ == '__main__':
 #
 #     main_dir = sys.argv[1]
 #     ## Europe data
-#     get_stan_parameters_europe(main_dir)
+#     get_stan_parameters_europe(main_dir, show=False)
 #     print("***********************")
 #     ## US data
-#     get_stan_parameters_us(20, main_dir)
+#     get_stan_parameters_us(20, main_dir, show=False)
 
