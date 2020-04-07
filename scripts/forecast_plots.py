@@ -78,8 +78,8 @@ def plot_forecasts_wo_dates_quantiles(quantiles_dict, confirmed_cases, county_na
 
     if save_image:
         name = str(metric) + str(dict_of_eu_geog[num_of_country])
-        fig.savefig('../results/plots/{}/{}.jpg'.format(results_folder,name))
         plt.tight_layout()
+        fig.savefig('../results/plots/{}/{}.jpg'.format(results_folder,name))
         fig.clf()
     else:
         plt.show()
