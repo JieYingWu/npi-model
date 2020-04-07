@@ -9,7 +9,8 @@ from os.path import join, exists
 from scipy.ndimage.interpolation import shift
 
 pd.set_option('mode.chained_assignment', None)
-def get_stan_parameters(data_dir, save_new_csv=False):
+
+def get_stan_parameters_europe(data_dir, show):
     """
     Returns in a dict:
     M; // number of countries
@@ -21,40 +22,26 @@ def get_stan_parameters(data_dir, save_new_csv=False):
     deaths[N2, M]; // reported deaths -- the rows with i > N contain -1 and should be ignored
     EpidemicStart[M];
     p; //intervention dates
-    covariate1, ...., covariate7
+    covariate1, ...., covariate7 //covariate variables
 
     """
-    imp_covid_dir = join(data_dir, 'european_data/COVID-19-up-to-date.csv')
-    imp_interventions_dir = join(data_dir, 'european_data/interventions.csv')
-    
+    imp_covid_dir = join(data_dir, 'data', 'europe_data/COVID-19-up-to-date.csv')
+    imp_interventions_dir = join(data_dir, 'data', 'europe_data/interventions.csv')
+
     interventions = pd.read_csv(imp_interventions_dir, encoding='latin-1')
     covid_up_to_date = pd.read_csv(imp_covid_dir, encoding='latin-1')
 
-    mod_interventions = pd.DataFrame(columns=['Country', 'school/uni closures', 'self-isolating if ill',
-                                              'banning public events', 'any government intervention',
-                                              'complete/partial lockdown', 'social distancing/isolation'])
-
-    mod_interventions['Country'] = interventions.iloc[0:11]['Country']
-    mod_interventions['school/uni closures'] = interventions.iloc[0:11]['schools_universities']
-    mod_interventions['self-isolating if ill'] = interventions.iloc[0:11]['self_isolating_if_ill']
-    mod_interventions['banning public events'] = interventions.iloc[0:11]['public_events']
-    mod_interventions['social distancing/isolation'] = interventions.iloc[0:11]['social_distancing_encouraged']
-    mod_interventions['complete/partial lockdown'] = interventions.iloc[0:11]['lockdown']
-    mod_interventions['any government intervention'] = interventions.iloc[0:11]['lockdown']
-    mod_interventions['sport'] = interventions.iloc[0:11]['sport']
-    mod_interventions['travel_restrictions'] = interventions.iloc[0:11]['travel_restrictions']
+    mod_interventions = interventions.iloc[0:11, 0:8] ##only meaningful data for interventions
 
     mod_interventions.sort_values('Country', inplace=True)
 
+    ### if intervention dates are after lockdown, set them to lockdown date
     for col in mod_interventions.columns.tolist():
-        if col == 'Country' or col == 'complete/partial lockdown':
+        if col == 'Country' or col == 'lockdown':
             continue
         col1 = pd.to_datetime(mod_interventions[col], format='%Y-%m-%d').dt.date
-        col2 = pd.to_datetime(mod_interventions['complete/partial lockdown'], format='%Y-%m-%d').dt.date
-        col3 = pd.to_datetime(mod_interventions['any government intervention'], format='%Y-%m-%d').dt.date
+        col2 = pd.to_datetime(mod_interventions['lockdown'], format='%Y-%m-%d').dt.date
         mod_interventions[col] = np.where(col1 > col2, col2, col1).astype(str)
-        if col != 'self-isolating if ill':
-            mod_interventions['any government intervention'] = np.where(col1 < col3, col1, col1).astype(str)
 
     countries = mod_interventions['Country'].to_list()
     date_cols = [col for col in mod_interventions.columns.tolist() if col != 'Country']
@@ -82,7 +69,7 @@ def get_stan_parameters(data_dir, save_new_csv=False):
         df_date = pd.to_datetime(d1['dateRep'], format='%d/%m/%Y').dt.date
         d1.loc[:, 'Date'] = df_date
 
-        d1 = d1.sort_values(by=['Date'])
+        d1 = d1.sort_values(by=['Date']) ##sort by dates
         d1.reset_index(drop=True, inplace=True)
 
         ## get first day with number of cases >0
@@ -94,15 +81,16 @@ def get_stan_parameters(data_dir, save_new_csv=False):
         idx = countries.index(country)
         dict_of_geo[idx] = country
         dict_of_start_dates[idx] = dt.datetime.strftime(d1['Date'][index2], format='%m-%d-%Y')
-
         start_dates.append(index1 + 1 - index2)
 
         d1 = d1.loc[index2:]
         case = d1['cases'].to_numpy()
         death = d1['deaths'].to_numpy()
-        print("{Country} has {num} days of data".format(Country=country, num=len(d1['cases'])))
-        print("Start date for {Country}: ".format(Country=country), dict_of_start_dates[idx])
+        if show:
+            print("{Country} has {num} days of data".format(Country=country, num=len(d1['cases'])))
+            print("Start date for {Country}: ".format(Country=country), dict_of_start_dates[idx])
 
+        ### check if interventions were in place from start date onwards
         for col in date_cols:
             covid_date = pd.to_datetime(d1['dateRep'], format='%d/%m/%Y').dt.date
             int_data = datetime.datetime.strptime(covariates1[col].to_string(index=False).strip(), '%Y-%m-%d')
@@ -111,19 +99,19 @@ def get_stan_parameters(data_dir, save_new_csv=False):
 
         N = len(d1['cases'])
         N_arr.append(N)
-        N2 = 75  ##from paper
+        N2 = 75  ##from paper (number of days needed for prediction)
         forecast = N2 - N
 
         if forecast < 0:
             print("Country: ", country, " N: ", N)
-            print("Error!!!! N2 is increasing!")
+            print("Error!!!! N is greater than N2!")
             N2 = N
             forecast = N2 - N
 
         covariates2 = d1[date_cols]
         covariates2.reset_index(drop=True, inplace=True)
         covariates2 = covariates2.to_numpy()
-        addlst = [covariates2[N - 1]] * (forecast)
+        addlst = [covariates2[N - 1]] * (forecast) ##padding
         add_1 = [-1] * forecast
 
         covariates2 = np.append(covariates2, addlst, axis=0)
@@ -132,15 +120,14 @@ def get_stan_parameters(data_dir, save_new_csv=False):
         cases.append(case)
         deaths.append(death)
 
-        covariate1.append(covariates2[:, 0])  # school_universities
-        covariate2.append(covariates2[:, 7])  # travel_restrictions
+        covariate1.append(covariates2[:, 0])  # schools_universities
+        covariate2.append(covariates2[:, 1])  # travel_restrictions
         covariate3.append(covariates2[:, 2])  # public_events
-        covariate4.append(covariates2[:, 6])  # sports
+        covariate4.append(covariates2[:, 3])  # sports
         covariate5.append(covariates2[:, 4])  # lockdwon
         covariate6.append(covariates2[:, 5])  # social_distancing
-        covariate7.append(covariates2[:, 1])  # self-isolating if ill
+        covariate7.append(covariates2[:, 6])  # self-isolating if ill
 
-        # converting to numpy array
     covariate1 = np.array(covariate1).T
     covariate2 = np.array(covariate2).T
     covariate3 = np.array(covariate3).T
@@ -160,6 +147,7 @@ def get_stan_parameters(data_dir, save_new_csv=False):
 
     final_dict = {}
     plot_dict = {}
+
     final_dict['M'] = len(countries)
     final_dict['N0'] = 6
     final_dict['N'] = np.asarray(N_arr).astype(np.int)
@@ -168,7 +156,7 @@ def get_stan_parameters(data_dir, save_new_csv=False):
     final_dict['cases'] = cases
     final_dict['deaths'] = deaths
     final_dict['EpidemicStart'] = np.asarray(start_dates)
-    final_dict['p'] = len(mod_interventions.columns) - 2  # s.t government intervention is not included
+    final_dict['p'] = len(mod_interventions.columns) - 1
     final_dict['covariate1'] = covariate1
     final_dict['covariate2'] = covariate2
     final_dict['covariate3'] = covariate3
@@ -182,14 +170,12 @@ def get_stan_parameters(data_dir, save_new_csv=False):
     return final_dict, plot_dict, countries
 
 
-def get_stan_parameters_our(num_counties, data_dir):
-    
-    #### Set directory for our data
-    cases_path = join(data_dir, 'us_data/infections_timeseries.csv')
-    deaths_path = join(data_dir, 'us_data/deaths_timeseries.csv')
-    interventions_path = join(data_dir, 'us_data/interventions.csv')
-    
-    # Pick counties with 20 most cases:
+def get_stan_parameters_us(num_counties, data_dir, show):
+
+    cases_path = join(data_dir, 'data', 'us_data/infections_timeseries.csv')
+    deaths_path = join(data_dir, 'data', 'us_data/deaths_timeseries.csv')
+    interventions_path = join(data_dir, 'data', 'us_data/interventions.csv')
+
     df_cases = pd.read_csv(cases_path)
     df_deaths = pd.read_csv(deaths_path)
     interventions = pd.read_csv(interventions_path)
@@ -198,8 +184,9 @@ def get_stan_parameters_our(num_counties, data_dir):
     id_cols = ['FIPS', 'STATE', 'AREA_NAME']
     int_cols = [col for col in interventions.columns.tolist() if col not in id_cols]
     interventions.fillna(1, inplace=True)
-    for col in int_cols:
+    for col in int_cols: ### convert date from given format
         interventions[col] = interventions[col].apply(lambda x: dt.date.fromordinal(int(x)))
+
     # Pick top 20 counties with most cases
     headers = df_cases.columns.values
     last_day = headers[-1]
@@ -230,11 +217,9 @@ def get_stan_parameters_our(num_counties, data_dir):
     df_cases = df_cases.T  ### Dates are now row-wise
     df_cases_dates = np.array(df_cases.index)
     df_cases = df_cases.to_numpy()
-    # print("Getting only dates and not FIPS or Combined-Key: ", df_cases.shape)
 
     df_deaths = df_deaths.drop(['merge', 'FIPS', 'Combined_Key'], axis=1)
-    df_deaths = df_deaths.T  ### Dates are now row-wise
-    df_deaths_dates = np.array(df_deaths.index)
+    df_deaths = df_deaths.T
     df_deaths = df_deaths.to_numpy()
 
     interventions.drop(id_cols, axis=1, inplace=True)
@@ -261,21 +246,24 @@ def get_stan_parameters_our(num_counties, data_dir):
     N_arr = []
 
     for i in range(len(fips_list)):
-        i2 = index2[i]  ## get index2 for every county
+        i2 = index2[i]
         dict_of_start_dates[i] = df_cases_dates[i2]
         case = df_cases[i2:, i]
         death = df_deaths[i2:, i]
         assert len(case) == len(death)
+
         req_dates = df_cases_dates[i2:]
         covariates2 = []
         req_dates = np.array([dt.datetime.strptime(x, '%m/%d/%y').date() for x in req_dates])
 
+        ### check if interventions were in place start date onwards
         for col in range(covariates1.shape[1]):
             covariates2.append(np.where(req_dates >= covariates1[i, col], 1, 0))
         covariates2 = np.array(covariates2).T
 
-        print("{name} County with FIPS {fips} has {num} days of data".format(name=dict_of_geo[i]['County'], fips=fips_list[i], num=len(case)))
-        print("Start date: ", dict_of_start_dates[i])
+        if show:
+            print("{name} County with FIPS {fips} has {num} days of data".format(name=dict_of_geo[i]['County'], fips=fips_list[i], num=len(case)))
+            print("Start date: ", dict_of_start_dates[i])
 
         N = len(case)
         N_arr.append(N)
@@ -285,7 +273,7 @@ def get_stan_parameters_our(num_counties, data_dir):
 
         if forecast < 0:
             print("FIPS: ", fips_list[i], " N: ", N)
-            print("Error!!!! N2 is increasing!")
+            print("Error!!!! N is greater than N2!")
             N2 = N
         addlst = [covariates2[N - 1]] * (forecast)
         add_1 = [-1] * forecast
@@ -304,7 +292,6 @@ def get_stan_parameters_our(num_counties, data_dir):
         covariate6.append(covariates2[:, 5])  # entertainment/gym
         covariate7.append(covariates2[:, 6])  # federal guidelines
 
-    # converting to numpy array
     covariate1 = np.array(covariate1).T
     covariate2 = np.array(covariate2).T
     covariate3 = np.array(covariate3).T
@@ -312,7 +299,6 @@ def get_stan_parameters_our(num_counties, data_dir):
     covariate5 = np.array(covariate5).T
     covariate6 = np.array(covariate6).T
     covariate7 = np.array(covariate7).T
-
     cases = np.array(cases).T
     deaths = np.array(deaths).T
 
@@ -326,7 +312,7 @@ def get_stan_parameters_our(num_counties, data_dir):
     final_dict['cases'] = cases
     final_dict['deaths'] = deaths
     final_dict['EpidemicStart'] = np.asarray(start_dates).astype(np.int)
-#    final_dict['p'] = len(interventions_colnames) - 1 ### not sure whether to subtract 1 or not
+    final_dict['p'] = len(interventions_colnames) - 1
     final_dict['covariate1'] = covariate1
     final_dict['covariate2'] = covariate2
     final_dict['covariate3'] = covariate3
@@ -338,12 +324,12 @@ def get_stan_parameters_our(num_counties, data_dir):
     plot_dict['country_code'] = dict_of_geo
     return final_dict, plot_dict, fips_list
              
-if __name__ == '__main__':
-
-    data_dir = 'us_data'
-    ## Europe data
-    get_stan_parameters(data_dir)
-    print("***********************")
-    ## US data
-    get_stan_parameters_our(20, data_dir)
+# if __name__ == '__main__':
+#
+#     main_dir = sys.argv[1]
+#     ## Europe data
+#     get_stan_parameters_europe(main_dir)
+#     print("***********************")
+#     ## US data
+#     get_stan_parameters_us(20, main_dir)
 
