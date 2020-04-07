@@ -1,7 +1,7 @@
 from os.path import join, exists
 import sys
 import numpy as np
-from data_parser import get_stan_parameters, get_stan_parameters_our
+from data_parser import get_stan_parameters_europe, get_stan_parameters_us
 import pystan
 import pandas as pd
 from statsmodels.distributions.empirical_distribution import ECDF
@@ -16,14 +16,15 @@ sm = pystan.StanModel(file='stan-models/base.stan')
 
 data_dir = sys.argv[1]
 if sys.argv[2] == 'europe':
+    stan_data, plot_data, countries = get_stan_parameters_europe(data_dir, show=False)
     weighted_fatalities = np.loadtxt(join(data_dir, 'europe_data', 'weighted_fatality.csv'), skiprows=1, delimiter=',', dtype=str)
     ifrs = {}
-    stan_data, plot_data, countries = get_stan_parameters(data_dir)
     for i in range(weighted_fatalities.shape[0]):
         ifrs[weighted_fatalities[i,1]] = float(weighted_fatalities[i,-2])
 
 elif sys.argv[2] == 'US':
-    stan_data, plot_data, countries = get_stan_parameters_our(20, data_dir)
+    num_of_counties = 20
+    stan_data, plot_data, countries = get_stan_parameters_us(num_of_counties, data_dir, show=False)
     weighted_fatalities = np.loadtxt(join(data_dir, 'us_data', 'weighted_fatality.csv'), skiprows=1, delimiter=',', dtype=str)
     ifrs = {}
     for i in range(weighted_fatalities.shape[0]):
@@ -101,7 +102,7 @@ df = pd.DataFrame(summary_dict['summary'],
                  index=summary_dict['summary_rownames'])
 
 
-df.to_csv('results/' + sys.argv[2] + '_summary.csv', sep=';')
+df.to_csv('results/' + sys.argv[2] + '_summary.csv', sep=',')
 
 ## TODO: Make pretty plots
 ## use plot_data to get start_dates and geocode data for plotting
