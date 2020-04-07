@@ -17,7 +17,9 @@ def plot_rt_europe(simulation_file, interventions_file, country_number, country_
     simulation_data = pd.read_csv(simulation_file, delimiter=';', index_col=0)
     interventions, interventions_data = get_interventions_europe(interventions_file)
     interventions_data = interventions_data[interventions_data['Country'] == country_name]
-    time_data = list(pd.date_range(start=start_date, periods=num_days))
+    #time_data = list(pd.date_range(start=start_date, periods=num_days))
+    time_data = list(pd.date_range(start=start_date, end='04/07/20'))
+    num_days = len(time_data)
     # remove those interventions, that are not considered in the report
     interventions.remove('sport')
     interventions.remove('travel_restrictions')
@@ -34,13 +36,13 @@ def plot_rt_europe(simulation_file, interventions_file, country_number, country_
     plt.hlines(1, time_data[0], time_data[-1])
 
     # 50% conf interval
-    upper = Rt_data['75%']
-    lower = Rt_data['25%']
+    upper = Rt_data['75%'][:num_days]
+    lower = Rt_data['25%'][:num_days]
     plt.fill_between(time_data, lower, upper, step='post', alpha=0.4, color='darkgreen', label='50% conf. interval')
 
     # 95% conf interval
-    upper = Rt_data['97.5%']
-    lower = Rt_data['2.5%']
+    upper = Rt_data['97.5%'][:num_days]
+    lower = Rt_data['2.5%'][:num_days]
     plt.fill_between(time_data, lower, upper, step='post', alpha=0.4, color='lightgreen', label='95% conf. interval')
 
     init_height = 1.2 * plt.gca().get_ylim()[1]
@@ -92,7 +94,9 @@ def plot_rt_US(simulation_file, interventions_file, county_number, fips, start_d
     simulation_data = pd.read_csv(simulation_file, delimiter=';', index_col=0)
     interventions, interventions_data = get_interventions_US(interventions_file)
     interventions_data = interventions_data[interventions_data['FIPS'] == fips]
-    time_data = list(pd.date_range(start=start_date, periods=num_days))
+    # time_data = list(pd.date_range(start=start_date, periods=num_days))
+    time_data = list(pd.date_range(start=start_date, end='04/07/20'))
+    num_days = len(time_data)
     # remove those interventions, that are not considered in the report
     interventions.remove('foreign travel ban')
 
@@ -107,13 +111,13 @@ def plot_rt_US(simulation_file, interventions_file, county_number, fips, start_d
     plt.hlines(1, time_data[0], time_data[-1])
 
     # 50% conf interval
-    upper = Rt_data['75%']
-    lower = Rt_data['25%']
+    upper = Rt_data['75%'][:num_days]
+    lower = Rt_data['25%'][:num_days]
     plt.fill_between(time_data, lower, upper, step='post', alpha=0.4, color='darkgreen', label='50% conf. interval')
 
     # 95% conf interval
-    upper = Rt_data['97.5%']
-    lower = Rt_data['2.5%']
+    upper = Rt_data['97.5%'][:num_days]
+    lower = Rt_data['2.5%'][:num_days]
     plt.fill_between(time_data, lower, upper, step='post', alpha=0.4, color='lightgreen', label='95% conf. interval')
 
     init_height = 1.2 * plt.gca().get_ylim()[1]
@@ -239,7 +243,7 @@ if __name__ == '__main__':
     country_numbers = np.arange(1, len(country_list) + 1)
 
     for country_ind, country_name, date in zip(country_numbers, country_list, start_dates):
-        plot_rt_europe(simulation_file, interventions_file, country_ind, country_name, date, save_img=False)
+        plot_rt_europe(simulation_file, interventions_file, country_ind, country_name, date, save_img=True)
 
     ### USA ###
     simulation_file = r'results\US_summary.csv'
@@ -253,7 +257,7 @@ if __name__ == '__main__':
     county_numbers = np.arange(1, len(fips_list) + 1)
 
     for county, fips, date in zip(county_numbers, fips_list, start_dates):
-        plot_rt_US(simulation_file, interventions_file, county, fips, date, save_img=False)
+        plot_rt_US(simulation_file, interventions_file, county, fips, date, save_img=True)
 
 
 
