@@ -317,6 +317,7 @@ def get_stan_parameters_us(num_counties, data_dir, show):
     #     writer.writerow(list(dict_of_geo.values()))
     #     writer.writerow(list(dict_of_start_dates.values()))
 
+
     final_dict = {}
     final_dict['M'] = num_counties
     final_dict['N0'] = 6
