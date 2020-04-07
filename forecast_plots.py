@@ -11,9 +11,9 @@ import numpy as np
 import datetime
 
 # this is for Europe
-start_day_of_confirmed ='12-31-2019'
+#start_day_of_confirmed ='12-31-2019'
 # this is for states
-#start_day_of_confirmed = '01-22-2020'
+start_day_of_confirmed = '01-22-2020'
 
 #Todo - save in folder
 #todo - auto change to europe/us
@@ -77,7 +77,8 @@ def plot_forecasts_wo_dates_quantiles(row2_5, row25, row50, row75, row97_5, conf
 
     if save_image:
         name = str(metric)+str(dict_of_eu_geog[num_of_country])
-        fig.savefig('./results/plots/europe/{}.jpg'.format(name))
+        fig.savefig('./results/plots/usa/{}.jpg'.format(name))
+        plt.tight_layout()
         fig.clf()
     else:
         plt.show()
@@ -207,9 +208,9 @@ def make_all_eu_plots():
 
 def main():
     # This is for USA
-    #make_all_us_plots()
+    make_all_us_plots()
     # This is for Europe
-    make_all_eu_plots()
+    #make_all_eu_plots()
 
 
 if __name__ == '__main__':
