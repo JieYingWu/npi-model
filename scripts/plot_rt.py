@@ -12,11 +12,11 @@ register_matplotlib_converters()
 ticker.Locator.MAXTICKS = 10000
 
 
-def plot_rt_europe(simulation_file, interventions_file, country_number, start_date, num_days=75, save_img=False):
+def plot_rt_europe(simulation_file, interventions_file, country_number, country_name, start_date, num_days=75, save_img=False):
     # read data
     simulation_data = pd.read_csv(simulation_file, delimiter=';', index_col=0)
-    countries, interventions, interventions_data = get_interventions_europe(interventions_file)
-    interventions_data = interventions_data[interventions_data['Country'] == countries[country_number - 1]]
+    interventions, interventions_data = get_interventions_europe(interventions_file)
+    interventions_data = interventions_data[interventions_data['Country'] == country_name]
     time_data = list(pd.date_range(start=start_date, periods=num_days))
     # remove those interventions, that are not considered in the report
     interventions.remove('sport')
@@ -77,21 +77,21 @@ def plot_rt_europe(simulation_file, interventions_file, country_number, start_da
     plt.subplots_adjust(bottom=0.30)
     plt.xlim([time_data[0], time_data[-1]])
 
-    plt.title(countries[country_number - 1])
+    plt.title(country_name)
     plt.xlabel('Days')
     plt.ylabel('Time-dependent Reproduction Number')
 
     if save_img:
-        plt.savefig(r'results\plots\europe_interventions\Rt_{}.png'.format(countries[country_number - 1]), bbox_extra_artists=(lgd,), bbox_inches='tight')
+        plt.savefig(r'results\plots\europe_interventions\Rt_{}.png'.format(country_name), bbox_extra_artists=(lgd,), bbox_inches='tight')
 
     plt.show()
 
 
-def plot_rt_US(simulation_file, interventions_file, county_number, start_date, num_days=100, save_img=False):
+def plot_rt_US(simulation_file, interventions_file, county_number, fips, start_date, num_days=100, save_img=False):
     # read data
-    simulation_data = pd.read_csv(simulation_file, delimiter=';', index_col=0)
-    fips_list, interventions, interventions_data = get_interventions_US(interventions_file)
-    interventions_data = interventions_data[interventions_data['FIPS'] == fips_list[county_number - 1]]
+    simulation_data = pd.read_csv(simulation_file, delimiter=',', index_col=0)
+    interventions, interventions_data = get_interventions_US(interventions_file)
+    interventions_data = interventions_data[interventions_data['FIPS'] == fips]
     time_data = list(pd.date_range(start=start_date, periods=num_days))
     # remove those interventions, that are not considered in the report
     interventions.remove('foreign travel ban')
@@ -155,7 +155,7 @@ def plot_rt_US(simulation_file, interventions_file, county_number, start_date, n
     plt.ylabel('Time-dependent Reproduction Number')
 
     if save_img:
-        plt.savefig(r'results\plots\usa_interventions\Rt_{}.png'.format(fips_list[county_number - 1]), bbox_extra_artists=(lgd,), bbox_inches='tight')
+        plt.savefig(r'results\plots\usa_interventions\Rt_{}.png'.format(fips), bbox_extra_artists=(lgd,), bbox_inches='tight')
         #plt.savefig(r'results\plots\usa_interventions\Rt_{}.png'.format(interventions_data['AREA_NAME'].values[0]),
         #            bbox_extra_artists=(lgd,), bbox_inches='tight')
 
@@ -196,7 +196,7 @@ def get_interventions_europe(interventions_file):
     countries = mod_interventions['Country'].to_list()
     date_cols = [col for col in mod_interventions.columns.tolist() if col != 'Country']
 
-    return countries, date_cols, mod_interventions
+    return date_cols, mod_interventions
 
 
 # copied from data_parser
@@ -211,13 +211,9 @@ def get_interventions_US(interventions_file, num_counties=100):
     for col in int_cols: ### convert date from given format
         interventions[col] = interventions[col].apply(lambda x: dt.date.fromordinal(int(x)))
 
-    # this needs to be updated if any changes are made to the data parser
-    fips = [36061, 36119, 36059, 36103, 17031, 26163, 6037, 34003, 36087, 53033, 22071, 34013, 12086, 9001, 26125,
-            34017, 36071, 42101, 34039, 25025]
-
     interventions_list = list(interventions.columns.values)[3:]
 
-    return fips, interventions_list, interventions
+    return interventions_list, interventions
 
 
 def get_geo_startdate_data(geo_file, startdate_file):
@@ -226,7 +222,7 @@ def get_geo_startdate_data(geo_file, startdate_file):
     start_dates = pd.read_csv(startdate_file)
 
     fips_list = list(geos.values[0, 1:])
-    start_dates = list(start_dates.values[0, :])
+    start_dates = list(start_dates.values[0, 1:])
 
     return fips_list, start_dates
 
@@ -234,30 +230,32 @@ def get_geo_startdate_data(geo_file, startdate_file):
 if __name__ == '__main__':
 
     ### EUROPE ###
-    # simulation_file = r'results\europe_summary.csv'
-    # interventions_file = r'data\europe_data\interventions.csv'
-    # country_numbers = np.arange(1, 12)
-    # start_dates = ['02-22-2020', '02-18-2020', '02-21-2020', '02-07-2020', '02-15-2020', '01-27-2020', '02-24-2020', '02-09-2020', '02-18-2020', '02-14-2020', '02-12-2020']
-    #
-    # for country, date in zip(country_numbers, start_dates):
-    #     plot_rt_europe(simulation_file, interventions_file, country, date, save_img=True)
+    simulation_file = r'results\europe_summary.csv'
+    interventions_file = r'data\europe_data\interventions.csv'
+    geo_file = r'results\europe_geocode.csv'
+    startdate_file = r'results\europe_start_dates.csv'
+
+    country_list, start_dates = get_geo_startdate_data(geo_file, startdate_file)
+
+    # model output indices start at 1
+    country_numbers = np.arange(1, len(country_list) + 1)
+
+    for country_ind, country_name, date in zip(country_numbers, country_list, start_dates):
+        plot_rt_europe(simulation_file, interventions_file, country_ind, country_name, date, save_img=True)
 
     ### USA ###
     simulation_file = r'results\US_summary.csv'
     interventions_file = r'data\us_data\interventions.csv'
     geo_file = r'results\us_geocode.csv'
     startdate_file = r'results\us_start_dates.csv'
-    county_numbers = np.arange(1, 21)
 
     fips_list, start_dates = get_geo_startdate_data(geo_file, startdate_file)
 
-    # start_dates = ['2-16-2020', '2-27-2020', '2-20-2020', '2-18-2020', '2-21-2020', '2-22-2020',
-    #                '2-18-2020', '2-17-2020', '2-22-2020', '2-02-2020', '2-16-2020', '2-21-2020',
-    #                '3-01-2020', '2-20-2020', '2-23-2020', '2-26-2020', '2-28-2020', '2-28-2020',
-    #                '2-29-2020', '2-26-2020']
+    # model output indices start at 1
+    county_numbers = np.arange(1, len(fips_list) + 1)
 
-    for county, date in zip(county_numbers, start_dates):
-        plot_rt_US(simulation_file, interventions_file, county, date, save_img=True)
+    for county, fips, date in zip(county_numbers, fips_list, start_dates):
+        plot_rt_US(simulation_file, interventions_file, county, fips, date, save_img=True)
 
 
 
