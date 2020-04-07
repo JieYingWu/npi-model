@@ -23,13 +23,14 @@ if sys.argv[2] == 'europe':
         ifrs[weighted_fatalities[i,1]] = float(weighted_fatalities[i,-2])
 
 elif sys.argv[2] == 'US':
-    num_of_counties = 20
+    num_of_counties = 5
     stan_data, countries = get_stan_parameters_us(num_of_counties, data_dir, show=False)
     weighted_fatalities = np.loadtxt(join(data_dir, 'us_data', 'weighted_fatality.csv'), skiprows=1, delimiter=',', dtype=str)
     ifrs = {}
     for i in range(weighted_fatalities.shape[0]):
         ifrs[str(weighted_fatalities[i,0])] = weighted_fatalities[i,-1]
 
+#exit()
 
 N2 = stan_data['N2']
 serial_interval = np.loadtxt(join(data_dir, 'serial_interval.csv'), skiprows=1, delimiter=',')
@@ -81,7 +82,7 @@ stan_data['f'] = all_f
 #stan_data = {'M':len(countries), 'N':N, 'p':interventions.shape[1]-1,...}
 
 # Train the model and generate samples - returns a StanFit4Model
-fit = sm.sampling(data=stan_data, iter=200, chains=4, warmup=100, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
+fit = sm.sampling(data=stan_data, iter=200, chains=4, warmup=150, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
 # fit = sm.sampling(data=stan_data, iter=20, chains=4, warmup=10, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
 
 # All the parameters in the stan model

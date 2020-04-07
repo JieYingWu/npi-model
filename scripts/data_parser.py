@@ -25,8 +25,8 @@ def get_stan_parameters_europe(data_dir, show):
     covariate1, ...., covariate7 //covariate variables
 
     """
-    imp_covid_dir = join(data_dir, 'data', 'europe_data/COVID-19-up-to-date.csv')
-    imp_interventions_dir = join(data_dir, 'data', 'europe_data/interventions.csv')
+    imp_covid_dir = join(data_dir, 'europe_data/COVID-19-up-to-date.csv')
+    imp_interventions_dir = join(data_dir, 'europe_data/interventions.csv')
 
     interventions = pd.read_csv(imp_interventions_dir, encoding='latin-1')
     covid_up_to_date = pd.read_csv(imp_covid_dir, encoding='latin-1')
@@ -147,11 +147,12 @@ def get_stan_parameters_europe(data_dir, show):
 
     final_dict = {}
 
-    filename = os.path.join(data_dir, 'results/europe_start_dates.csv')
-    with open(filename, 'w', newline='') as file:
-        writer = csv.writer(file, delimiter=',')
-        writer.writerow(list(dict_of_geo.values()))
-        writer.writerow(list(dict_of_start_dates.values()))
+    filename1 = 'europe_start_dates.csv'
+    filename2 = 'europe_geocode.csv'
+    df_sd = pd.DataFrame(dict_of_start_dates, index=[0])
+    df_geo = pd.DataFrame(dict_of_geo, index=[0])
+    df_sd.to_csv('results/' + filename1, sep=',')
+    df_geo.to_csv('results/' + filename2, sep=',')
 
     final_dict['M'] = len(countries)
     final_dict['N0'] = 6
@@ -175,9 +176,9 @@ def get_stan_parameters_europe(data_dir, show):
 
 def get_stan_parameters_us(num_counties, data_dir, show):
 
-    cases_path = join(data_dir, 'data', 'us_data/infections_timeseries.csv')
-    deaths_path = join(data_dir, 'data', 'us_data/deaths_timeseries.csv')
-    interventions_path = join(data_dir, 'data', 'us_data/interventions.csv')
+    cases_path = join(data_dir, 'us_data/infections_timeseries.csv')
+    deaths_path = join(data_dir, 'us_data/deaths_timeseries.csv')
+    interventions_path = join(data_dir, 'us_data/interventions.csv')
 
     df_cases = pd.read_csv(cases_path)
     df_deaths = pd.read_csv(deaths_path)
@@ -202,8 +203,8 @@ def get_stan_parameters_us(num_counties, data_dir, show):
     dict_of_geo = {}
     fips_list = df_cases['FIPS'].tolist()
     for i in range(len(fips_list)):
-        comb_key = df_cases.loc[df_cases['FIPS'] == fips_list[i], 'Combined_Key'].to_string(index=False)
-        dict_of_geo[i] = comb_key
+        #comb_key = df_cases.loc[df_cases['FIPS'] == fips_list[i], 'Combined_Key'].to_string(index=False)
+        dict_of_geo[i] = fips_list[i]
 
     merge_df = pd.DataFrame({'merge': fips_list})
     df_deaths = df_deaths.loc[df_deaths['FIPS'].isin(fips_list)]
@@ -304,11 +305,18 @@ def get_stan_parameters_us(num_counties, data_dir, show):
     cases = np.array(cases).T
     deaths = np.array(deaths).T
 
-    filename = os.path.join(data_dir, 'results/us_start_dates.csv')
-    with open(filename, 'w', newline='') as file:
-        writer = csv.writer(file, delimiter=',')
-        writer.writerow(list(dict_of_geo.values()))
-        writer.writerow(list(dict_of_start_dates.values()))
+    filename1 = 'us_start_dates.csv'
+    filename2 = 'us_geocode.csv'
+    df_sd = pd.DataFrame(dict_of_start_dates, index=[0])
+    df_geo = pd.DataFrame(dict_of_geo, index=[0])
+    df_sd.to_csv('results/' + filename1, sep=',')
+    df_geo.to_csv('results/' + filename2, sep=',')
+    # with open(filename, 'w', newline='') as file:
+    #     writer = csv.writer(file, delimiter=',')
+    #     writer.writerow(fips_list)
+    #     writer.writerow(list(dict_of_geo.values()))
+    #     writer.writerow(list(dict_of_start_dates.values()))
+
 
     final_dict = {}
     final_dict['M'] = num_counties
@@ -332,10 +340,10 @@ def get_stan_parameters_us(num_counties, data_dir, show):
 
 # if __name__ == '__main__':
 #
-#     main_dir = sys.argv[1]
+#     data_dir = 'data'
 #     ## Europe data
-#     get_stan_parameters_europe(main_dir, show=False)
+#     get_stan_parameters_europe(data_dir, show=False)
 #     print("***********************")
 #     ## US data
-#     get_stan_parameters_us(20, main_dir, show=False)
+#     get_stan_parameters_us(20, data_dir, show=False)
 
