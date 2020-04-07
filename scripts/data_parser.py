@@ -345,5 +345,5 @@ def get_stan_parameters_us(num_counties, data_dir, show):
 #     get_stan_parameters_europe(data_dir, show=False)
 #     print("***********************")
 #     ## US data
-#     get_stan_parameters_us(20, data_dir, show=False)
+#     get_stan_parameters_us(5, data_dir, show=False)
 
