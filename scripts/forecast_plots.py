@@ -9,7 +9,7 @@ import datetime
 plot_settings = 'usa'  # choose 'eu' for europe and 'usa' for usa plots
 base_model = True  # True for prediction/E_deaths, False for prediction0/E_deaths0
 # to match with IC paper select base_model==True
-last_day_to_plot = '4/02/20'  # predict to this date
+last_day_to_plot = '4/10/20'  # predict to this date
 
 
 # saving some params for plot settings
@@ -63,6 +63,7 @@ def plot_forecasts_wo_dates_quantiles(quantiles_dict, confirmed_cases, county_na
         barplot_missing_values = np.zeros(days_to_predict - np.shape(confirmed_cases)[0])
         barplot_values = list(confirmed_cases) + list(barplot_missing_values)
 
+    print(np.shape(days_to_predict), np.shape(confirmed_cases)[0])
     # plot creation
     fig = plt.figure('Forecast ')
     ax = fig.add_subplot(111)
