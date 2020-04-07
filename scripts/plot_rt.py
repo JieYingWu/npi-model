@@ -223,12 +223,12 @@ def get_interventions_US(interventions_file, num_counties=100):
 def get_geo_startdate_data(geo_file, startdate_file):
 
     geos = pd.read_csv(geo_file)
-    startdates = pd.read_csv(startdate_file)
+    start_dates = pd.read_csv(startdate_file)
 
-    fips = list(geos.values[0, 1:])
-    startdates = list(startdates.values[0, :])
+    fips_list = list(geos.values[0, 1:])
+    start_dates = list(start_dates.values[0, :])
 
-    print('bla')
+    return fips_list, start_dates
 
 
 if __name__ == '__main__':
@@ -251,10 +251,10 @@ if __name__ == '__main__':
 
     fips_list, start_dates = get_geo_startdate_data(geo_file, startdate_file)
 
-    start_dates = ['2-16-2020', '2-27-2020', '2-20-2020', '2-18-2020', '2-21-2020', '2-22-2020',
-                   '2-18-2020', '2-17-2020', '2-22-2020', '2-02-2020', '2-16-2020', '2-21-2020',
-                   '3-01-2020', '2-20-2020', '2-23-2020', '2-26-2020', '2-28-2020', '2-28-2020',
-                   '2-29-2020', '2-26-2020']
+    # start_dates = ['2-16-2020', '2-27-2020', '2-20-2020', '2-18-2020', '2-21-2020', '2-22-2020',
+    #                '2-18-2020', '2-17-2020', '2-22-2020', '2-02-2020', '2-16-2020', '2-21-2020',
+    #                '3-01-2020', '2-20-2020', '2-23-2020', '2-26-2020', '2-28-2020', '2-28-2020',
+    #                '2-29-2020', '2-26-2020']
 
     for county, date in zip(county_numbers, start_dates):
         plot_rt_US(simulation_file, interventions_file, county, date, save_img=True)
