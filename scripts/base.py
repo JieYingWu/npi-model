@@ -80,7 +80,7 @@ stan_data['f'] = all_f
 #stan_data = {'M':len(countries), 'N':N, 'p':interventions.shape[1]-1,...}
 
 # Train the model and generate samples - returns a StanFit4Model
-fit = sm.sampling(data=stan_data, iter=200, chains=4, warmup=100, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
+fit = sm.sampling(data=stan_data, iter=200, chains=4, warmup=150, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':12})
 # fit = sm.sampling(data=stan_data, iter=20, chains=4, warmup=10, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
 
 # All the parameters in the stan model
