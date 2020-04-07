@@ -220,22 +220,36 @@ def get_interventions_US(interventions_file, num_counties=100):
     return fips, interventions_list, interventions
 
 
+def get_geo_startdate_data(geo_file, startdate_file):
+
+    geos = pd.read_csv(geo_file)
+    startdates = pd.read_csv(startdate_file)
+
+    fips = list(geos.values[0, 1:])
+    startdates = list(startdates.values[0, :])
+
+    print('bla')
+
+
 if __name__ == '__main__':
 
     ### EUROPE ###
-    simulation_file = r'results\europe_summary.csv'
-    interventions_file = r'data\europe_data\interventions.csv'
-    country_numbers = np.arange(1, 12)
-    start_dates = ['02-22-2020', '02-18-2020', '02-21-2020', '02-07-2020', '02-15-2020', '01-27-2020', '02-24-2020', '02-09-2020', '02-18-2020', '02-14-2020', '02-12-2020']
-
-    for country, date in zip(country_numbers, start_dates):
-        plot_rt_europe(simulation_file, interventions_file, country, date, save_img=True)
+    # simulation_file = r'results\europe_summary.csv'
+    # interventions_file = r'data\europe_data\interventions.csv'
+    # country_numbers = np.arange(1, 12)
+    # start_dates = ['02-22-2020', '02-18-2020', '02-21-2020', '02-07-2020', '02-15-2020', '01-27-2020', '02-24-2020', '02-09-2020', '02-18-2020', '02-14-2020', '02-12-2020']
+    #
+    # for country, date in zip(country_numbers, start_dates):
+    #     plot_rt_europe(simulation_file, interventions_file, country, date, save_img=True)
 
     ### USA ###
     simulation_file = r'results\US_summary.csv'
     interventions_file = r'data\us_data\interventions.csv'
-    cases_file = r'data\us_data\infections_timeseries.csv'
+    geo_file = r'results\us_geocode.csv'
+    startdate_file = r'results\us_start_dates.csv'
     county_numbers = np.arange(1, 21)
+
+    fips_list, start_dates = get_geo_startdate_data(geo_file, startdate_file)
 
     start_dates = ['2-16-2020', '2-27-2020', '2-20-2020', '2-18-2020', '2-21-2020', '2-22-2020',
                    '2-18-2020', '2-17-2020', '2-22-2020', '2-02-2020', '2-16-2020', '2-21-2020',
