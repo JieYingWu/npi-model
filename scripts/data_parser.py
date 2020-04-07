@@ -146,7 +146,12 @@ def get_stan_parameters_europe(data_dir, show):
     covariate7 = 0  # models should take only one covariate
 
     final_dict = {}
-    plot_dict = {}
+
+    filename = os.path.join(data_dir, 'results/europe_start_dates.csv')
+    with open(filename, 'w', newline='') as file:
+        writer = csv.writer(file, delimiter=',')
+        writer.writerow(list(dict_of_geo.values()))
+        writer.writerow(list(dict_of_start_dates.values()))
 
     final_dict['M'] = len(countries)
     final_dict['N0'] = 6
@@ -164,10 +169,8 @@ def get_stan_parameters_europe(data_dir, show):
     final_dict['covariate5'] = covariate5
     final_dict['covariate6'] = covariate6
     final_dict['covariate7'] = covariate7
-    plot_dict['start_deaths'] = dict_of_start_dates
-    plot_dict['country_code'] = dict_of_geo
 
-    return final_dict, plot_dict, countries
+    return final_dict, countries
 
 
 def get_stan_parameters_us(num_counties, data_dir, show):
@@ -200,7 +203,7 @@ def get_stan_parameters_us(num_counties, data_dir, show):
     fips_list = df_cases['FIPS'].tolist()
     for i in range(len(fips_list)):
         comb_key = df_cases.loc[df_cases['FIPS'] == fips_list[i], 'Combined_Key'].to_string(index=False)
-        dict_of_geo[i] = {'County': comb_key.split('-')[0].strip(), 'State': comb_key.split('-')[1].strip()}
+        dict_of_geo[i] = comb_key
 
     merge_df = pd.DataFrame({'merge': fips_list})
     df_deaths = df_deaths.loc[df_deaths['FIPS'].isin(fips_list)]
@@ -227,7 +230,7 @@ def get_stan_parameters_us(num_counties, data_dir, show):
     covariates1 = interventions.to_numpy()
 
     #### cases and deaths are already cumulative
-    index1 = np.argmax(df_deaths > 0, axis=0)
+    index1 = np.where(np.argmax(df_deaths >= 10, axis=0) != 0, np.argmax(df_deaths >= 10, axis=0), df_deaths.shape[0])
     index2 = index1 - 30
     start_dates = index1 + 1 - index2
     dict_of_start_dates = {}
@@ -301,8 +304,13 @@ def get_stan_parameters_us(num_counties, data_dir, show):
     cases = np.array(cases).T
     deaths = np.array(deaths).T
 
+    filename = os.path.join(data_dir, 'results/us_start_dates.csv')
+    with open(filename, 'w', newline='') as file:
+        writer = csv.writer(file, delimiter=',')
+        writer.writerow(list(dict_of_geo.values()))
+        writer.writerow(list(dict_of_start_dates.values()))
+
     final_dict = {}
-    plot_dict = {}
     final_dict['M'] = num_counties
     final_dict['N0'] = 6
     final_dict['N'] = np.asarray(N_arr, dtype=np.int)
@@ -319,10 +327,9 @@ def get_stan_parameters_us(num_counties, data_dir, show):
     final_dict['covariate5'] = covariate5
     final_dict['covariate6'] = covariate6
     final_dict['covariate7'] = covariate7
-    plot_dict['start_deaths'] = dict_of_start_dates
-    plot_dict['country_code'] = dict_of_geo
-    sreturn final_dict, plot_dict, fips_list
-#
+
+    return final_dict, fips_list
+
 # if __name__ == '__main__':
 #
 #     main_dir = sys.argv[1]
