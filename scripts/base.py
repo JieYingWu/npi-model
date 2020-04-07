@@ -103,7 +103,7 @@ df = pd.DataFrame(summary_dict['summary'],
                  index=summary_dict['summary_rownames'])
 
 
-df.to_csv('results/' + sys.argv[2] + '_summary.csv', sep=',')
+df.to_csv('results/' + sys.argv[2] + '_summary.csv', sep=';')
 
 ## TODO: Make pretty plots
 ## use plot_data to get start_dates and geocode data for plotting
