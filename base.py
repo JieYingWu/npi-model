@@ -7,7 +7,7 @@ import pandas as pd
 from statsmodels.distributions.empirical_distribution import ECDF
 import pickle
 import datetime
-from forecast_plots import plot_forecasts
+#from forecast_plots import plot_forecasts
 
 assert len(sys.argv) == 3
 
@@ -101,7 +101,7 @@ df = pd.DataFrame(summary_dict['summary'],
                  index=summary_dict['summary_rownames'])
 
 
-df.to_csv(sys.argv[2] + '_summary.csv', sep=';')
+df.to_csv('../results/' + sys.argv[2] + '_summary.csv', sep=';')
 
 ## TODO: Make pretty plots
 ## use plot_data to get start_dates and geocode data for plotting

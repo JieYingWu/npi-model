@@ -24,8 +24,8 @@ def get_stan_parameters(data_dir, save_new_csv=False):
     covariate1, ...., covariate7
 
     """
-    imp_covid_dir = join(data_dir, 'data/COVID-19-up-to-date.csv')
-    imp_interventions_dir = join(data_dir, 'data/interventions.csv')
+    imp_covid_dir = join(data_dir, 'european_data/COVID-19-up-to-date.csv')
+    imp_interventions_dir = join(data_dir, 'european_data/interventions.csv')
     
     interventions = pd.read_csv(imp_interventions_dir, encoding='latin-1')
     covid_up_to_date = pd.read_csv(imp_covid_dir, encoding='latin-1')
@@ -340,7 +340,7 @@ def get_stan_parameters_our(num_counties, data_dir):
              
 if __name__ == '__main__':
 
-    data_dir = '../npi-model'
+    data_dir = 'us_data'
     ## Europe data
     get_stan_parameters(data_dir)
     print("***********************")
