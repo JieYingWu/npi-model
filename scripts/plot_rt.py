@@ -89,7 +89,7 @@ def plot_rt_europe(simulation_file, interventions_file, country_number, country_
 
 def plot_rt_US(simulation_file, interventions_file, county_number, fips, start_date, num_days=100, save_img=False):
     # read data
-    simulation_data = pd.read_csv(simulation_file, delimiter=',', index_col=0)
+    simulation_data = pd.read_csv(simulation_file, delimiter=';', index_col=0)
     interventions, interventions_data = get_interventions_US(interventions_file)
     interventions_data = interventions_data[interventions_data['FIPS'] == fips]
     time_data = list(pd.date_range(start=start_date, periods=num_days))
@@ -156,8 +156,6 @@ def plot_rt_US(simulation_file, interventions_file, county_number, fips, start_d
 
     if save_img:
         plt.savefig(r'results\plots\usa_interventions\Rt_{}.png'.format(fips), bbox_extra_artists=(lgd,), bbox_inches='tight')
-        #plt.savefig(r'results\plots\usa_interventions\Rt_{}.png'.format(interventions_data['AREA_NAME'].values[0]),
-        #            bbox_extra_artists=(lgd,), bbox_inches='tight')
 
     plt.show()
 
@@ -241,7 +239,7 @@ if __name__ == '__main__':
     country_numbers = np.arange(1, len(country_list) + 1)
 
     for country_ind, country_name, date in zip(country_numbers, country_list, start_dates):
-        plot_rt_europe(simulation_file, interventions_file, country_ind, country_name, date, save_img=True)
+        plot_rt_europe(simulation_file, interventions_file, country_ind, country_name, date, save_img=False)
 
     ### USA ###
     simulation_file = r'results\US_summary.csv'
@@ -255,7 +253,7 @@ if __name__ == '__main__':
     county_numbers = np.arange(1, len(fips_list) + 1)
 
     for county, fips, date in zip(county_numbers, fips_list, start_dates):
-        plot_rt_US(simulation_file, interventions_file, county, fips, date, save_img=True)
+        plot_rt_US(simulation_file, interventions_file, county, fips, date, save_img=False)
 
 
 
