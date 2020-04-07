@@ -103,7 +103,9 @@ summary_dict = fit.summary()
 df = pd.DataFrame(summary_dict['summary'], 
                  columns=summary_dict['summary_colnames'], 
                  index=summary_dict['summary_rownames'])
-df.to_csv(r'summary.csv', sep=';')
+
+
+df.to_csv(sys.argv[2] + '_summary.csv', sep=';')
 
 ## TODO: Make pretty plots
 # Probably don't have to use Imperial data for this, just find similar looking Python packages
