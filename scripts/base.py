@@ -30,6 +30,8 @@ elif sys.argv[2] == 'US':
     for i in range(weighted_fatalities.shape[0]):
         ifrs[str(weighted_fatalities[i,0])] = weighted_fatalities[i,-1]
 
+#print(stan_data)
+#exit()
 
 N2 = stan_data['N2']
 serial_interval = np.loadtxt(join(data_dir, 'serial_interval.csv'), skiprows=1, delimiter=',')

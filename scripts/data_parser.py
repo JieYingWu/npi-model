@@ -175,9 +175,9 @@ def get_stan_parameters_europe(data_dir, show):
 
 def get_stan_parameters_us(num_counties, data_dir, show):
 
-    cases_path = join(data_dir, 'data', 'us_data/infections_timeseries.csv')
-    deaths_path = join(data_dir, 'data', 'us_data/deaths_timeseries.csv')
-    interventions_path = join(data_dir, 'data', 'us_data/interventions.csv')
+    cases_path = join(data_dir, 'us_data/infections_timeseries.csv')
+    deaths_path = join(data_dir, 'us_data/deaths_timeseries.csv')
+    interventions_path = join(data_dir, 'us_data/interventions.csv')
 
     df_cases = pd.read_csv(cases_path)
     df_deaths = pd.read_csv(deaths_path)
@@ -304,7 +304,7 @@ def get_stan_parameters_us(num_counties, data_dir, show):
     cases = np.array(cases).T
     deaths = np.array(deaths).T
 
-    filename = os.path.join(data_dir, 'results/us_start_dates.csv')
+    filename = 'results/us_start_dates.csv'
     with open(filename, 'w', newline='') as file:
         writer = csv.writer(file, delimiter=',')
         writer.writerow(list(dict_of_geo.values()))
