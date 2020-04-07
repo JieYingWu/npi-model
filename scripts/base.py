@@ -12,20 +12,20 @@ import datetime
 assert len(sys.argv) == 3
 
 # Compile the model
-sm = pystan.StanModel(file='stan-models/base.stan')
+sm = pystan.StanModel(file='../stan-models/base.stan')
 
 data_dir = sys.argv[1]
-weighted_fatalities = np.loadtxt(join(data_dir, 'weighted_fatality.csv'), skiprows=1, delimiter=',', dtype=str)
-ifrs = {}
-
-
 if sys.argv[2] == 'europe':
+    weighted_fatalities = np.loadtxt(join(data_dir, 'europe_data', 'weighted_fatality.csv'), skiprows=1, delimiter=',', dtype=str)
+    ifrs = {}
     stan_data, plot_data, countries = get_stan_parameters(data_dir)
     for i in range(weighted_fatalities.shape[0]):
         ifrs[weighted_fatalities[i,1]] = float(weighted_fatalities[i,-2])
 
 elif sys.argv[2] == 'US':
     stan_data, plot_data, countries = get_stan_parameters_our(20, data_dir)
+    weighted_fatalities = np.loadtxt(join(data_dir, 'us_data', 'weighted_fatality.csv'), skiprows=1, delimiter=',', dtype=str)
+    ifrs = {}
     for i in range(weighted_fatalities.shape[0]):
         ifrs[str(weighted_fatalities[i,0])] = weighted_fatalities[i,-1]
 
