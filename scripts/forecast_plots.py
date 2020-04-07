@@ -7,9 +7,9 @@ import datetime
 
 # change here variables for different plotting options
 plot_settings = 'usa'  # choose 'eu' for europe and 'usa' for usa plots
-base_model = True  # True for prediction/E_deaths, False for prediction0/E_deaths0
+base_model = False  # True for prediction/E_deaths, False for prediction0/E_deaths0
 # to match with IC paper select base_model==True
-last_day_to_plot = '03-31-2020'  # predict to this date
+last_day_to_plot = '04-02-2020'  # predict to this date
 
 
 # saving some params for plot settings
@@ -63,7 +63,7 @@ def plot_forecasts_wo_dates_quantiles(quantiles_dict, confirmed_cases, county_na
     ax = fig.add_subplot(111)
     ax.fill_between(date_list, quantiles_dict['2.5%'], quantiles_dict['97.5%'], alpha=0.25, color='b')
     ax.fill_between(date_list, quantiles_dict['25%'], quantiles_dict['75%'], alpha=0.2, color='b')
-    plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
+    #plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
     ax.bar(date_list, barplot_values, color='r', width=0.9, alpha=0.3)
     ax.set_ylabel("Daily number of {}".format(metric))
     ax.set_xlabel("Date")
@@ -75,6 +75,8 @@ def plot_forecasts_wo_dates_quantiles(quantiles_dict, confirmed_cases, county_na
     ax.title.set_text(geography_name)
     ax.xaxis_date()
     fig.autofmt_xdate()
+
+    plt.setp(ax.get_xticklabels(), rotation=30, horizontalalignment='right')
 
     if save_image:
         name = str(metric) + str(dict_of_eu_geog[num_of_country])
@@ -169,14 +171,24 @@ def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of
 
 # create a batch of all possible plots for usa
 def make_all_us_plots():
-    dict_of_start_dates = {0: '2-16-2020', 1: '2-26-2020', 2: '2-20-2020', 3: '2-18-2020', 4: '02-21-2020',
-                           5: '2-21-2020', 6: '2-22-2020', 7: '2-17-2020', 8: '2-02-2020', 9: '02-18-2020',
-                           10: '2-16-2020', 11: '2-27-2020', 12: '2-20-2020', 13: '2-21-2020', 14: '02-28-2020',
-                           15: '2-22-2020', 16: '2-25-2020', 17: '2-25-2020', 18: '2-26-2020', 19: '2-27-2020'}
+    '''
+    dict_of_start_dates = {0: '2-13-2020', 1: '2-22-2020', 2: '2-16-2020', 3: '2-15-2020', 4: '2-16-2020', 5: '2-17-2020',
+                           6: '2-13-2020', 7: '2-9-2020', 8: '1-30-2020', 9: '2-10-2020', 10: '2-13-2020', 11: '2-23-2020',
+                           12: '2-17-2020', 13: '2-17-2020', 14: '2-25-2020',
+                           15: '2-20-2020', 16: '2-21-2020', 17: '2-17-2020', 18: '2-19-2020', 19: '2-26-2020'}
 
     dict_of_eu_geog = {0: 36061, 1: 36119, 2: 36059, 3: 36103, 4: 17031, 5: 26163, 6: 36087, 7: 34003,
                        8: 53033, 9: 6037, 10: 22071, 11: 36071, 12: 9001, 13: 34013, 14: 12086,
                        15: 26125, 16: 25017, 17: 34017, 18: 25025, 19: 34023}
+
+    '''
+    dict_of_start_dates ={0: '2-16-2020', 1: '2-27-2020', 2: '2-20-2020', 3: '2-18-2020', 4: '2-21-2020', 5: '2-22-2020',
+                          6: '2-18-2020', 7: '2-17-2020', 8: '2-22-2020', 9: '2-2-2020', 10: '2-16-2020', 11: '2-21-2020',
+                          12: '3-1-2020', 13: '2-20-2020', 14: '2-2-2020', 15: '2-26-2020',
+                          16: '2-28-2020', 17: '2-28-2020', 18: '2-29-2020', 19: '2-26-2020'}
+
+    dict_of_eu_geog = {0: 36061, 1: 36119, 2: 36059, 3: 36103, 4: 17031, 5: 26163, 6: 6037, 7: 34003, 8: 36087, 9: 53033,
+                       10: 22071, 11: 34013, 12: 12086, 13: 9001, 14: 26125, 15: 34017, 16: 36071, 17: 42101, 18: 34039, 19: 25025}
 
     path = "../results/US_summary.csv"
 
