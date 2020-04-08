@@ -183,7 +183,7 @@ def county_monotonicity(df):
     idx_row = {}
     return df.iloc[df1.index]['FIPS']
 
-def preprocessing_us_data():
+def preprocessing_us_data(data_dir):
     """"
     Loads and cleans data
     Returns:
@@ -356,7 +356,7 @@ def primary_calculations(df_cases, df_deaths, covariates1, df_cases_dates, fips_
 
 def get_stan_parameters_by_county_us(num_counties, data_dir, show):
 
-    df_cases, df_deaths, interventions = preprocessing_us_data()
+    df_cases, df_deaths, interventions = preprocessing_us_data(data_dir)
 
     ## select counties
     interventions = interventions[interventions['FIPS'] % 1000 != 0]
@@ -418,7 +418,7 @@ def get_stan_parameters_by_county_us(num_counties, data_dir, show):
 
 def get_stan_parameters_by_state_us(num_states, data_dir, show):
 
-    df_cases, df_deaths, interventions = preprocessing_us_data()
+    df_cases, df_deaths, interventions = preprocessing_us_data(data_dir)
 
     ## select states
     beginning_ids_int = np.unique(np.array(interventions['FIPS'] / 1000).astype(np.int))
@@ -503,14 +503,14 @@ def get_stan_parameters_by_state_us(num_states, data_dir, show):
 
     return final_dict, fips_list
 
-# if __name__ == '__main__':
-#
-#     data_dir = 'data'
-#     ## Europe data
-#     get_stan_parameters_europe(data_dir, show=True)
-#     print("***********************")
-#     ## US data
-#     get_stan_parameters_by_state_us(5, data_dir, show=True)
-#     print("***********************")
-#     get_stan_parameters_by_county_us(5, data_dir, show=True)
+if __name__ == '__main__':
+
+    data_dir = 'data'
+    ## Europe data
+    #get_stan_parameters_europe(data_dir, show=True)
+    #print("***********************")
+    ## US data
+    get_stan_parameters_by_state_us(5, data_dir, show=True)
+    #print("***********************")
+    #get_stan_parameters_by_county_us(5, data_dir, show=True)
 
