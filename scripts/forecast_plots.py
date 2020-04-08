@@ -176,13 +176,13 @@ def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of
     fips = int(dict_of_eu_geog[num_of_country].values)
 
     confirmed_start_date = datetime.datetime.strptime(start_day_of_confirmed, '%m/%d/%y')
+    print(dict_of_start_dates)
     print(str(dict_of_start_dates[num_of_country].values[0]))
     forecast_start_date = datetime.datetime.strptime(str(dict_of_start_dates[num_of_country].values[0]), '%m/%d/%y')
     print(forecast_start_date)
     diff = (forecast_start_date - confirmed_start_date).days + 1  # since it also has a name skip it
 
     confirmed_cases = list(df.loc[fips][diff:])
-    print(confirmed_cases)
     sustracted_confirmed_cases = [confirmed_cases[0]]
     # since us data is cummulative
     for i in range(1, len(confirmed_cases)):
@@ -199,7 +199,6 @@ def make_all_us_county_plots():
 
     for plot_choice in range(0, 2):
         for num_of_country in dict_of_eu_geog.keys():
-            print(num_of_country)
             confirmed_cases, county_name = read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates,
                                                               dict_of_eu_geog)
             plot_daily_infections_num(path, confirmed_cases, county_name, plot_choice, num_of_country,
@@ -239,7 +238,7 @@ def make_all_eu_plots():
 
 def main():
     if plot_settings == 'usa':
-        make_all_us_county_plots()
+        #make_all_us_county_plots()
         make_all_us_states_plots()
     if plot_settings == 'eu':
         make_all_eu_plots()
