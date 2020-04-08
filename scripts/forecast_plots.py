@@ -6,7 +6,7 @@ import pandas as pd
 import datetime
 
 # change here variables for different plotting options
-plot_settings = 'eu'  # choose 'eu' for europe and 'usa' for usa plots
+plot_settings = 'usa'  # choose 'eu' for europe and 'usa' for usa plots
 base_model = True  # True for prediction/E_deaths, False for prediction0/E_deaths0
 # to match with IC paper select base_model==True
 last_day_to_plot = '4/10/20'  # predict to this date
@@ -188,10 +188,26 @@ def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of
 
 
 # create a batch of all possible plots for usa
-def make_all_us_plots():
-    dict_of_start_dates = pd.read_csv('../results/us_start_dates.csv', delimiter=',', index_col=0)
-    dict_of_eu_geog = pd.read_csv('../results/us_geocode.csv', delimiter=',', index_col=0)
-    path = "../results/US_summary.csv"
+def make_all_us_county_plots():
+    dict_of_start_dates = pd.read_csv('../results/us_county_start_dates.csv', delimiter=',', index_col=0)
+    dict_of_eu_geog = pd.read_csv('../results/us_county_geocode.csv', delimiter=',', index_col=0)
+    path = "../results/US_county_summary.csv"
+
+    for plot_choice in range(0, 2):
+        for num_of_country in dict_of_eu_geog.keys():
+            print(num_of_country)
+            confirmed_cases, county_name = read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates,
+                                                              dict_of_eu_geog)
+            plot_daily_infections_num(path, confirmed_cases, county_name, plot_choice, num_of_country,
+                                      dict_of_start_dates, dict_of_eu_geog)
+    return
+
+
+# create a batch of all possible plots for usa
+def make_all_us_states_plots():
+    dict_of_start_dates = pd.read_csv('../results/us_states_start_dates.csv', delimiter=',', index_col=0)
+    dict_of_eu_geog = pd.read_csv('../results/us_states_geocode.csv', delimiter=',', index_col=0)
+    path = "../results/US_state_summary.csv"
 
     for plot_choice in range(0, 2):
         for num_of_country in dict_of_eu_geog.keys():
@@ -219,7 +235,8 @@ def make_all_eu_plots():
 
 def main():
     if plot_settings == 'usa':
-        make_all_us_plots()
+        make_all_us_county_plots()
+        make_all_us_states_plots()
     if plot_settings == 'eu':
         make_all_eu_plots()
 
