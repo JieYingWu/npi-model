@@ -22,8 +22,8 @@ transformed data {
 }
 
 parameters {
-  real<lower=0, upper=10> mu[M]; // intercept for Rt
-  real<lower=0, upper=1> alpha[6]; // the hier term
+  real<lower=0> mu[M]; // intercept for Rt
+  real<lower=0> alpha[6]; // the hier term
   real<lower=0> kappa;
   real<lower=0> y[M];
   real<lower=0> phi;
