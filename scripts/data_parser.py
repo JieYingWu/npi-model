@@ -158,7 +158,7 @@ def get_stan_parameters_europe(data_dir, show):
     final_dict['N0'] = 6
     final_dict['N'] = np.asarray(N_arr).astype(np.int)
     final_dict['N2'] = N2
-    final_dict['x'] = np.arange(0, N2)
+    final_dict['x'] = np.arange(1, N2+1)
     final_dict['cases'] = cases
     final_dict['deaths'] = deaths
     final_dict['EpidemicStart'] = np.asarray(start_dates)
@@ -306,7 +306,9 @@ def get_stan_parameters_by_county_us(num_counties, data_dir, show):
         addlst = [covariates2[N - 1]] * (forecast)
         add_1 = [-1] * forecast
 
+        case[case < 0] = 0
         case = np.append(case, add_1, axis=0)
+        death[death < 0] = 0
         death = np.append(death, add_1, axis=0)
         cases.append(case)
         deaths.append(death)
@@ -344,7 +346,7 @@ def get_stan_parameters_by_county_us(num_counties, data_dir, show):
     final_dict['N0'] = 6
     final_dict['N'] = np.asarray(N_arr, dtype=np.int)
     final_dict['N2'] = N2
-    final_dict['x'] = np.arange(0, N2)
+    final_dict['x'] = np.arange(1, N2+1)
     final_dict['cases'] = cases
     final_dict['deaths'] = deaths
     final_dict['EpidemicStart'] = np.asarray(start_dates).astype(np.int)
@@ -564,11 +566,11 @@ def get_stan_parameters_by_state_us(num_states, data_dir, show):
     final_dict['N0'] = 6
     final_dict['N'] = np.asarray(N_arr, dtype=np.int)
     final_dict['N2'] = N2
-    final_dict['x'] = np.arange(0, N2)
+    final_dict['x'] = np.arange(1, N2+1)
     final_dict['cases'] = cases
     final_dict['deaths'] = deaths
     final_dict['EpidemicStart'] = np.asarray(start_dates).astype(np.int)
-    final_dict['p'] = len(state_interventions_colnames) - 1
+    final_dict['p'] = len(state_interventions_colnames)-1
     final_dict['covariate1'] = covariate1
     final_dict['covariate2'] = covariate2
     final_dict['covariate3'] = covariate3

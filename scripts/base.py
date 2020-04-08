@@ -1,3 +1,4 @@
+
 from os.path import join, exists
 import sys
 import numpy as np
@@ -9,11 +10,9 @@ import pickle
 import datetime
 #from forecast_plots import plot_forecasts
 
-assert len(sys.argv) == 3
+assert len(sys.argv) < 5
 
 # Compile the model
-sm = pystan.StanModel(file='stan-models/base.stan')
-
 data_dir = sys.argv[1]
 if sys.argv[2] == 'europe':
     stan_data, countries = get_stan_parameters_europe(data_dir, show=False)
@@ -23,7 +22,7 @@ if sys.argv[2] == 'europe':
         ifrs[weighted_fatalities[i,1]] = float(weighted_fatalities[i,-2])
 
 elif sys.argv[2] == 'US_county':
-    num_of_counties = 5
+    num_of_counties = int(sys.argv[3])
     stan_data, countries = get_stan_parameters_by_county_us(num_of_counties, data_dir, show=False)
     weighted_fatalities = np.loadtxt(join(data_dir, 'us_data', 'weighted_fatality.csv'), skiprows=1, delimiter=',', dtype=str)
     ifrs = {}
@@ -31,13 +30,22 @@ elif sys.argv[2] == 'US_county':
         ifrs[str(weighted_fatalities[i,0])] = weighted_fatalities[i,-1]
 
 elif sys.argv[2] == 'US_state':
-    num_of_states = 20
+    num_of_states = int(sys.argv[3])
     stan_data, countries = get_stan_parameters_by_state_us(num_of_states, data_dir, show=False)
-    weighted_fatalities = np.loadtxt(join(data_dir, 'state_data', 'weighted_fatality.csv'), skiprows=1, delimiter=',', dtype=str)
+    weighted_fatalities = np.loadtxt(join(data_dir, 'us_data', 'state_weighted_fatality.csv'), skiprows=1, delimiter=',', dtype=str)
     ifrs = {}
     for i in range(weighted_fatalities.shape[0]):
         ifrs[str(weighted_fatalities[i,0])] = weighted_fatalities[i,-1]
 
+#print(countries)
+#exit()
+
+stan_data['cases'] = np.array(stan_data['cases']).astype(np.int)
+stan_data['deaths'] = np.array(stan_data['deaths']).astype(np.int)
+stan_data['cases'][stan_data['cases']<-1] = 0
+stan_data['deaths'][stan_data['deaths']<-1] = 0
+#np.savetxt('cases.csv', stan_data['cases'])
+#np.savetxt('deaths.csv', stan_data['deaths'])
 #exit()
 
 N2 = stan_data['N2']
@@ -90,7 +98,9 @@ stan_data['f'] = all_f
 #stan_data = {'M':len(countries), 'N':N, 'p':interventions.shape[1]-1,...}
 
 # Train the model and generate samples - returns a StanFit4Model
-fit = sm.sampling(data=stan_data, iter=200, chains=4, warmup=150, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
+sm = pystan.StanModel(file='stan-models/base.stan')
+
+fit = sm.sampling(data=stan_data, iter=200, chains=8, warmup=100, thin=4, control={'adapt_delta':0.9, 'max_treedepth':10})
 # fit = sm.sampling(data=stan_data, iter=20, chains=4, warmup=10, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
 
 # All the parameters in the stan model

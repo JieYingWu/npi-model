@@ -6,7 +6,7 @@ import pandas as pd
 import datetime
 
 # change here variables for different plotting options
-plot_settings = 'usa'  # choose 'eu' for europe and 'usa' for usa plots
+plot_settings = 'eu'  # choose 'eu' for europe and 'usa' for usa plots
 base_model = True  # True for prediction/E_deaths, False for prediction0/E_deaths0
 # to match with IC paper select base_model==True
 last_day_to_plot = '4/10/20'  # predict to this date
@@ -116,12 +116,11 @@ def plot_daily_infections_num(path, confirmed_cases, county_name, plot_choice, n
     elif plot_settings == 'eu':
         base = datetime.datetime.strptime(str(dict_of_start_dates[num_of_country].values[0]), '%m-%d-%Y')
         days_to_predict = (datetime.datetime.strptime(last_day_to_plot, '%m/%d/%y') - base).days
-        df = pd.read_csv(path, delimiter=';', index_col=0)
+        df = pd.read_csv(path, delimiter=',', index_col=0)
 
     row_names = list(df.index.tolist())
     list2_5, list25, list50, list75, list97_5 = [], [], [], [], []
     county_number = str(int(num_of_country) + 1) + ']'
-
     for name in row_names:
         if plot_name in name:
             if name.split(",")[1] == county_number:

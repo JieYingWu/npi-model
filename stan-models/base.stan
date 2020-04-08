@@ -40,7 +40,8 @@ transformed parameters {
         Rt[,m] = mu[m] * exp(covariate1[,m] * (-alpha[1]) + covariate2[,m] * (-alpha[2]) +
         covariate3[,m] * (-alpha[3])+ covariate4[,m] * (-alpha[4]) + covariate5[,m] * (-alpha[5]) + 
         covariate6[,m] * (-alpha[6])); // + GP[i]); // to_vector(x) * time_effect
-      for (i in (N0+1):N2) {
+     
+ for (i in (N0+1):N2) {
         convolution=0;
         for(j in 1:(i-1)) {
           convolution += prediction[j, m]*SI[i-j]; // Correctd 22nd March
