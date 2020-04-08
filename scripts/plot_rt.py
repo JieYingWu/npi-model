@@ -14,7 +14,7 @@ ticker.Locator.MAXTICKS = 10000
 
 def plot_rt_europe(simulation_file, interventions_file, country_number, country_name, start_date, num_days=75, save_img=False):
     # read data
-    simulation_data = pd.read_csv(simulation_file, delimiter=';', index_col=0)
+    simulation_data = pd.read_csv(simulation_file, delimiter=',', index_col=0)
     interventions, interventions_data = get_interventions_europe(interventions_file)
     interventions_data = interventions_data[interventions_data['Country'] == country_name]
     #time_data = list(pd.date_range(start=start_date, periods=num_days))
@@ -91,7 +91,7 @@ def plot_rt_europe(simulation_file, interventions_file, country_number, country_
 
 def plot_rt_US(simulation_file, interventions_file, county_number, fips, start_date, num_days=100, save_img=False):
     # read data
-    simulation_data = pd.read_csv(simulation_file, delimiter=';', index_col=0)
+    simulation_data = pd.read_csv(simulation_file, delimiter=',', index_col=0)
     interventions, interventions_data = get_interventions_US(interventions_file)
     interventions_data = interventions_data[interventions_data['FIPS'] == fips]
     # time_data = list(pd.date_range(start=start_date, periods=num_days))
@@ -245,11 +245,11 @@ if __name__ == '__main__':
     for country_ind, country_name, date in zip(country_numbers, country_list, start_dates):
         plot_rt_europe(simulation_file, interventions_file, country_ind, country_name, date, save_img=True)
 
-    ### USA ###
-    simulation_file = r'results\US_summary.csv'
+    ### USA counties ###
+    simulation_file = r'results\US_county_summary.csv'
     interventions_file = r'data\us_data\interventions.csv'
-    geo_file = r'results\us_geocode.csv'
-    startdate_file = r'results\us_start_dates.csv'
+    geo_file = r'results\us_county_geocode.csv'
+    startdate_file = r'results\us_county_start_dates.csv'
 
     fips_list, start_dates = get_geo_startdate_data(geo_file, startdate_file)
 
