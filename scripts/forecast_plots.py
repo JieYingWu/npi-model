@@ -166,9 +166,11 @@ def read_true_cases_europe(plot_choice, num_of_country, dict_of_start_dates, dic
 def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of_eu_geog):
     # 1 for deaths forecast; 0 for infections forecast
     if plot_choice == 0:
-        filepath = "../data/us_data/infections_timeseries.csv"
+        #filepath = "../data/us_data/infections_timeseries.csv"
+        filepath = "../data/us_data/infections_timeseries_w_states.csv"
     else:
-        filepath = "../data/us_data/deaths_timeseries.csv"
+        #filepath = "../data/us_data/deaths_timeseries.csv"
+        filepath = "../data/us_data/deaths_timeseries_w_states.csv"
 
     df = pd.read_csv(filepath, delimiter=',', index_col=0)
     fips = int(dict_of_eu_geog[num_of_country].values)
@@ -179,6 +181,7 @@ def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of
     diff = (forecast_start_date - confirmed_start_date).days + 1  # since it also has a name skip it
 
     confirmed_cases = list(df.loc[fips][diff:])
+    print(confirmed_cases)
     sustracted_confirmed_cases = [confirmed_cases[0]]
     # since us data is cummulative
     for i in range(1, len(confirmed_cases)):
@@ -235,7 +238,7 @@ def make_all_eu_plots():
 
 def main():
     if plot_settings == 'usa':
-        make_all_us_county_plots()
+        #make_all_us_county_plots()
         make_all_us_states_plots()
     if plot_settings == 'eu':
         make_all_eu_plots()

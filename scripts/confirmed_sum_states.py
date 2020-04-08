@@ -23,9 +23,9 @@ def compute_sums(filepath_from, filepath_to):
         header = [fips, name]
         total = list(extracted_df.sum()[2:])
         new_row = header + total
+        #print(new_row)
         state_total_string = pd.Series(new_row, index=df.columns)
         df = df.append(state_total_string, ignore_index=True)
-
     df.to_csv(filepath_to, index=False, header=True)
     return
 
