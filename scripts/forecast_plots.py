@@ -176,6 +176,7 @@ def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of
     fips = int(dict_of_eu_geog[num_of_country].values)
 
     confirmed_start_date = datetime.datetime.strptime(start_day_of_confirmed, '%m/%d/%y')
+    print(str(dict_of_start_dates[num_of_country].values[0]))
     forecast_start_date = datetime.datetime.strptime(str(dict_of_start_dates[num_of_country].values[0]), '%m/%d/%y')
     print(forecast_start_date)
     diff = (forecast_start_date - confirmed_start_date).days + 1  # since it also has a name skip it
