@@ -173,7 +173,6 @@ def get_stan_parameters_europe(data_dir, show):
 
     return final_dict, countries
 
-
 def get_stan_parameters_by_county_us(num_counties, data_dir, show):
 
     cases_path = join(data_dir, 'us_data/infections_timeseries.csv')
@@ -190,6 +189,31 @@ def get_stan_parameters_by_county_us(num_counties, data_dir, show):
     interventions.fillna(1, inplace=True)
     for col in int_cols: ### convert date from given format
         interventions[col] = interventions[col].apply(lambda x: dt.date.fromordinal(int(x)))
+
+    issues_cases = county_monotonicity(df_cases)
+    issues_deaths = county_monotonicity(df_deaths)
+    def get_daily_counts(L):
+        diff = np.array([y - x for x, y in zip(L, L[1:])])
+        L[1:] = diff
+        return L
+
+    #### get daily counts instead of cumulative
+    df_cases.iloc[:, 2:] = df_cases.iloc[:, 2:].apply(get_daily_counts, axis=1)
+    df_deaths.iloc[:, 2:] = df_deaths.iloc[:, 2:].apply(get_daily_counts, axis=1)
+
+    # print(df_cases.columns)
+    sanity_check = df_cases.iloc[:, 2:].apply(lambda x: np.sum(x < 0), axis=1)
+    drop_counties = sanity_check[sanity_check != 0].index
+    df_cases = df_cases.drop(drop_counties)
+
+    sanity_check2 = df_deaths.iloc[:, 2:].apply(lambda x: np.sum(x < 0), axis=1)
+    drop_counties = sanity_check2[sanity_check2 != 0].index
+    df_deaths = df_deaths.drop(drop_counties)
+
+    ## filter only the FIPS that are present in both cases and deaths timeseries
+    intersect = list(set(df_cases['FIPS']) & set(df_deaths['FIPS']))
+    df_cases = df_cases[df_cases['FIPS'].isin(intersect)]
+    df_deaths = df_deaths[df_deaths['FIPS'].isin(intersect)]
 
     # Pick top 20 counties with most cases
     headers = df_cases.columns.values
@@ -230,8 +254,9 @@ def get_stan_parameters_by_county_us(num_counties, data_dir, show):
     interventions_colnames = interventions.columns.values
     covariates1 = interventions.to_numpy()
 
-    #### cases and deaths are already cumulative
-    index1 = np.where(np.argmax(df_deaths >= 10, axis=0) != 0, np.argmax(df_deaths >= 10, axis=0), df_deaths.shape[0])
+    index = np.argmax(df_cases > 0)
+    cum_sum = np.cumsum(df_deaths, axis=0) >= 10
+    index1 = np.where(np.argmax(cum_sum, axis=0) != 0, np.argmax(cum_sum, axis=0), cum_sum.shape[0])
     index2 = index1 - 30
     start_dates = index1 + 1 - index2
     dict_of_start_dates = {}
@@ -251,8 +276,8 @@ def get_stan_parameters_by_county_us(num_counties, data_dir, show):
     for i in range(len(fips_list)):
         i2 = index2[i]
         dict_of_start_dates[i] = df_cases_dates[i2]
-        case = df_cases[i2:, i] - df_cases[i2 - 1:len(df_cases) - 1, i]  ### original data is cumulative
-        death = df_deaths[i2:, i] - df_deaths[i2 - 1:len(df_deaths) - 1, i]
+        case = df_cases[i2:, i]
+        death = df_deaths[i2:, i]
         assert len(case) == len(death)
 
         req_dates = df_cases_dates[i2:]
@@ -306,6 +331,8 @@ def get_stan_parameters_by_county_us(num_counties, data_dir, show):
     covariate7 = np.array(covariate7).T
     cases = np.array(cases).T
     deaths = np.array(deaths).T
+    #print(np.sum(cases<-1))
+    #print(np.sum(deaths<-1))
 
     filename1 = 'us_county_start_dates.csv'
     filename2 = 'us_county_geocode.csv'
@@ -334,23 +361,47 @@ def get_stan_parameters_by_county_us(num_counties, data_dir, show):
 
     return final_dict, fips_list
 
+def check_monotonicity(L):
+    is_monotonic = np.sum([x<= y for x, y in zip(L, L[1:])])
+    return is_monotonic
+
+def county_monotonicity(df):
+    df1 = df.iloc[:, 2:].apply(check_monotonicity, axis=1)
+    df1 = df1[df1!=(df.shape[1] - 3)]
+    idx_row = {}
+    return df.iloc[df1.index]['FIPS']
+
 def get_stan_parameters_by_state_us(num_states, data_dir, show):
 
     cases_path = join(data_dir, 'us_data/infections_timeseries.csv')
     deaths_path = join(data_dir, 'us_data/deaths_timeseries.csv')
     interventions_path = join(data_dir, 'us_data/interventions.csv')
 
-    df_cases = pd.read_csv(cases_path)
+    df_cases = pd.read_csv(cases_path, encoding='latin1')
     df_deaths = pd.read_csv(deaths_path)
-    interventions = pd.read_csv(interventions_path)
 
+    interventions = pd.read_csv(interventions_path, encoding='latin1')
     interventions.fillna(1, inplace=True)
     interventions.drop([0], axis=0, inplace=True)
     beginning_ids_int = np.unique(np.array(interventions['FIPS'] / 1000).astype(np.int))
     id_cols = ['FIPS', 'STATE', 'AREA_NAME', 'Combined_Key']
     int_cols = [col for col in interventions.columns.tolist() if col not in id_cols]
+    int_cases_col = [col for col in df_cases.columns.tolist() if col not in id_cols]
     for col in int_cols:
         interventions[col] = interventions[col].apply(lambda x: dt.date.fromordinal(int(x)))
+
+    #### check monotonicity of the data
+    #issues_cases = county_monotonicity(df_cases)
+    #issues_deaths = county_monotonicity(df_deaths)
+
+    def get_daily_counts(L):
+        diff = np.array([y - x for x, y in zip(L, L[1:])])
+        L[1:] = diff
+        return L
+
+    df_cases.iloc[:, 2:] = df_cases.iloc[:, 2:].apply(get_daily_counts, axis=1)
+    df_deaths.iloc[:, 2:] = df_deaths.iloc[:, 2:].apply(get_daily_counts, axis=1)
+    #print(df_cases.shape, df_deaths.shape)
 
     state_interventions = pd.DataFrame(columns=int_cols, index=beginning_ids_int * 1000)
     for i in beginning_ids_int:
@@ -359,12 +410,6 @@ def get_stan_parameters_by_state_us(num_states, data_dir, show):
         state_interventions.loc[i * 1000, :] = county_int[int_cols].max(axis=0)
 
     state_interventions.insert(0, 'FIPS', state_interventions.index)
-    ### change cases data from cumulative to daily count
-    df_cases_dates = (df_cases.iloc[:, 2:]).diff(axis=1)
-    df_cases.iloc[:, 3:] = df_cases_dates.iloc[:, 1:]
-
-    df_deaths_dates = (df_deaths.iloc[:, 2:]).diff(axis=1)
-    df_deaths.iloc[:, 3:] = df_deaths_dates.iloc[:, 1:]
 
     beginning_ids_cases = np.unique(np.array(df_cases['FIPS'] / 1000).astype(np.int))
     cases_dates_cols = [col for col in df_cases.columns.tolist() if col not in id_cols]
@@ -382,6 +427,19 @@ def get_stan_parameters_by_state_us(num_states, data_dir, show):
     state_cases.insert(0, 'FIPS', state_cases.index)
     state_deaths.insert(0, 'FIPS', state_deaths.index)
 
+    sanity_check = state_cases.iloc[:, 1:].apply(lambda x: np.sum(x < 0), axis=1)
+    drop_states = sanity_check[sanity_check != 0].index
+    state_cases = state_cases.drop(drop_states)
+
+    sanity_check2 = state_deaths.iloc[:, 1:].apply(lambda x: np.sum(x < 0), axis=1)
+    drop_states = sanity_check2[sanity_check2 != 0].index
+    state_deaths = state_deaths.drop(drop_states)
+
+    ## filter only the FIPS that are present in both cases and deaths timeseries
+    intersect = list(set(state_cases['FIPS']) & set(state_deaths['FIPS']))
+    state_cases = state_cases[state_cases['FIPS'].isin(intersect)]
+    state_deaths = state_deaths[state_deaths['FIPS'].isin(intersect)]
+
     # Pick top N states with most cases
     headers = state_cases.columns.values
     last_day = headers[-1]
@@ -393,12 +451,12 @@ def get_stan_parameters_by_state_us(num_states, data_dir, show):
     fips_list = state_cases['FIPS'].tolist()
 
     for i in range(len(fips_list)):
-        #comb_key = df_cases.loc[df_cases['FIPS'] == fips_list[i], 'Combined_Key'].to_string(index=False)
+        # comb_key = df_cases.loc[df_cases['FIPS'] == fips_list[i], 'Combined_Key'].to_string(index=False)
         dict_of_geo[i] = fips_list[i]
 
     merge_df = pd.DataFrame({'merge': fips_list})
     state_deaths = state_deaths.loc[state_deaths['FIPS'].isin(fips_list)]
-    state_deaths = pd.merge(merge_df, state_deaths, left_on='merge', right_on='FIPS', how='outer')
+    state_deaths = pd.merge(merge_df, state_deaths, left_on='merge', right_on='FIPS', how='inner')
     state_deaths = state_deaths.reset_index(drop=True)
 
     state_interventions = state_interventions.loc[state_interventions['FIPS'].isin(fips_list)]
@@ -470,12 +528,8 @@ def get_stan_parameters_by_state_us(num_states, data_dir, show):
         addlst = [covariates2[N - 1]] * (forecast)
         add_1 = [-1] * forecast
 
-        case[case < 0] = 0
         case = np.append(case, add_1, axis=0)
-        #print(case.shape)
-        death[death < 0] = 0
         death = np.append(death, add_1, axis=0)
-        #print(death.shape)
         cases.append(case)
         deaths.append(death)
 
@@ -497,6 +551,8 @@ def get_stan_parameters_by_state_us(num_states, data_dir, show):
     covariate7 = np.array(covariate7).T
     cases = np.array(cases).T.astype(int)
     deaths = np.array(deaths).T.astype(int)
+    #print(np.sum(cases < -1))
+    #print(np.sum(deaths < -1))
 
     filename1 = 'us_states_start_dates.csv'
     filename2 = 'us_states_geocode.csv'
@@ -532,7 +588,7 @@ def get_stan_parameters_by_state_us(num_states, data_dir, show):
 #     get_stan_parameters_europe(data_dir, show=True)
 #     print("***********************")
 #     ## US data
-#     get_stan_parameters_by_state_us(5, data_dir, show=False)
+#     get_stan_parameters_by_state_us(5, data_dir, show=True)
 #     print("***********************")
 #     get_stan_parameters_by_county_us(5, data_dir, show=True)
 
