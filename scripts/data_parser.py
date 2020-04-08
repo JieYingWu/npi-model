@@ -174,7 +174,7 @@ def get_stan_parameters_europe(data_dir, show):
     return final_dict, countries
 
 
-def get_stan_parameters_us(num_counties, data_dir, show):
+def get_stan_parameters_by_county_us(num_counties, data_dir, show):
 
     cases_path = join(data_dir, 'us_data/infections_timeseries.csv')
     deaths_path = join(data_dir, 'us_data/deaths_timeseries.csv')
@@ -265,7 +265,7 @@ def get_stan_parameters_us(num_counties, data_dir, show):
         covariates2 = np.array(covariates2).T
 
         if show:
-            print("{name} County with FIPS {fips} has {num} days of data".format(name=dict_of_geo[i]['County'], fips=fips_list[i], num=len(case)))
+            print("County with FIPS {fips} has {num} days of data".format(fips=fips_list[i], num=len(case)))
             print("Start date: ", dict_of_start_dates[i])
 
         N = len(case)
@@ -305,18 +305,12 @@ def get_stan_parameters_us(num_counties, data_dir, show):
     cases = np.array(cases).T
     deaths = np.array(deaths).T
 
-    filename1 = 'us_start_dates.csv'
-    filename2 = 'us_geocode.csv'
+    filename1 = 'us_county_start_dates.csv'
+    filename2 = 'us_county_geocode.csv'
     df_sd = pd.DataFrame(dict_of_start_dates, index=[0])
     df_geo = pd.DataFrame(dict_of_geo, index=[0])
     df_sd.to_csv('results/' + filename1, sep=',')
     df_geo.to_csv('results/' + filename2, sep=',')
-    # with open(filename, 'w', newline='') as file:
-    #     writer = csv.writer(file, delimiter=',')
-    #     writer.writerow(fips_list)
-    #     writer.writerow(list(dict_of_geo.values()))
-    #     writer.writerow(list(dict_of_start_dates.values()))
-
 
     final_dict = {}
     final_dict['M'] = num_counties
@@ -338,12 +332,200 @@ def get_stan_parameters_us(num_counties, data_dir, show):
 
     return final_dict, fips_list
 
+def get_stan_parameters_by_state_us(num_states, data_dir, show):
+
+    cases_path = join(data_dir, 'us_data/infections_timeseries.csv')
+    deaths_path = join(data_dir, 'us_data/deaths_timeseries.csv')
+    interventions_path = join(data_dir, 'us_data/interventions.csv')
+
+    df_cases = pd.read_csv(cases_path)
+    df_deaths = pd.read_csv(deaths_path)
+    interventions = pd.read_csv(interventions_path)
+
+    interventions.fillna(1, inplace=True)
+    interventions.drop([0], axis=0, inplace=True)
+    beginning_ids_int = np.unique(np.array(interventions['FIPS'] / 1000).astype(np.int))
+    id_cols = ['FIPS', 'STATE', 'AREA_NAME', 'Combined_Key']
+    int_cols = [col for col in interventions.columns.tolist() if col not in id_cols]
+    for col in int_cols:
+        interventions[col] = interventions[col].apply(lambda x: dt.date.fromordinal(int(x)))
+
+    state_interventions = pd.DataFrame(columns=int_cols, index=beginning_ids_int * 1000)
+    for i in beginning_ids_int:
+        county_int = interventions.loc[(interventions['FIPS'] / 1000).astype(int) == i, :]
+        ## set the latest date for intervention at any county as the date of intervention for the state
+        state_interventions.loc[i * 1000, :] = county_int[int_cols].max(axis=0)
+
+    state_interventions.insert(0, 'FIPS', state_interventions.index)
+    ### change cases data from cumulative to daily count
+    df_cases_dates = (df_cases.iloc[:, 2:]).diff(axis=1)
+    df_cases.iloc[:, 3:] = df_cases_dates.iloc[:, 1:]
+
+    df_deaths_dates = (df_deaths.iloc[:, 2:]).diff(axis=1)
+    df_deaths.iloc[:, 3:] = df_deaths_dates.iloc[:, 1:]
+
+    beginning_ids_cases = np.unique(np.array(df_cases['FIPS'] / 1000).astype(np.int))
+    cases_dates_cols = [col for col in df_cases.columns.tolist() if col not in id_cols]
+    deaths_dates_cols = [col for col in df_deaths.columns.tolist() if col not in id_cols]
+    state_cases = pd.DataFrame(columns=cases_dates_cols, index=beginning_ids_cases * 1000)
+    state_deaths = pd.DataFrame(columns=deaths_dates_cols, index=beginning_ids_cases * 1000)
+
+    ### get daily counts over states
+    for i in beginning_ids_cases:
+        county_case_int = df_cases.loc[(df_cases['FIPS'] / 1000).astype(int) == i, cases_dates_cols]
+        county_death_int = df_deaths.loc[(df_deaths['FIPS'] / 1000).astype(int) == i, deaths_dates_cols]
+        state_cases.loc[i * 1000, :] = county_case_int.sum(axis=0)
+        state_deaths.loc[i * 1000, :] = county_death_int.sum(axis=0)
+
+    state_cases.insert(0, 'FIPS', state_cases.index)
+    state_deaths.insert(0, 'FIPS', state_deaths.index)
+
+    # Pick top N states with most cases
+    headers = state_cases.columns.values
+    last_day = headers[-1]
+    state_cases = state_cases.sort_values(by=[last_day], ascending=False)
+    state_cases = state_cases.iloc[:num_states]
+    state_cases = state_cases.reset_index(drop=True)
+
+    dict_of_geo = {}
+    fips_list = state_cases['FIPS'].tolist()
+
+    for i in range(len(fips_list)):
+        #comb_key = df_cases.loc[df_cases['FIPS'] == fips_list[i], 'Combined_Key'].to_string(index=False)
+        dict_of_geo[i] = fips_list[i]
+
+    merge_df = pd.DataFrame({'merge': fips_list})
+    state_deaths = state_deaths.loc[state_deaths['FIPS'].isin(fips_list)]
+    state_deaths = pd.merge(merge_df, state_deaths, left_on='merge', right_on='FIPS', how='outer')
+    state_deaths = state_deaths.reset_index(drop=True)
+
+    state_interventions = state_interventions.loc[state_interventions['FIPS'].isin(fips_list)]
+    state_interventions = pd.merge(merge_df, state_interventions, left_on='merge', right_on='FIPS', how='outer')
+    state_interventions = state_interventions.reset_index(drop=True)
+
+    state_cases = state_cases.T  ### Dates are now row-wise
+    state_cases_dates = np.array(state_cases.index)
+    state_cases = state_cases.to_numpy()
+
+    state_deaths = state_deaths.drop(['merge', 'FIPS'], axis=1)
+    state_deaths = state_deaths.T
+    state_deaths = state_deaths.to_numpy()
+
+    state_interventions.drop(['merge', 'FIPS'], axis=1, inplace=True)
+    state_interventions_colnames = state_interventions.columns.values
+
+    covariates1 = state_interventions.to_numpy()
+
+    #### cases and deaths are already cumulative
+    index = np.argmax(state_cases > 0)
+    cum_sum = np.cumsum(state_deaths, axis=0) >= 10
+    index1 = np.where(np.argmax(cum_sum, axis=0) != 0, np.argmax(cum_sum, axis=0), cum_sum.shape[0])
+    index2 = index1 - 30
+    start_dates = index1 + 1 - index2
+    dict_of_start_dates = {}
+
+    covariate1 = []
+    covariate2 = []
+    covariate3 = []
+    covariate4 = []
+    covariate5 = []
+    covariate6 = []
+    covariate7 = []
+
+    cases = []
+    deaths = []
+    N_arr = []
+
+    for i in range(len(fips_list)):
+        i2 = index2[i]
+        dict_of_start_dates[i] = state_cases_dates[i2]
+        case = state_cases[i2:, i]
+        death = state_deaths[i2:, i]
+        req_dates = state_cases_dates[i2:]
+        covariates2 = []
+        req_dates = np.array([dt.datetime.strptime(x, '%m/%d/%y').date() for x in req_dates])
+
+        ### check if interventions were in place start date onwards
+        for col in range(covariates1.shape[1]):
+            covariates2.append(np.where(req_dates >= covariates1[i, col], 1, 0))
+        covariates2 = np.array(covariates2).T
+
+        if show:
+            print("State with FIPS {fips} has {num} days of data".format(fips=fips_list[i], num=len(case)))
+            print("Start date: ", dict_of_start_dates[i])
+
+        N = len(case)
+        N_arr.append(N)
+        N2 = 100
+
+        forecast = N2 - N
+
+        if forecast < 0:
+            print("FIPS: ", fips_list[i], " N: ", N)
+            print("Error!!!! N is greater than N2!")
+            N2 = N
+        addlst = [covariates2[N - 1]] * (forecast)
+        add_1 = [-1] * forecast
+
+        case = np.append(case, add_1, axis=0)
+        death = np.append(death, add_1, axis=0)
+        cases.append(case)
+        deaths.append(death)
+
+        covariates2 = np.append(covariates2, addlst, axis=0)
+        covariate1.append(covariates2[:, 0])  # stay at home
+        covariate2.append(covariates2[:, 1])  # >50 gatherings
+        covariate3.append(covariates2[:, 2])  # >500 gatherings
+        covariate4.append(covariates2[:, 3])  # public scools
+        covariate5.append(covariates2[:, 4])  # restaurant dine-in
+        covariate6.append(covariates2[:, 5])  # entertainment/gym
+        covariate7.append(covariates2[:, 6])  # federal guidelines
+
+    covariate1 = np.array(covariate1).T
+    covariate2 = np.array(covariate2).T
+    covariate3 = np.array(covariate3).T
+    covariate4 = np.array(covariate4).T
+    covariate5 = np.array(covariate5).T
+    covariate6 = np.array(covariate6).T
+    covariate7 = np.array(covariate7).T
+    cases = np.array(cases).T
+    deaths = np.array(deaths).T
+
+    filename1 = 'us_states_start_dates.csv'
+    filename2 = 'us_states_geocode.csv'
+    df_sd = pd.DataFrame(dict_of_start_dates, index=[0])
+    df_geo = pd.DataFrame(dict_of_geo, index=[0])
+    df_sd.to_csv('results/' + filename1, sep=',')
+    df_geo.to_csv('results/' + filename2, sep=',')
+
+    final_dict = {}
+    final_dict['M'] = num_states
+    final_dict['N0'] = 6
+    final_dict['N'] = np.asarray(N_arr, dtype=np.int)
+    final_dict['N2'] = N2
+    final_dict['x'] = np.arange(0, N2)
+    final_dict['cases'] = cases
+    final_dict['deaths'] = deaths
+    final_dict['EpidemicStart'] = np.asarray(start_dates).astype(np.int)
+    final_dict['p'] = len(state_interventions_colnames) - 1
+    final_dict['covariate1'] = covariate1
+    final_dict['covariate2'] = covariate2
+    final_dict['covariate3'] = covariate3
+    final_dict['covariate4'] = covariate4
+    final_dict['covariate5'] = covariate5
+    final_dict['covariate6'] = covariate6
+    final_dict['covariate7'] = covariate7
+
+    return final_dict, fips_list
+
 # if __name__ == '__main__':
 #
 #     data_dir = 'data'
 #     ## Europe data
-#     get_stan_parameters_europe(data_dir, show=False)
+#     get_stan_parameters_europe(data_dir, show=True)
 #     print("***********************")
 #     ## US data
-#     get_stan_parameters_us(5, data_dir, show=False)
+#     get_stan_parameters_by_state_us(5, data_dir, show=True)
+#     print("***********************")
+#     get_stan_parameters_by_county_us(5, data_dir, show=True)
 
