@@ -24,11 +24,11 @@ def compute_sums(filepath_from, filepath_to, selection):
             regex_string = "0"+fips[:-3]
 
         extracted_df = df.loc[df.iloc[:, 0].str.startswith(regex_string)]
-        print(extracted_df)
+        #print(extracted_df)
         header = [fips, name]
         total = list(extracted_df.sum()[2:])
         new_row = header + total
-        print(new_row)
+        #print(new_row)
         state_total_string = pd.Series(new_row, index=df.columns)
         df = df.append(state_total_string, ignore_index=True)
     df.to_csv(filepath_to, index=False, header=True)
