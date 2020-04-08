@@ -281,7 +281,9 @@ def get_stan_parameters_by_county_us(num_counties, data_dir, show):
         addlst = [covariates2[N - 1]] * (forecast)
         add_1 = [-1] * forecast
 
+        case[case < 0] = 0
         case = np.append(case, add_1, axis=0)
+        death[death < 0] = 0
         death = np.append(death, add_1, axis=0)
         cases.append(case)
         deaths.append(death)
@@ -468,8 +470,10 @@ def get_stan_parameters_by_state_us(num_states, data_dir, show):
         addlst = [covariates2[N - 1]] * (forecast)
         add_1 = [-1] * forecast
 
+        case[case < 0] = 0
         case = np.append(case, add_1, axis=0)
         #print(case.shape)
+        death[death < 0] = 0
         death = np.append(death, add_1, axis=0)
         #print(death.shape)
         cases.append(case)
