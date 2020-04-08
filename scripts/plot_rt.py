@@ -274,18 +274,18 @@ if __name__ == '__main__':
     #     plot_rt_europe(simulation_file, interventions_file, country_ind, country_name, date, save_img=True)
 
     ### USA counties ###
-    # simulation_file = r'results\US_county_summary.csv'
-    # interventions_file = r'data\us_data\interventions.csv'
-    # geo_file = r'results\us_county_geocode.csv'
-    # startdate_file = r'results\us_county_start_dates.csv'
-    #
-    # fips_list, start_dates = get_geo_startdate_data(geo_file, startdate_file)
-    #
-    # # model output indices start at 1
-    # county_numbers = np.arange(1, len(fips_list) + 1)
-    #
-    # for county, fips, date in zip(county_numbers, fips_list, start_dates):
-    #     plot_rt_US(simulation_file, interventions_file, county, fips, date, False, save_img=True)
+    simulation_file = r'results\US_county_summary.csv'
+    interventions_file = r'data\us_data\interventions.csv'
+    geo_file = r'results\us_county_geocode.csv'
+    startdate_file = r'results\us_county_start_dates.csv'
+
+    fips_list, start_dates = get_geo_startdate_data(geo_file, startdate_file)
+
+    # model output indices start at 1
+    county_numbers = np.arange(1, len(fips_list) + 1)
+
+    for county, fips, date in zip(county_numbers, fips_list, start_dates):
+        plot_rt_US(simulation_file, interventions_file, county, fips, date, False, save_img=True)
 
     ### USA states ###
     simulation_file = r'results\US_state_summary.csv'
