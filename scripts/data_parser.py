@@ -403,6 +403,7 @@ def get_stan_parameters_by_state_us(num_states, data_dir, show):
     state_interventions = pd.merge(merge_df, state_interventions, left_on='merge', right_on='FIPS', how='outer')
     state_interventions = state_interventions.reset_index(drop=True)
 
+    state_cases = state_cases.drop(['FIPS'], axis=1)
     state_cases = state_cases.T  ### Dates are now row-wise
     state_cases_dates = np.array(state_cases.index)
     state_cases = state_cases.to_numpy()
@@ -468,7 +469,9 @@ def get_stan_parameters_by_state_us(num_states, data_dir, show):
         add_1 = [-1] * forecast
 
         case = np.append(case, add_1, axis=0)
+        #print(case.shape)
         death = np.append(death, add_1, axis=0)
+        #print(death.shape)
         cases.append(case)
         deaths.append(death)
 
@@ -488,8 +491,8 @@ def get_stan_parameters_by_state_us(num_states, data_dir, show):
     covariate5 = np.array(covariate5).T
     covariate6 = np.array(covariate6).T
     covariate7 = np.array(covariate7).T
-    cases = np.array(cases).T
-    deaths = np.array(deaths).T
+    cases = np.array(cases).T.astype(int)
+    deaths = np.array(deaths).T.astype(int)
 
     filename1 = 'us_states_start_dates.csv'
     filename2 = 'us_states_geocode.csv'
@@ -525,7 +528,7 @@ def get_stan_parameters_by_state_us(num_states, data_dir, show):
 #     get_stan_parameters_europe(data_dir, show=True)
 #     print("***********************")
 #     ## US data
-#     get_stan_parameters_by_state_us(5, data_dir, show=True)
+#     get_stan_parameters_by_state_us(5, data_dir, show=False)
 #     print("***********************")
 #     get_stan_parameters_by_county_us(5, data_dir, show=True)
 
