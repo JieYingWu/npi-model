@@ -6,15 +6,16 @@ We provide...
 * Plotting tools of how US interventions have affected modeled Rt
 
 ![](https://github.com/JieYingWu/npi-model/blob/master/results/plots/usa/deaths36061.jpg)
-![](https://github.com/JieYingWu/npi-model/blob/master/results/plots/usa_interventions/Rt_36061.png)
+![](https://github.com/JieYingWu/npi-model/blob/master/results/plots/usa_interventions/Rt_county_36061.png)
 
 
-Words of warning: We have noticed that the time series of the reported cases and deaths are of inconsistent quality; for example, our cumulative time series of cases and death counts are not monotonically increasing. For days where the case or death count is negative, we interpolate neighbouring days for that value.
+Words of warning: We have noticed that the time series of the reported cases and deaths are of inconsistent quality; for example, our cumulative time series of cases and death counts are not monotonically increasing (so, checks have been implemented for the same). For days where the case or death count is negative, we interpolate neighbouring days for that value.
 
 Additionally, fits to the US-county level data is less certain than the European Countries considered by the original model as there are fewer cases in most counties than any of the European countries. We also provide state-level analysis for more similar comparison. 
 
 ## Dependencies
 * pystan (this requires Cython compiler - https://pystan.readthedocs.io/en/latest/installation_beginner.html)
+Pystan is only partially supported on Windows: https://pystan.readthedocs.io/en/latest/windows.html **(Tip: Use Anaconda!!)**
 
 ## To Run
 For US data, call `python scripts/base.py data US_county 20` in the base directory and it will save the summary over runs in the results folder.

@@ -14,7 +14,7 @@ ticker.Locator.MAXTICKS = 10000
 
 def plot_rt_europe(simulation_file, interventions_file, country_number, country_name, start_date, num_days=75, save_img=False):
     # read data
-    simulation_data = pd.read_csv(simulation_file, delimiter=';', index_col=0)
+    simulation_data = pd.read_csv(simulation_file, delimiter=',', index_col=0)
     interventions, interventions_data = get_interventions_europe(interventions_file)
     interventions_data = interventions_data[interventions_data['Country'] == country_name]
     #time_data = list(pd.date_range(start=start_date, periods=num_days))
@@ -89,10 +89,10 @@ def plot_rt_europe(simulation_file, interventions_file, country_number, country_
     plt.show()
 
 
-def plot_rt_US(simulation_file, interventions_file, county_number, fips, start_date, num_days=100, save_img=False):
+def plot_rt_US(simulation_file, interventions_file, county_number, fips, start_date, state_level, save_img=False):
     # read data
-    simulation_data = pd.read_csv(simulation_file, delimiter=';', index_col=0)
-    interventions, interventions_data = get_interventions_US(interventions_file)
+    simulation_data = pd.read_csv(simulation_file, delimiter=',', index_col=0)
+    interventions, interventions_data = get_interventions_US(interventions_file, state_level=state_level)
     interventions_data = interventions_data[interventions_data['FIPS'] == fips]
     # time_data = list(pd.date_range(start=start_date, periods=num_days))
     time_data = list(pd.date_range(start=start_date, end='04/07/20'))
@@ -132,14 +132,15 @@ def plot_rt_US(simulation_file, interventions_file, county_number, fips, start_d
     # make sure markers for several interventions on the same day are drawn at different positions
     for ind, intervention in enumerate(interventions):
         date = interventions_data[intervention].values[0]
-        num = adjust_height.count(date)
-        adjust_height.append(date)
-        if num == 0:
-            # plot vertical line
-            plt.axvline(pd.to_datetime(date), drawstyle='steps-pre', color='gray', ls='--')
-        # plot marker for this intervention
-        plt.plot(pd.to_datetime(date), init_height - (num + 1) * 0.05 * init_height, marker=marker[ind],
-                 label=intervention, linestyle='None')
+        if not pd.isna(date):
+            num = adjust_height.count(date)
+            adjust_height.append(date)
+            if num == 0:
+                # plot vertical line
+                plt.axvline(pd.to_datetime(date), drawstyle='steps-pre', color='gray', ls='--')
+            # plot marker for this intervention
+            plt.plot(pd.to_datetime(date), init_height - (num + 1) * 0.05 * init_height, marker=marker[ind],
+                     label=intervention, linestyle='None')
 
     # legend for interventions
     box = plt.gca().get_position()
@@ -159,7 +160,11 @@ def plot_rt_US(simulation_file, interventions_file, county_number, fips, start_d
     plt.ylabel('Time-dependent Reproduction Number')
 
     if save_img:
-        plt.savefig(r'results\plots\usa_interventions\Rt_{}.png'.format(fips), bbox_extra_artists=(lgd,), bbox_inches='tight')
+        if state_level:
+            plt.savefig(r'results\plots\usa_interventions\Rt_state_{}.png'.format(fips), bbox_extra_artists=(lgd,), bbox_inches='tight')
+        else:
+            plt.savefig(r'results\plots\usa_interventions\Rt_county_{}.png'.format(fips), bbox_extra_artists=(lgd,),
+                            bbox_inches='tight')
 
     plt.show()
 
@@ -202,16 +207,38 @@ def get_interventions_europe(interventions_file):
 
 
 # copied from data_parser
-def get_interventions_US(interventions_file, num_counties=100):
+def get_interventions_US(interventions_file, state_level=False):
 
-    interventions = pd.read_csv(interventions_file)
+    if state_level:
+        interventions = pd.read_csv(interventions_file)
 
-    interventions = interventions[interventions['FIPS'] % 1000 != 0]
-    id_cols = ['FIPS', 'STATE', 'AREA_NAME']
-    int_cols = [col for col in interventions.columns.tolist() if col not in id_cols]
-    interventions.fillna(1, inplace=True)
-    for col in int_cols: ### convert date from given format
-        interventions[col] = interventions[col].apply(lambda x: dt.date.fromordinal(int(x)))
+        interventions.fillna(1, inplace=True)
+        interventions.drop([0], axis=0, inplace=True)
+        beginning_ids_int = np.unique(np.array(interventions['FIPS'] / 1000).astype(np.int))
+        id_cols = ['FIPS', 'STATE', 'AREA_NAME', 'Combined_Key']
+        int_cols = [col for col in interventions.columns.tolist() if col not in id_cols]
+        for col in int_cols:
+            interventions[col] = interventions[col].apply(lambda x: dt.date.fromordinal(int(x)))
+
+        state_interventions = pd.DataFrame(columns=int_cols, index=beginning_ids_int * 1000)
+        for i in beginning_ids_int:
+            county_int = interventions.loc[(interventions['FIPS'] / 1000).astype(int) == i, :]
+            ## set the latest date for intervention at any county as the date of intervention for the state
+            state_interventions.loc[i * 1000, :] = county_int[int_cols].max(axis=0)
+
+        state_interventions.insert(0, 'FIPS', state_interventions.index)
+        state_interventions.insert(1, 'STATE', interventions['STATE'][interventions['FIPS'].isin(state_interventions.index)].values)
+        state_interventions.insert(2, 'AREA_NAME', interventions['AREA_NAME'][interventions['FIPS'].isin(state_interventions.index)].values)
+        interventions = state_interventions
+
+    else:
+        interventions = pd.read_csv(interventions_file)
+        id_cols = ['FIPS', 'STATE', 'AREA_NAME', 'Combined_Key']
+        #id_cols = ['FIPS', 'STATE', 'AREA_NAME']
+        int_cols = [col for col in interventions.columns.tolist() if col not in id_cols]
+        #interventions.fillna(1, inplace=True)
+        for col in int_cols: ### convert date from given format
+            interventions[col] = interventions[col].apply(lambda x: dt.date.fromordinal(int(x)) if not pd.isna(x) else x)
 
     interventions_list = list(interventions.columns.values)[3:]
 
@@ -245,11 +272,11 @@ if __name__ == '__main__':
     for country_ind, country_name, date in zip(country_numbers, country_list, start_dates):
         plot_rt_europe(simulation_file, interventions_file, country_ind, country_name, date, save_img=True)
 
-    ### USA ###
-    simulation_file = r'results\US_summary.csv'
+    ### USA counties ###
+    simulation_file = r'results\US_county_summary.csv'
     interventions_file = r'data\us_data\interventions.csv'
-    geo_file = r'results\us_geocode.csv'
-    startdate_file = r'results\us_start_dates.csv'
+    geo_file = r'results\us_county_geocode.csv'
+    startdate_file = r'results\us_county_start_dates.csv'
 
     fips_list, start_dates = get_geo_startdate_data(geo_file, startdate_file)
 
@@ -257,7 +284,21 @@ if __name__ == '__main__':
     county_numbers = np.arange(1, len(fips_list) + 1)
 
     for county, fips, date in zip(county_numbers, fips_list, start_dates):
-        plot_rt_US(simulation_file, interventions_file, county, fips, date, save_img=True)
+        plot_rt_US(simulation_file, interventions_file, county, fips, date, False, save_img=True)
+
+    ### USA states ###
+    simulation_file = r'results\US_state_summary.csv'
+    interventions_file = r'data\us_data\interventions.csv'
+    geo_file = r'results\us_states_geocode.csv'
+    startdate_file = r'results\us_states_start_dates.csv'
+
+    fips_list, start_dates = get_geo_startdate_data(geo_file, startdate_file)
+
+    # model output indices start at 1
+    county_numbers = np.arange(1, len(fips_list) + 1)
+
+    for county, fips, date in zip(county_numbers, fips_list, start_dates):
+        plot_rt_US(simulation_file, interventions_file, county, fips, date, True, save_img=True)
 
 
 
