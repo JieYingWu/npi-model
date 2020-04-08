@@ -581,14 +581,14 @@ def get_stan_parameters_by_state_us(num_states, data_dir, show):
 
     return final_dict, fips_list
 
-if __name__ == '__main__':
-
-    data_dir = 'data'
-    ## Europe data
-    get_stan_parameters_europe(data_dir, show=True)
-    print("***********************")
-    ## US data
-    get_stan_parameters_by_state_us(5, data_dir, show=True)
-    print("***********************")
-    get_stan_parameters_by_county_us(5, data_dir, show=True)
+# if __name__ == '__main__':
+#
+#     data_dir = 'data'
+#     ## Europe data
+#     get_stan_parameters_europe(data_dir, show=True)
+#     print("***********************")
+#     ## US data
+#     get_stan_parameters_by_state_us(5, data_dir, show=True)
+#     print("***********************")
+#     get_stan_parameters_by_county_us(5, data_dir, show=True)
 
