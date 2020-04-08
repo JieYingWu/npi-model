@@ -33,7 +33,7 @@ elif sys.argv[2] == 'US_county':
 elif sys.argv[2] == 'US_state':
     num_of_states = 20
     stan_data, countries = get_stan_parameters_by_state_us(num_of_states, data_dir, show=False)
-    weighted_fatalities = np.loadtxt(join(data_dir, 'us_data', 'weighted_fatality.csv'), skiprows=1, delimiter=',', dtype=str)
+    weighted_fatalities = np.loadtxt(join(data_dir, 'state_data', 'weighted_fatality.csv'), skiprows=1, delimiter=',', dtype=str)
     ifrs = {}
     for i in range(weighted_fatalities.shape[0]):
         ifrs[str(weighted_fatalities[i,0])] = weighted_fatalities[i,-1]
