@@ -1,13 +1,11 @@
 
-from os.path import join, exists
+from os.path import join
 import sys
 import numpy as np
 from data_parser import get_stan_parameters_europe, get_stan_parameters_by_state_us, get_stan_parameters_by_county_us
-#import pystan
+import pystan
 import pandas as pd
 from statsmodels.distributions.empirical_distribution import ECDF
-import pickle
-import datetime
 #from forecast_plots import plot_forecasts
 
 assert len(sys.argv) < 5
@@ -37,6 +35,8 @@ elif sys.argv[2] == 'US_state':
     for i in range(weighted_fatalities.shape[0]):
         ifrs[str(weighted_fatalities[i,0])] = weighted_fatalities[i,-1]
 
+stan_data['cases'] = stan_data['cases'].astype(np.int)
+stan_data['deaths'] = stan_data['deaths'].astype(np.int)
 # print("**********Preprocessing done**********")
 # np.savetxt('cases.csv', stan_data['cases'].astype(int), delimiter=',', fmt='%i')
 # np.savetxt('deaths.csv', stan_data['deaths'].astype(int), delimiter=',', fmt='%i')
@@ -84,13 +84,6 @@ for c in range(len(countries)):
     all_f[:,c] = s * h
 
 stan_data['f'] = all_f
-# print("**********Modeling done**********")
-
-stan_data = list(M=length(countries),N=NULL,p=p,x1=poly(1:N2,2)[,1],x2=poly(1:N2,2)[,2],
-                y=NULL,covariate1=NULL,covariate2=NULL,covariate3=NULL,covariate4=NULL,covariate5=NULL,covariate6=NULL,covariate7=NULL,deaths=NULL,f=NULL,
-                N0=6,cases=NULL,LENGTHSCALE=7,SI=serial.interval$fit[1:N2],
-                EpidemicStart = NULL) # N0 = 6 to make it consistent with Rayleigh
-stan_data = {'M':len(countries), 'N':N, 'p':interventions.shape[1]-1,...}
 
 # Train the model and generate samples - returns a StanFit4Model
 sm = pystan.StanModel(file='stan-models/base.stan')
