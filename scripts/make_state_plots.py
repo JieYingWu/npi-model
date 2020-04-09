@@ -4,43 +4,18 @@ import plotly.figure_factory as ff
 import matplotlib.pyplot as plt
 from math import isnan
 import plotly.express as px
+import plotly.graph_objects as go
 
 visualizations_dir = './results/plots/states_r'
-beds_key = "ICU Beds"
-cmap = plt.get_cmap('Blues')
 
 
-def is_county(fips):
-    return fips[2:] != '000'
-
-
-def is_state(fips):
-    return fips[2:] == '000'
-
-
-def read_beds(data_dir):
-    filename = join(data_dir, 'counties.csv')
-    df = pd.read_csv(filename, converters={
-        "FIPS": str,
-        # beds_key : lambda x : 0. if x == 'NA' else float(x)
-    })
-    fips_codes = []
-    beds = []
-    for fips, bs in zip(list(df['FIPS']), list(df[beds_key])):
-        if is_county(fips) and bs != 'NA' and bs != '' and not isnan(float(bs)):
-            fips_codes.append(fips)
-            beds.append(int(bs))
-    return fips_codes, beds
-
-
-def plot_states(df):
+def plot_states(df,date):
     fig = go.Figure(data=go.Choropleth(
-      locations=df['code'],  # Spatial coordinates
-      z=df['total exports'].astype(float),  # Data to be color-coded
+      locations=df['Combined_Key'],  # Spatial coordinates
+      z=df['4/7/2020'].astype(float),  # Data to be color-coded
       locationmode='USA-states',  # set of locations match entries in `locations`
-      colorscale='Reds',
-      marker_line_color='white',
-      title="Rt values",
+      colorscale='blues',
+      marker_line_color='white'
     ))
 
     fig.update_layout(
@@ -58,7 +33,9 @@ def main():
     filename = join(visualizations_dir, "states.png")
     #fips, beds = read_beds(data_dir)
     # insert reading from df
-    fig = plot_states(df)
+    df = pd.read_csv('../data/us_data/Dt_data_states.csv', delimiter=';')
+    date = '4/7/2020'
+    fig = plot_states(df, date)
     fig.write_image(filename)
 
 
