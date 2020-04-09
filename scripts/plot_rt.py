@@ -226,6 +226,7 @@ def get_interventions_US(interventions_file, state_level=False):
             ## set the latest date for intervention at any county as the date of intervention for the state
             state_interventions.loc[i * 1000, :] = county_int[int_cols].max(axis=0)
 
+        state_interventions.replace(dt.date.fromordinal(1), np.nan, inplace=True)
         state_interventions.insert(0, 'FIPS', state_interventions.index)
         state_interventions.insert(1, 'STATE', interventions['STATE'][interventions['FIPS'].isin(state_interventions.index)].values)
         state_interventions.insert(2, 'AREA_NAME', interventions['AREA_NAME'][interventions['FIPS'].isin(state_interventions.index)].values)
@@ -259,18 +260,18 @@ def get_geo_startdate_data(geo_file, startdate_file):
 if __name__ == '__main__':
 
     ### EUROPE ###
-    simulation_file = r'results\europe_summary.csv'
-    interventions_file = r'data\europe_data\interventions.csv'
-    geo_file = r'results\europe_geocode.csv'
-    startdate_file = r'results\europe_start_dates.csv'
-
-    country_list, start_dates = get_geo_startdate_data(geo_file, startdate_file)
-
-    # model output indices start at 1
-    country_numbers = np.arange(1, len(country_list) + 1)
-
-    for country_ind, country_name, date in zip(country_numbers, country_list, start_dates):
-        plot_rt_europe(simulation_file, interventions_file, country_ind, country_name, date, save_img=True)
+    # simulation_file = r'results\europe_summary.csv'
+    # interventions_file = r'data\europe_data\interventions.csv'
+    # geo_file = r'results\europe_geocode.csv'
+    # startdate_file = r'results\europe_start_dates.csv'
+    #
+    # country_list, start_dates = get_geo_startdate_data(geo_file, startdate_file)
+    #
+    # # model output indices start at 1
+    # country_numbers = np.arange(1, len(country_list) + 1)
+    #
+    # for country_ind, country_name, date in zip(country_numbers, country_list, start_dates):
+    #     plot_rt_europe(simulation_file, interventions_file, country_ind, country_name, date, save_img=True)
 
     ### USA counties ###
     simulation_file = r'results\US_county_summary.csv'
