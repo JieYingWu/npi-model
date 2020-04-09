@@ -3,10 +3,10 @@ import csv
 import sys
 import numpy as np
 import pandas as pd
-from future.backports import datetime
 import datetime as dt
+
+from future.backports import datetime
 from os.path import join, exists
-from scipy.ndimage.interpolation import shift
 
 pd.set_option('mode.chained_assignment', None)
 
@@ -255,7 +255,7 @@ def filtering(df_cases, df_deaths, interventions, num_counties):
     #print("Inside filtering function:", df_cases.shape, df_deaths.shape)
     return df_cases, df_deaths, interventions, fips_list
 
-def primary_calculations(df_cases, df_deaths, covariates1, df_cases_dates, fips_list):
+def primary_calculations(df_cases, df_deaths, covariates1, df_cases_dates, fips_list, interpolate=True):
     """"
     Returns:
         final_dict: Stan_data used to feed main sampler
@@ -335,6 +335,10 @@ def primary_calculations(df_cases, df_deaths, covariates1, df_cases_dates, fips_
     deaths = np.array(deaths).T
     #print(np.sum(cases<-1))
     #print(np.sum(deaths<-1))
+    
+    if interpolate:
+        deaths = advanced_impute_data(deaths)
+        cases = advanced_impute_data(cases)
 
     final_dict = {}
     final_dict['N0'] = 6
@@ -354,7 +358,7 @@ def primary_calculations(df_cases, df_deaths, covariates1, df_cases_dates, fips_
 
     return dict_of_start_dates, final_dict
 
-def get_stan_parameters_by_county_us(num_counties, data_dir, show):
+def get_stan_parameters_by_county_us(num_counties, data_dir, show, interpolate=True):
 
     df_cases, df_deaths, interventions = preprocessing_us_data()
 
@@ -416,7 +420,7 @@ def get_stan_parameters_by_county_us(num_counties, data_dir, show):
 
     return final_dict, fips_list
 
-def get_stan_parameters_by_state_us(num_states, data_dir, show):
+def get_stan_parameters_by_state_us(num_states, data_dir, show, interpolate=True):
 
     df_cases, df_deaths, interventions = preprocessing_us_data()
 
@@ -494,6 +498,7 @@ def get_stan_parameters_by_state_us(num_states, data_dir, show):
         for i in range(len(fips_list)):
             print("State with FIPS {fips} has start date: ".format(fips=fips_list[i]), dict_of_start_dates[i])
 
+
     filename1 = 'us_states_start_dates.csv'
     filename2 = 'us_states_geocode.csv'
     df_sd = pd.DataFrame(dict_of_start_dates, index=[0])
@@ -502,15 +507,85 @@ def get_stan_parameters_by_state_us(num_states, data_dir, show):
     df_geo.to_csv('results/' + filename2, sep=',')
 
     return final_dict, fips_list
+    
 
-# if __name__ == '__main__':
-#
-#     data_dir = 'data'
+def simple_impute_data(arr):
+    """
+    Naive data imputation that does NOT yield a monotonically increasing timeseries
+
+    """
+
+    arr = arr.T 
+    for county in arr:
+        for i, cell in enumerate(county[1:], 1):
+            if cell != -1 and county[i+1] != -1 and cell < county[i-1]:
+                county[i] = interpolate(county[i-1], county[i+1])
+    arr = arr.T
+    return arr
+
+def advanced_impute_data(arr):
+    """
+    Make array monotonically increasing by linear interpolation
+    Returns:
+    - Imputed Array
+
+    """
+
+    arr = arr.T 
+    for county in arr:
+        change_list = []
+        #get first date of cases/deaths and skip it
+        first = np.nonzero(county)[0]
+        for i, cell in enumerate(county[1:], 1):
+            if i < first[0]:
+                continue
+            #Special Case where series is decreasing towards the end
+            if cell == -1 and len(change_list) != 1:
+                first_idx = change_list[0]
+                diff = county[first_idx] -county[first_idx-1]
+                new_value = county[first_idx] + diff
+
+                for j, idx in enumerate(change_list[1:], 1):
+                    new_value += diff
+                    county[idx] = new_value
+                break
+
+            if cell != -1 and county[i+1] != -1 and change_list == []:
+                change_list.append(i)
+
+            if i not in change_list:
+                    change_list.append(i)
+            if cell > county[change_list[0]]:
+                if len(change_list) >= 3:
+                    #cut first and last value of change list  
+                    first_, *change_list, last_ = change_list
+                    county[change_list[0]:change_list[-1]+1] = interpolate(change_list, 
+                                                                            county[first_],
+                                                                            county[last_])
+                    change_list = [last_]
+    arr = arr.T
+    return arr
+
+def interpolate(change_list, lower, upper):
+    """
+    Interpolate values with length ofchange_list between two given values lower and upper
+
+    """
+    
+    x = np.arange(1, len(change_list)+1)
+    xp = np.array([0, len(change_list)+1])
+    fp = np.array([lower, upper])
+    interpolated_values = np.interp(x, xp, fp)
+    return np.ceil(interpolated_values)
+
+if __name__ == '__main__':
+    path = 'data/us_data/infections_timeseries.csv'
+    data_dir = 'data'
 #     ## Europe data
 #     get_stan_parameters_europe(data_dir, show=True)
 #     print("***********************")
 #     ## US data
-#     get_stan_parameters_by_state_us(5, data_dir, show=True)
+    get_stan_parameters_by_state_us(5, data_dir, show=False, interpolate=True)
 #     print("***********************")
-#     get_stan_parameters_by_county_us(5, data_dir, show=True)
+    get_stan_parameters_by_county_us(5, data_dir, show=True, interpolate=True)
 
