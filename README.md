@@ -5,8 +5,8 @@ We provide...
 * Code to visualize the model fit with confidence intervales
 * Plotting tools of how US interventions have affected modeled Rt
 
-![](https://github.com/JieYingWu/npi-model/blob/master/results/plots/usa/deaths36000.jpg)
-![](https://github.com/JieYingWu/npi-model/blob/master/results/plots/usa_interventions/Rt_state_36000.png)
+![](https://github.com/JieYingWu/npi-model/blob/master/results/plots/usa/deaths6000.jpg)
+![](https://github.com/JieYingWu/npi-model/blob/master/results/plots/usa_interventions/Rt_state_6000.png)
 
 
 Words of warning: We have noticed that the time series of the reported cases and deaths are of inconsistent quality; for example, our cumulative time series of cases and death counts are not monotonically increasing (so, checks have been implemented for the same). For days where the case or death count is negative, we interpolate neighbouring days for that value.
