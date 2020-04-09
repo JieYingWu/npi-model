@@ -10,7 +10,7 @@ import plotly as pl
 def plot_states(df, date):
     fig = go.Figure(data=go.Choropleth(
         locations=df['Combined_Key'],  # Spatial coordinates
-        z=df['4/7/2020'].astype(float) / 1e16,  # Data to be color-coded
+        z=df[date].astype(float),  # Data to be color-coded
         locationmode='USA-states',  # set of locations match entries in `locations`
         colorscale='blues',
         marker_line_color='white'
@@ -25,15 +25,14 @@ def plot_states(df, date):
 
 
 def main():
-    visualizations_dir = './results/plots/states_r/'
-    df = pd.read_csv('../data/us_data/Dt_data_states.csv', delimiter=';')
+    visualizations_dir = '../results/plots/states_r/'
+    df = pd.read_csv('../data/us_data/Dt_data_states.csv', delimiter=',')
     col_names = list(df.columns.values)[2:]
     date = '4/7/2020'
     for date in col_names:
         fig = plot_states(df, date)
-        filename = visualizations_dir + date.replace("/", "")
+        filename = visualizations_dir + date.replace("/", "") + '.png'
         fig.write_image(filename)
-        #pl.io.to_image(fig, format=None,scale=None, width=None, height=None)
 
 
 if __name__ == '__main__':
