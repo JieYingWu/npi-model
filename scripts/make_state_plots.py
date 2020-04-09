@@ -3,6 +3,7 @@ from os.path import join, exists
 import plotly.figure_factory as ff
 import matplotlib.pyplot as plt
 from math import isnan
+import plotly.express as px
 
 visualizations_dir = './results/plots/states_r'
 beds_key = "ICU Beds"
@@ -32,28 +33,32 @@ def read_beds(data_dir):
     return fips_codes, beds
 
 
-def plot_counties(fips, values):
-    binning_endpoints = [1, 5, 10, 15, 20, 25, 30, 50, 75, 100, 200, 300, 400, 500]
-    num_points = len(binning_endpoints) + 2
-    colors = [cmap((i + 1) / num_points) for i in range(num_points)]
-    colorscale = [f'rgb({t[0]}, {t[1]}, {t[2]})' for t in colors]
-    fig = ff.create_choropleth(
-        fips=fips, values=values,
-        binning_endpoints=binning_endpoints,
-        county_outline={'color': 'rgb(255,255,255)', 'width': 0.05},
-        colorscale=colorscale,
-        round_legend_values=True,
-        title='County-level Number of Intensive Care Unit Beds'
+def plot_states(df):
+    fig = go.Figure(data=go.Choropleth(
+      locations=df['code'],  # Spatial coordinates
+      z=df['total exports'].astype(float),  # Data to be color-coded
+      locationmode='USA-states',  # set of locations match entries in `locations`
+      colorscale='Reds',
+      marker_line_color='white',
+      title="Rt values",
+    ))
+
+    fig.update_layout(
+      title_text='Rt',
+      geo_scope='usa',  # limite map scope to USA
     )
+
     fig.layout.template = None
+    fig.show()
     return fig
 
 
 def main():
-    data_dir = 'data'
+    data_dir = './data'
     filename = join(visualizations_dir, "states.png")
-    fips, beds = read_beds(data_dir)
-    fig = plot_counties(fips, beds)
+    #fips, beds = read_beds(data_dir)
+    # insert reading from df
+    fig = plot_states(df)
     fig.write_image(filename)
 
 
