@@ -252,12 +252,12 @@ def make_all_eu_plots():
 
 
 def main():
-    if plot_settings == 'usa':
-        make_all_us_county_plots()
-        make_all_us_states_plots()
-    if plot_settings == 'eu':
+    if sys.argv[1] == 'europe':
         make_all_eu_plots()
-
+    if sys.argv[1] == 'US_county':
+        make_all_us_county_plots()
+    if sys.argv[1] == 'US_state':
+        make_all_us_states_plots()
 
 if __name__ == '__main__':
     main()

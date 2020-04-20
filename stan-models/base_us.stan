@@ -15,6 +15,7 @@ data {
   matrix[N2, M] covariate7;
   matrix[N2, M] covariate8;
   matrix[N2, M] covariate9;
+  matrix[N2, M] covariate10;
   int EpidemicStart[M];
   real SI[N2]; // fixed pre-calculated SI using emprical data from Neil
 }
@@ -24,8 +25,8 @@ transformed data {
 }
 
 parameters {
-  real<lower=0> mu[M]; // intercept for Rt
-  real<lower=0> alpha[9]; // the hier term
+  real<lower=0> mu; // intercept for Rt
+  real<lower=0> alpha[10]; // the hier term
   real<lower=0> kappa;
   real<lower=0> y[M];
   real<lower=0> phi;
@@ -40,9 +41,11 @@ transformed parameters {
     matrix[N2, M] Rt = rep_matrix(0,N2,M);
     for (m in 1:M){
       prediction[1:N0,m] = rep_vector(y[m],N0); // learn the number of cases in the first N0 days
-        Rt[,m] = mu[m] * exp(covariate1[,m] * (-alpha[1]) + covariate2[,m] * (-alpha[2]) +
-        covariate3[,m] * (-alpha[3]) + covariate4[,m] * (-alpha[4]) + covariate5[,m] * (-alpha[5]) + 
-        covariate6[,m] * (-alpha[6]) + covariate7[,m] * (-alpha[7]) + covariate8[,m] * (-alpha[8])); 
+        Rt[,m] = mu * exp(covariate2[,m] * (-alpha[2]) +
+                             covariate3[,m] * (-alpha[3]) + covariate4[,m] * (-alpha[4]) +
+                             covariate5[,m] * (-alpha[5]) + covariate6[,m] * (-alpha[6]) +
+                             covariate7[,m] * (-alpha[7]) + covariate8[,m] * (-alpha[8]) +
+                             covariate9[,m] * (alpha[9]) + covariate10[,m] * (alpha[10]));
      
  for (i in (N0+1):N2) {
         convolution=0;
@@ -69,8 +72,23 @@ model {
   phi ~ normal(0,5);
 //  kappa ~ normal(0,0.5);
   kappa ~ normal(1.5,3);
-  mu ~ normal(3.28, kappa); // citation needed 
-  alpha ~ gamma(.5,1);
+  mu ~ normal(1.5, kappa); // citation needed
+
+
+// Huber regression without rural-urban code
+//[-0.02422716 -0.00017786  0.01367269 -0.08787214 -0.01466833 -0.01466833
+// -0.03085076  0.00061918 -0.00246635 -0.14877603]
+
+  alpha[1] ~ gamma(0.5,1);
+  alpha[2] ~ gamma(0.5,1);
+  alpha[3] ~ gamma(0.5,1);
+  alpha[4] ~ gamma(0.5,1);
+  alpha[5] ~ gamma(0.5,1);
+  alpha[6] ~ gamma(0.5,1);
+  alpha[7] ~ gamma(0.5,1);
+  alpha[8] ~ gamma(0.5,1);
+  alpha[9] ~ gamma(0.005,0.01);
+  alpha[10] ~ gamma(0.005,0.01);
   ifr_noise ~ normal(1,0.1);
   for(m in 1:M){
     for(i in EpidemicStart[m]:N[m]){
@@ -80,8 +98,6 @@ model {
 }
 
 generated quantities {
-    matrix[N2, M] lp0 = rep_matrix(1000,N2,M); // log-probability for LOO for the counterfactual model
-    matrix[N2, M] lp1 = rep_matrix(1000,N2,M); // log-probability for LOO for the main model
     real convolution0;
     matrix[N2, M] prediction0 = rep_matrix(0,N2,M);
     matrix[N2, M] E_deaths0  = rep_matrix(0,N2,M);
@@ -92,7 +108,7 @@ generated quantities {
         for(j in 1:(i-1)) {
           convolution0 += prediction0[j, m]*SI[i-j]; // Correctd 22nd March
         }
-        prediction0[i, m] = mu[m] * convolution0;
+        prediction0[i, m] = mu * convolution0;
       }
       
       E_deaths0[1, m]= 1e-9;
