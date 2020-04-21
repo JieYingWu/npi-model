@@ -74,12 +74,20 @@ for i in range(M):
     cur_features[:, 0] = cur_features[:, 0] / 1000
     cur_x = np.concatenate((cur_covariates[:, 1:], cur_foot_traffic, cur_features[:, 0:], np.ones((N2, 1))), axis=1)
     if X is None:
+<<<<<<< HEAD
         X = cur_x
     else:
+=======
+        X = np.concatenate((cur_covariates[:,1:], cur_foot_traffic, np.expand_dims(cur_features[:,0], axis=1)), axis=1)
+        print(X)
+    else:
+        cur_x = np.concatenate((cur_covariates[:,1:], cur_foot_traffic, np.expand_dims(cur_features[:,0], axis=1)), axis=1)
+>>>>>>> e1109bcae106160489f7e9801ea76403a38ec456
         X = np.concatenate((X, cur_x), axis=0)
 
 # X columns are covariates(8), foot traffic(1), and features(2)
-print(rt.shape, X.shape)
+#print(rt.shape, X.shape)
+print(X[0:5,-1])
 
 R_knot = 3.28
 
