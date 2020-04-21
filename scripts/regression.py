@@ -4,14 +4,15 @@ import pandas as pd
 pd.set_option('mode.chained_assignment', None)
 import matplotlib.pyplot as plt  
 from sklearn.model_selection import train_test_split 
-from sklearn.linear_model import LinearRegression, HuberRegressor
+from sklearn.linear_model import LinearRegression, HuberRegressor, Ridge
 from sklearn import metrics
 from os.path import join
 from data_parser import get_data_state, get_data_county
 import datetime as dt
 from dateutil.parser import parse
 
-data_dir = sys.argv[1]
+base_dir = sys.argv[1]
+data_dir = join(base_dir, 'data')
 region = sys.argv[2]
 M = int(sys.argv[3])
 
@@ -40,7 +41,7 @@ elif sys.argv[2] == 'US_state':
 N2 = stan_data['N2'] 
 
 # Estimated Rt value to predict
-rt_path = join('results', region+'_summary_IC.csv')
+rt_path = join(base_dir, 'results', region+'_summary_IC.csv')
 rt = pd.read_csv(rt_path, index_col=0)
 rt = rt.filter(regex='^mean', axis=1)
 rt = rt.filter(regex='Rt\[', axis=0)
@@ -70,25 +71,42 @@ for i in range(M):
         cur_foot_traffic = np.pad(cur_foot_traffic, (0, end_pad), 'constant', constant_values=(0, cur_foot_traffic[-1]))
     cur_foot_traffic = np.expand_dims(cur_foot_traffic, axis=1)
 
+    cur_features[:, 0] = cur_features[:, 0] / 1000
+    cur_x = np.concatenate((cur_covariates[:, 1:], cur_foot_traffic, cur_features[:, 0:], np.ones((N2, 1))), axis=1)
     if X is None:
-        X = np.concatenate((cur_covariates[:,1:], cur_foot_traffic, np.expand_dims(cur_features[:,1], axis=1)), axis=1)
+        X = cur_x
     else:
-        cur_x = np.concatenate((cur_covariates[:,1:], cur_foot_traffic, np.expand_dims(cur_features[:,1], axis=1)), axis=1)
         X = np.concatenate((X, cur_x), axis=0)
 
 # X columns are covariates(8), foot traffic(1), and features(2)
 print(rt.shape, X.shape)
 
+R_knot = 3.28
+
 ## Train the linear regression to learn alphas
-y = np.log(rt)-np.log(3.28)
+y = np.log(rt)-np.log(R_knot)
+
 #X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
 #print(X_train.shape, y_train.shape)
-regressor = HuberRegressor(epsilon=3)
-regressor.fit(X, y)
+regressor = HuberRegressor(epsilon=3, max_iter=400)
+regressor.fit(X, np.ravel(y))
 
 print(regressor.intercept_)
 print(regressor.coef_)
 
-y_hat = regressor.predict(X[0:100, :])
-print(np.exp(y[0:100])*3.28)
-print(np.exp(y_hat)*3.28)
+time = np.arange(N2)
+for j in range(1, M, 4):
+    i = j * N2
+    y_hat = regressor.predict(X[i+0:i+N2, :])
+    R_hat = R_knot * np.exp(y_hat)
+    R_GT = rt[i+0:i+N2].values
+
+    col = np.random.rand(3,)
+
+    plt.plot(time, R_GT, color=col, linestyle='dashed')
+    plt.plot(time, R_hat, color=col, linestyle='solid')
+
+
+plt.xlabel('Time (days)')
+plt.ylabel('R')
+plt.show()
