@@ -2,7 +2,8 @@ import sys
 import numpy as np
 import pandas as pd
 pd.set_option('mode.chained_assignment', None)
-import matplotlib.pyplot as plt  
+import matplotlib.pyplot as plt
+from matplotlib.transforms import Bbox
 from sklearn.model_selection import train_test_split 
 from sklearn.linear_model import LinearRegression, HuberRegressor, Ridge
 from sklearn import metrics
@@ -72,22 +73,14 @@ for i in range(M):
     cur_foot_traffic = np.expand_dims(cur_foot_traffic, axis=1)
 
     cur_features[:, 0] = cur_features[:, 0] / 1000
-    cur_x = np.concatenate((cur_covariates[:, 1:], cur_foot_traffic, cur_features[:, 0:], np.ones((N2, 1))), axis=1)
+    cur_x = np.concatenate((cur_covariates[:, 1:], cur_foot_traffic, cur_features[:, 0:]), axis=1)
     if X is None:
-<<<<<<< HEAD
         X = cur_x
     else:
-=======
-        X = np.concatenate((cur_covariates[:,1:], cur_foot_traffic, np.expand_dims(cur_features[:,0], axis=1)), axis=1)
-        print(X)
-    else:
-        cur_x = np.concatenate((cur_covariates[:,1:], cur_foot_traffic, np.expand_dims(cur_features[:,0], axis=1)), axis=1)
->>>>>>> e1109bcae106160489f7e9801ea76403a38ec456
         X = np.concatenate((X, cur_x), axis=0)
 
 # X columns are covariates(8), foot traffic(1), and features(2)
-#print(rt.shape, X.shape)
-print(X[0:5,-1])
+print(rt.shape, X.shape)
 
 R_knot = 3.28
 
@@ -101,6 +94,15 @@ regressor.fit(X, np.ravel(y))
 
 print(regressor.intercept_)
 print(regressor.coef_)
+
+R_d = rt[0::N2].values
+dens = X[0::N2, -2]
+
+plt.plot(dens, R_d, color='blue', linestyle='None', marker='x')
+plt.xlim(0, 15)
+plt.xlabel('Density')
+plt.ylabel('Delta R')
+plt.show()
 
 time = np.arange(N2)
 for j in range(1, M, 4):
