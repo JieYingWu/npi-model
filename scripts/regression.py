@@ -71,13 +71,15 @@ for i in range(M):
     cur_foot_traffic = np.expand_dims(cur_foot_traffic, axis=1)
 
     if X is None:
-        X = np.concatenate((cur_covariates[:,1:], cur_foot_traffic, np.expand_dims(cur_features[:,1], axis=1)), axis=1)
+        X = np.concatenate((cur_covariates[:,1:], cur_foot_traffic, np.expand_dims(cur_features[:,0], axis=1)), axis=1)
+        print(X)
     else:
-        cur_x = np.concatenate((cur_covariates[:,1:], cur_foot_traffic, np.expand_dims(cur_features[:,1], axis=1)), axis=1)
+        cur_x = np.concatenate((cur_covariates[:,1:], cur_foot_traffic, np.expand_dims(cur_features[:,0], axis=1)), axis=1)
         X = np.concatenate((X, cur_x), axis=0)
 
 # X columns are covariates(8), foot traffic(1), and features(2)
-print(rt.shape, X.shape)
+#print(rt.shape, X.shape)
+print(X[0:5,-1])
 
 ## Train the linear regression to learn alphas
 y = np.log(rt)-np.log(3.28)
