@@ -80,15 +80,15 @@ for i in range(M):
 print(rt.shape, X.shape)
 
 ## Train the linear regression to learn alphas
-y = np.log(rt)-np.log(1.5)
+y = np.log(rt)-np.log(3.28)
 #X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
 #print(X_train.shape, y_train.shape)
-regressor = HuberRegressor(epsilon=10)
+regressor = HuberRegressor(epsilon=3)
 regressor.fit(X, y)
 
 print(regressor.intercept_)
 print(regressor.coef_)
 
 y_hat = regressor.predict(X[0:100, :])
-print(np.exp(y[0:100])*1.5)
-print(np.exp(y_hat)*1.5)
+print(np.exp(y[0:100])*3.28)
+print(np.exp(y_hat)*3.28)
