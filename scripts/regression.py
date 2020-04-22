@@ -52,6 +52,7 @@ X = None
 for i in range(M):
     cur_start = parse(start_date[i])
     cur_geocode = geocode[i]
+    print(cur_geocode)
     
     cur_covariates = np.stack((stan_data['covariate2'][:,i],
                                      stan_data['covariate3'][:,i], stan_data['covariate4'][:,i],
@@ -80,6 +81,9 @@ for i in range(M):
         X = np.concatenate((X, cur_x), axis=0)
 
 # X columns are covariates(8), foot traffic(1), and features(2)
+skip = 10
+rt = rt.values[skip*N2:M*N2,:]
+X = X[skip*N2:M*N2,:]
 print(rt.shape, X.shape)
 
 R_knot = 3.28
@@ -89,13 +93,13 @@ y = np.log(rt)-np.log(R_knot)
 
 #X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
 #print(X_train.shape, y_train.shape)
-regressor = HuberRegressor(epsilon=3, max_iter=400)
+regressor = HuberRegressor(epsilon=3, max_iter=1000)
 regressor.fit(X, np.ravel(y))
 
 print(regressor.intercept_)
 print(regressor.coef_)
 
-R_d = rt[0::N2].values
+R_d = rt[0::N2]
 dens = X[0::N2, -2]
 
 plt.plot(dens, R_d, color='blue', linestyle='None', marker='x')
@@ -105,11 +109,11 @@ plt.ylabel('Delta R')
 plt.show()
 
 time = np.arange(N2)
-for j in range(1, M, 4):
+for j in range(0, M-skip, 4):
     i = j * N2
     y_hat = regressor.predict(X[i+0:i+N2, :])
     R_hat = R_knot * np.exp(y_hat)
-    R_GT = rt[i+0:i+N2].values
+    R_GT = rt[i+0:i+N2]
 
     col = np.random.rand(3,)
 
