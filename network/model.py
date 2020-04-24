@@ -4,7 +4,7 @@ import torch.nn as nn
 class NpiLstm(nn.Module):
     def __init__(self, input_dim, hidden_dim, batch_size, output_dim=1,
                     num_layers=2):
-        super(LSTM, self).__init__()
+        super().__init__()
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
         self.batch_size = batch_size
