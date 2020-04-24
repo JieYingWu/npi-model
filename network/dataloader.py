@@ -35,13 +35,16 @@ class LSTMDataset(Dataset):
 
     """
 
-    def __init__(self, data_dir='../data/us_data', counties='all', split='train'):
+    def __init__(self, data_dir='../data/us_data', counties='all', split='train', retail_only=True, verbose=True):
         self.data_dir = data_dir
         self.counties = counties
         # split with factor 0.9
         assert split in ['train', 'val'], ValueError(f'Split can be train or val')
         self.split = split
 
+
+        self.retail_only = retail_only
+        self.verbose = verbose
 
         # make the fips list
         self.fips_lookup_path = join(self.data_dir, 'FIPS_lookup.csv')
@@ -60,7 +63,7 @@ class LSTMDataset(Dataset):
         self.google_traffic_paths = glob(join(self.data_dir, 'Google_traffic', '*baseline.csv'))
 
         # Get intersection of fips codes throughout all datasets
-        self.valid_fips_list = self.get_fips_list()
+        self.valid_fips_list = self.get_fips_list(verbose=self.verbose)
 
         # Parsing the data
         self.min_date, self.max_date = self.available_dates()
@@ -70,10 +73,17 @@ class LSTMDataset(Dataset):
         self.densities = self.parse_densities(self.counties_path)
         
         self.google_reports_list = []
-        for i, path in enumerate(self.google_traffic_paths):
-            self.google_reports_list.append(self.parse_google_report(path))
         
-        self.google_reports_list = list(map(list, zip(*self.google_reports_list)))
+        if retail_only:
+            self.google_report_retail = self.parse_google_report(self.google_traffic_paths[3])
+            self.google_report_retail = np.asarray(self.google_report_retail, dtype=np.int)
+        else:
+            for i, path in enumerate(self.google_traffic_paths):
+                self.google_reports_list.append(self.parse_google_report(path))
+        
+            self.google_reports_list = list(map(list, zip(*self.google_reports_list)))
+        print(f'Dataset loaded.\n {len(self)} Days of data for split: {self.split} \n {len(self.valid_fips_list)} counties selected.')
+        
         
         
 
@@ -185,7 +195,8 @@ class LSTMDataset(Dataset):
         df = df[['FIPS',density_pop, density_housing]]
         df = df[df['FIPS'].isin(self.valid_fips_list)]
 
-        return dict(zip(['density_population', 'density_housing'], [df[density_pop].to_numpy(), df[density_housing].to_numpy()]))
+        return dict(zip(['density_population', 'density_housing'], [torch.tensor(df[density_pop].to_numpy()),
+                                                     torch.tensor(df[density_housing].to_numpy())]))
     
     def get_interventions(self, idx):
         """ Returns the interventions for one time instance"""
@@ -203,7 +214,7 @@ class LSTMDataset(Dataset):
 
         df_deaths = pd.read_csv(self.deaths_path, encoding='latin1', dtype={'FIPS':str})
         df_infections = pd.read_csv(self.infections_path, encoding='latin1', dtype={'FIPS':str})
-        df_google = pd.read_csv(self.google_traffic_paths[0], encoding='latin1', dtype={'FIPS':str})
+        df_google = pd.read_csv(self.google_traffic_paths[3], encoding='latin1', dtype={'FIPS':str})
 
         death_fips = df_deaths['FIPS'].to_list()
         infections_fips = df_infections['FIPS'].to_list()
@@ -215,7 +226,9 @@ class LSTMDataset(Dataset):
         
         # google reports contain many nans
         nan_google = df_google[df_google.isna().any(axis=1)]
-        print(nan_google)
+        nan_fips = nan_google['FIPS'].to_list()
+        nan_fips = [f.zfill(5) for f in nan_fips]
+        
 
 
         # The google reports contain fips duplicates
@@ -243,14 +256,18 @@ class LSTMDataset(Dataset):
 
             if fips_code not in google_fips:
                 if verbose:
-                    print(f'Warning: Requested FIPS code {fips_code} not in {self.google_traffic_paths[0]}. Skipping FIPS code')
+                    print(f'Warning: Requested FIPS code {fips_code} not in {self.google_traffic_paths[3]}. Skipping FIPS code')
+                MISSING_CODE_COUNTER += 1
+            
+            if fips_code in nan_fips:
+                if verbose:
+                    print(f'Warning: Requested FIPS code {fips_code} has NA values in {self.google_traffic_paths[3]}. Skipping FIPS code')
                 MISSING_CODE_COUNTER += 1
 
             if MISSING_CODE_COUNTER > 0:
                 valid_fips_list.remove(fips_code)
 
         print(f'From {len(self.fips_list)} requested counties {len(valid_fips_list)} are valid.')
-        print(nan_google)
 
         return valid_fips_list
 
@@ -321,16 +338,19 @@ class LSTMDataset(Dataset):
         return_dict['deaths'] = torch.tensor(self.deaths[idx])
         return_dict['interventions'] = torch.tensor(self.get_interventions(idx))
         return_dict['densities'] = self.densities
+
+        if self.retail_only:
+            return_dict['mobility'] = torch.tensor(self.google_report_retail[idx])
         # return_dict['mobility'] = torch.tensor(self.google_reports_list[idx])
         return return_dict
 
 
 if __name__ == '__main__':
-    dataset = LSTMDataset(data_dir='data/us_data', split='val')
+    dataset = LSTMDataset(data_dir='data/us_data', split='train')
     # print(dataset.infections.shape)
     # print(dataset.deaths.shape)
     # print(len(dataset.google_reports_list))
     print(type(dataset.infections[0,1]))
     print(dataset.infections[0])
-    print(dataset.interventions)
     print(dataset[0])
+    # print(dataset[0])

@@ -22,8 +22,8 @@ device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 # Load some data
 # Create train and val set
 
-train_set = LSTMDataset(data_dir='data/us_data', split='train')
-val_set = LSTMDataset(data_dir='data/us_data', split='val')
+train_set = LSTMDataset(data_dir='data/us_data', split='train', retail_only=True, verbose=True)
+val_set = LSTMDataset(data_dir='data/us_data', split='val', retail_only=True, verbose=True)
 
 train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch,
                                                     shuffle=False, num_workers=0)
