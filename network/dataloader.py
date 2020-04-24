@@ -35,9 +35,13 @@ class LSTMDataset(Dataset):
 
     """
 
-    def __init__(self, data_dir='../data/us_data', counties='all'):
+    def __init__(self, data_dir='../data/us_data', counties='all', split='train'):
         self.data_dir = data_dir
         self.counties = counties
+        # split with factor 0.9
+        assert split in ['train', 'val'], ValueError(f'Split can be train or val')
+        self.split = split
+
 
         # make the fips list
         self.fips_lookup_path = join(self.data_dir, 'FIPS_lookup.csv')
@@ -70,6 +74,9 @@ class LSTMDataset(Dataset):
             self.google_reports_list.append(self.parse_google_report(path))
         
         self.google_reports_list = list(map(list, zip(*self.google_reports_list)))
+        
+        
+
 
 
     def parse_fips_lookup(self, path):
@@ -99,7 +106,7 @@ class LSTMDataset(Dataset):
             for row in csv_reader:
                 if row[0] in self.valid_fips_list:
                     infections_list.append(row[idx_min:idx_max+1])
-        return np.asarray(infections_list).T
+        return np.asarray(infections_list).T.astype(np.int)
 
     def parse_deaths(self, path):
         with open(path, 'r') as csv_file:
@@ -117,7 +124,7 @@ class LSTMDataset(Dataset):
             for row in csv_reader:
                 if row[0].zfill(5) in self.valid_fips_list:
                     deaths_list.append(row[idx_min:idx_max+1])
-        return np.asarray(deaths_list).T
+        return np.asarray(deaths_list).T.astype(np.int)
 
 
     def parse_google_report(self, path):
@@ -168,7 +175,7 @@ class LSTMDataset(Dataset):
                             row[i] = 0
                     interventions_list.append(row[4:])
                     valid_fips_list_copy.remove(row[0]) 
-        return interventions_list
+        return np.asanyarray(interventions_list).astype(np.int)
 
     def parse_densities(self, path):
         df = pd.read_csv(self.counties_path, dtype={'FIPS':str})
@@ -178,7 +185,7 @@ class LSTMDataset(Dataset):
         df = df[['FIPS',density_pop, density_housing]]
         df = df[df['FIPS'].isin(self.valid_fips_list)]
 
-        return dict(zip(['density_population', 'density_housing'], [df[density_pop].to_list(), df[density_housing].to_list()]))
+        return dict(zip(['density_population', 'density_housing'], [df[density_pop].to_numpy(), df[density_housing].to_numpy()]))
     
     def get_interventions(self, idx):
         """ Returns the interventions for one time instance"""
@@ -205,6 +212,10 @@ class LSTMDataset(Dataset):
         death_fips = [f.zfill(5) for f in death_fips]
         infections_fips = [f.zfill(5) for f in infections_fips]
         google_fips = [f.zfill(5) for f in google_fips]
+        
+        # google reports contain many nans
+        nan_google = df_google[df_google.isna().any(axis=1)]
+        print(nan_google)
 
 
         # The google reports contain fips duplicates
@@ -239,11 +250,10 @@ class LSTMDataset(Dataset):
                 valid_fips_list.remove(fips_code)
 
         print(f'From {len(self.fips_list)} requested counties {len(valid_fips_list)} are valid.')
+        print(nan_google)
+
         return valid_fips_list
 
-
-
-                
 
     def available_dates(self):
         """ Gets the intersection of available dates across all timeseries files"""
@@ -288,26 +298,39 @@ class LSTMDataset(Dataset):
         max_date = min(max_list)
         min_date = max(min_list)
         self.date_range = np.arange(min_date, max_date + 1)
+        # split into train and val:
+        length = len(self.date_range)
+        train_size = int(0.9*length)
+        if self.split == 'train':
+            self.date_range = self.date_range[:train_size+1]
+            max_date = self.date_range[train_size]
+        if self.split == 'val':
+            self.date_range = self.date_range[train_size+1:]
+            min_date = self.date_range[0]
         return min_date, max_date
 
     
     def __len__(self):
-        return self.max_date - self.min_date + 1
+        length_total = self.max_date - self.min_date + 1
+        return length_total
 
 
     def __getitem__(self, idx):
         return_dict = {}
-        return_dict['infections'] = self.infections[idx]
-        return_dict['deaths'] = self.deaths[idx]
-        return_dict['interventions'] = self.get_interventions(idx)
+        return_dict['infections'] = torch.tensor(self.infections[idx])
+        return_dict['deaths'] = torch.tensor(self.deaths[idx])
+        return_dict['interventions'] = torch.tensor(self.get_interventions(idx))
         return_dict['densities'] = self.densities
-        return_dict['mobility'] = self.google_reports_list[idx]
+        # return_dict['mobility'] = torch.tensor(self.google_reports_list[idx])
         return return_dict
 
 
 if __name__ == '__main__':
-    dataset = LSTMDataset(data_dir='data/us_data')
+    dataset = LSTMDataset(data_dir='data/us_data', split='val')
     # print(dataset.infections.shape)
     # print(dataset.deaths.shape)
     # print(len(dataset.google_reports_list))
-    # print(dataset[0])
+    print(type(dataset.infections[0,1]))
+    print(dataset.infections[0])
+    print(dataset.interventions)
+    print(dataset[0])

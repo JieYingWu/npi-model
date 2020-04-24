@@ -1,23 +1,32 @@
+""" Updates the Google mobility reports. Expected to be run as: python scripts/google_reports.py"""
 import os
 import csv
 import wget
 import pandas as pd
 import numpy as np 
+from datetime import date
 
 from os.path import join, exists
 
+today = date.today()
+today = today.strftime('%m_%d_%Y')
 
-def download_report(save_path='data/us_data/'):
+def download_report(save_path='raw_data/national/GoogleReports'):
     print('Downloading latest mobility report..')
-
+     
     url = 'https://www.gstatic.com/covid19/mobility/Global_Mobility_Report.csv'
-    wget.download(url, join(save_path, 'Global_Mobility_Report.csv'))
-    print('Download successful.')
+    save_name = 'Global_Mobility_Report_' + today + '.csv' 
 
-def parse_report(save_path='test/'):
-    if not exists(save_path):
-        os.makedirs(save_path)
-    path = 'data/us_data/Global_Mobility_Report.csv'
+    if not exists(join(save_path, save_name)):
+        wget.download(url, join(save_path, save_name))
+        print('Download successful.')
+        return join(save_path, save_name)
+    print('Report for this day already downloaded')
+    return join(save_path, save_name)
+
+
+def parse_report(data_path='data/us_data/',  save_path='data/us_data/Google_traffic/'):
+    path = download_report(data_path)
     df = pd.read_csv(path)
     df = df[df['country_region_code']=='US']
     dates = list(df['date'].unique())
@@ -74,7 +83,7 @@ def parse_report(save_path='test/'):
                 for j, l in enumerate(list_of_categories, 5):
                     l[index].append(row[j])
 
-    new_paths = [join(save_path,f+'.csv') for f in categories]
+    new_paths = [join(save_path, f + '.csv') for f in categories]
     print(new_paths)
 
     for j, new_path in enumerate(new_paths):
@@ -88,4 +97,4 @@ def parse_report(save_path='test/'):
 
 
 if __name__ == '__main__':
-    parse_report(save_path='data/us_data/Google_traffic')
+    parse_report()
