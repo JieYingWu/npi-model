@@ -93,7 +93,7 @@ class LSTMDataset(Dataset):
         """ Creates hash tables for FIPS and the combined key: 'COUNTY_STATE' from FIPS_lookup.csv """
         self.fips_to_combined_key = {}
         self.combined_key_to_fips = {}
-        with open(path, 'r') as fips_file:
+        with open(path, 'r', encoding='latin1') as fips_file:
             reader = csv.reader(fips_file, delimiter=',')
             next(reader)
             for row in reader:
@@ -119,7 +119,7 @@ class LSTMDataset(Dataset):
         return np.asarray(infections_list).T.astype(np.int)
 
     def parse_deaths(self, path):
-        with open(path, 'r') as csv_file:
+        with open(path, 'r', encoding='latin1') as csv_file:
 
             csv_reader = csv.reader(csv_file, delimiter=',')
             header = next(csv_reader)
@@ -188,7 +188,7 @@ class LSTMDataset(Dataset):
         return np.asanyarray(interventions_list).astype(np.int)
 
     def parse_densities(self, path):
-        df = pd.read_csv(self.counties_path, dtype={'FIPS':str})
+        df = pd.read_csv(self.counties_path, encoding='latin1', dtype={'FIPS':str})
         density_pop = 'Density per square mile of land area - Population'
         density_housing = 'Density per square mile of land area - Housing units' 
         
@@ -276,7 +276,7 @@ class LSTMDataset(Dataset):
         """ Gets the intersection of available dates across all timeseries files"""
 
         available_dates = {}
-        with open(self.google_traffic_paths[0], 'r') as f:
+        with open(self.google_traffic_paths[0], 'r', encoding='latin1') as f:
             reader = csv.reader(f)
             header = next(reader)
             available_dates_google = header[3:]
@@ -287,7 +287,7 @@ class LSTMDataset(Dataset):
 
             available_dates['google'] = available_dates_google
 
-        with open(self.infections_path, 'r') as f:
+        with open(self.infections_path, 'r', encoding='latin1') as f:
             reader = csv.reader(f)
             header = next(reader)
             available_dates_infections = header[2:]
@@ -298,7 +298,7 @@ class LSTMDataset(Dataset):
 
             available_dates['infections'] = available_dates_infections
         
-        with open(self.deaths_path, 'r') as f:
+        with open(self.deaths_path, 'r', encoding='latin1') as f:
             reader = csv.reader(f)
             header = next(reader)
             available_dates_deaths = header[2:]
