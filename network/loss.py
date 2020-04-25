@@ -9,6 +9,9 @@ class NpiLoss(nn.Module):
         self.regions = regions
         self.ifrs = ifrs
         self.si = si
+
+        self.calculate_fatality_rate()
+        self.loss_fn = nn.MSELoss()
     
     def poissonLoss(predicted, observed):
         """Custom loss function for Poisson model."""
@@ -17,7 +20,7 @@ class NpiLoss(nn.Module):
         return loss
 
 
-    def fatalityRate():
+    def calculate_fatality_rate():
         SI = self.si[0:self.N2,1]
 
         # infection to onset
@@ -25,7 +28,7 @@ class NpiLoss(nn.Module):
         cv1 = 0.86
         alpha1 = cv1**-2
         beta1 = mean1/alpha1
-        # onset to death
+        # onset to death 
         mean2 = 18.8
         cv2 = 0.45
         alpha2 = cv2**-2
@@ -70,6 +73,12 @@ class NpiLoss(nn.Module):
         for m in range(self.M):
             for i in range(start, end):
                 E_deaths[i,m] = 0;
-                for j in range(0:i-1):
+                for j in range(0,i-1):
                     E_deaths[i,m] += prediction[j,m] * self.f[i-j,m]
         return E_deaths
+
+    def forward(rt, deaths_gt):
+        cases_pred = predict_cases(rt)
+        deaths_pred = predict_deaths(rt, cases_pred)
+        loss = loss_fn(deaths_pred, deaths_gt)
+        return loss
