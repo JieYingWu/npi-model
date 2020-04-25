@@ -138,7 +138,7 @@ class LSTMDataset(Dataset):
 
 
     def parse_google_report(self, path):
-        with open(path, 'r') as csv_file:
+        with open(path, 'r', encoding='latin1') as csv_file:
 
             csv_reader = csv.reader(csv_file, delimiter=',')
             header = next(csv_reader)
@@ -165,7 +165,7 @@ class LSTMDataset(Dataset):
 
     def parse_interventions(self, path):
         """ set values with NA to zero"""
-        with open(path, 'r') as csv_file:
+        with open(path, 'r', encoding='latin1') as csv_file:
 
             csv_reader = csv.reader(csv_file, delimiter=',')
             header = next(csv_reader)
