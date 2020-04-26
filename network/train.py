@@ -10,7 +10,7 @@ from os.path import join
 from loss import NpiLoss
 from model import NpiLstm
 from dataloader import LSTMDataset
-
+import pandas as pd
 
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -23,27 +23,34 @@ save = lambda ep, model, model_path, error, optimizer, scheduler: torch.save({
         'scheduler': scheduler.state_dict()
     }, str(model_path))
 
+data_dir = sys.argv[1]
+
 FEATURES = 9
 HIDDEN_DIM = 16
 OUTPUT_DIM = 1
 num_epochs = 1
+N2 = 100
 
 lr = 1e-4
 batch = 16
-
+use_previous_model = False
+train_counties = ['22071','36061','53033','34031','36059','06037','34003','17031','12086','34017','36103','34027','36119','48201','05119','22103','25017','12011','22033','34039','36087','09009','22095','42077','22017','44007','22105','09001','39101','22055']
+val_counties = ['22051','36029','22087','09003','26163']
 # set up device 
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-train_set = LSTMDataset(data_dir='data/us_data', split='train', retail_only=True, verbose=True)
-val_set = LSTMDataset(data_dir='data/us_data', split='val', retail_only=True, verbose=True)
+train_set = LSTMDataset(data_dir='data/us_data', counties=train_counties, split='train', retail_only=True, verbose=True)
+val_set = LSTMDataset(data_dir='data/us_data', counties=val_counties, split='val', retail_only=True, verbose=True)
 
 train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch,
                                                     shuffle=False, num_workers=0)
         
 val_loader = torch.utils.data.DataLoader(val_set, batch_size=batch,
                                                     shuffle=False, num_workers=0)
-
+train_regions = train_set.counties
+val_regions = val_set.counties
+regions = train_regions + val_regions
 
 # Read existing weights for both G and D models
 if use_previous_model:
@@ -65,20 +72,24 @@ else:
     
 # Read weighted fatalities and serial interval
 wf_file = join(data_dir, 'us_data', 'weighted_fatality.csv')
-weighted_fatalities = np.loadtxt(wf_file, skiprows=1, delimiter=',', dtype=str)
+weighted_fatalities = pd.read_csv(wf_file, encoding='latin1', index_col='FIPS')
+#ifrs = weighted_fatalities[weighted_fatalities['FIPS'].isin(regions)]
 ifrs = {}
-for i in range(weighted_fatalities.shape[0]):
-    ifrs[weighted_fatalities[i,0]] = weighted_fatalities[i,-1]
+print(weighted_fatalities.index)
+for r in regions:
+    ifrs[r] = weighted_fatalities.loc[int(r), 'fatality_rate']
+print(ifrs)
+
 serial_interval = np.loadtxt(join(data_dir, 'serial_interval.csv'), skiprows=1, delimiter=',')
 
 lr = 1e-4
 batch = 16
 n_epochs = 500
 
-model = NpiLstm(FEATURES, HIDDEN_DIM, batch, OUTPUT_DIM)
+model = NpiLstm(N2, FEATURES, HIDDEN_DIM, batch, OUTPUT_DIM)
 print(f'The model has {count_parameters(model):,} trainable parameters')
 
-loss_fn = torch.nn.PoissonLoss()
+loss_fn = NpiLoss(N2, regions, ifrs, serial_interval, device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 scheduler = ReduceLROnPlateau(optimizer)
 

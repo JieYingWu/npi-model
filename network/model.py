@@ -19,7 +19,7 @@ class Encoder(nn.Module):
 class NpiLstm(nn.Module):
     def __init__(self, input_dim, hidden_dim, batch, N2=100, output_dim=1,
                     num_layers=2, device='cpu'):
-        super(LSTM, self).__init__()
+        super(NpiLstm, self).__init__()
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
         self.batch = batch
@@ -37,8 +37,8 @@ class NpiLstm(nn.Module):
 
     def init_hidden(self):
         # This is what we'll initialise our hidden state as
-        self.hidden =  (torch.zeros(self.num_layers, self.batch_size, self.hidden_dim),
-                        torch.zeros(self.num_layers, self.batch_size, self.hidden_dim))
+        self.hidden =  (torch.zeros(self.num_layers, self.batch, self.hidden_dim),
+                        torch.zeros(self.num_layers, self.batch, self.hidden_dim))
         
         
     def forward(self, x):
