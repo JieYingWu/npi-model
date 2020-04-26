@@ -49,10 +49,14 @@ class LSTMDataset(Dataset):
         # make the fips list
         self.fips_lookup_path = join(self.data_dir, 'FIPS_lookup.csv')
         self.parse_fips_lookup(self.fips_lookup_path)
+        self.fips_list = self.fips_to_combined_key.keys()
+        
         if self.counties == 'all':
-            self.fips_list = self.fips_to_combined_key.keys()
             self.counties = list(self.fips_list)
-
+        else:
+            if not (isinstance(self.counties, list)):
+                self.counties = list(self.counties)
+            self.counties = [f.zfill(5) for f in self.counties]
 
         # all the data paths
         self.interventions_path = join(self.data_dir, 'interventions.csv')
@@ -63,7 +67,7 @@ class LSTMDataset(Dataset):
         self.google_traffic_paths = glob(join(self.data_dir, 'Google_traffic', '*baseline.csv'))
 
         # Get intersection of fips codes throughout all datasets
-        self.valid_fips_list = self.get_fips_list(verbose=self.verbose)
+        self.valid_fips_list = self.get_fips_list(self.counties, verbose=self.verbose)
 
         # Parsing the data
         self.min_date, self.max_date = self.available_dates()
@@ -209,16 +213,20 @@ class LSTMDataset(Dataset):
         return return_list
 
 
-    def get_fips_list(self, verbose=True):
+    def get_fips_list(self, fips_list=None, verbose=True):
         """ Returns intersection of FIPS codes which are valid for all files"""
 
         df_deaths = pd.read_csv(self.deaths_path, encoding='latin1', dtype={'FIPS':str})
         df_infections = pd.read_csv(self.infections_path, encoding='latin1', dtype={'FIPS':str})
         df_google = pd.read_csv(self.google_traffic_paths[3], encoding='latin1', dtype={'FIPS':str})
+        
+
+
 
         death_fips = df_deaths['FIPS'].to_list()
         infections_fips = df_infections['FIPS'].to_list()
         google_fips = df_google['FIPS'].to_list()
+        
 
         death_fips = [f.zfill(5) for f in death_fips]
         infections_fips = [f.zfill(5) for f in infections_fips]
@@ -228,7 +236,6 @@ class LSTMDataset(Dataset):
         nan_google = df_google[df_google.isna().any(axis=1)]
         nan_fips = nan_google['FIPS'].to_list()
         nan_fips = [f.zfill(5) for f in nan_fips]
-        
 
 
         # The google reports contain fips duplicates
@@ -239,9 +246,9 @@ class LSTMDataset(Dataset):
                 duplicates.append(i)
             unique_list.append(i)
 
-        valid_fips_list = list(self.fips_list)
+        valid_fips_list = fips_list.copy() 
 
-
+        
         for fips_code in self.counties:
             MISSING_CODE_COUNTER = 0
             if fips_code not in death_fips:
@@ -263,11 +270,10 @@ class LSTMDataset(Dataset):
                 if verbose:
                     print(f'Warning: Requested FIPS code {fips_code} has NA values in {self.google_traffic_paths[3]}. Skipping FIPS code')
                 MISSING_CODE_COUNTER += 1
-
             if MISSING_CODE_COUNTER > 0:
                 valid_fips_list.remove(fips_code)
 
-        print(f'From {len(self.fips_list)} requested counties {len(valid_fips_list)} are valid.')
+        print(f'From {len(fips_list)} requested counties {len(valid_fips_list)} are valid.')
 
         return valid_fips_list
 
@@ -346,11 +352,13 @@ class LSTMDataset(Dataset):
 
 
 if __name__ == '__main__':
-    dataset = LSTMDataset(data_dir='data/us_data', split='train')
+    counties=['10010', '1001', '1039', '13069', '20181']
+    counties='all'
+    dataset = LSTMDataset(data_dir='data/us_data', counties=counties, split='train', verbose=True)
     # print(dataset.infections.shape)
     # print(dataset.deaths.shape)
     # print(len(dataset.google_reports_list))
     print(type(dataset.infections[0,1]))
     print(dataset.infections[0])
-    print(dataset[0])
+    print(dataset.valid_fips_list)
     # print(dataset[0])
