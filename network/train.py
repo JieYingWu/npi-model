@@ -34,13 +34,14 @@ N2 = 100
 lr = 1e-4
 batch = 16
 use_previous_model = False
-
+train_counties = ['22071','36061','53033','34031','36059','06037','34003','17031','12086','34017','36103','34027','36119','48201','05119','22103','25017','12011','22033','34039','36087','09009','22095','42077','22017','44007','22105','09001','39101','22055']
+val_counties = ['22051','36029','22087','09003','26163']
 # set up device 
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-train_set = LSTMDataset(data_dir='data/us_data', split='train', retail_only=True, verbose=True)
-val_set = LSTMDataset(data_dir='data/us_data', split='val', retail_only=True, verbose=True)
+train_set = LSTMDataset(data_dir='data/us_data', counties=train_counties, split='train', retail_only=True, verbose=True)
+val_set = LSTMDataset(data_dir='data/us_data', counties=val_counties, split='val', retail_only=True, verbose=True)
 
 train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch,
                                                     shuffle=False, num_workers=0)
@@ -71,10 +72,12 @@ else:
     
 # Read weighted fatalities and serial interval
 wf_file = join(data_dir, 'us_data', 'weighted_fatality.csv')
-weighted_fatalities = pd.read_csv(wf_file, encoding='latin1', dtype={'FIPS':str}, index_col='FIPS')
-ifrs = weighted_fatalities[['fatality_rate']]
+weighted_fatalities = pd.read_csv(wf_file, encoding='latin1', index_col='FIPS')
 #ifrs = weighted_fatalities[weighted_fatalities['FIPS'].isin(regions)]
-ifrs = ifrs.to_dict()
+ifrs = {}
+print(weighted_fatalities.index)
+for r in regions:
+    ifrs[r] = weighted_fatalities.loc[int(r), 'fatality_rate']
 print(ifrs)
 
 serial_interval = np.loadtxt(join(data_dir, 'serial_interval.csv'), skiprows=1, delimiter=',')
