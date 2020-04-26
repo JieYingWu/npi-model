@@ -10,7 +10,7 @@ from os.path import join
 from loss import NpiLoss
 from model import NpiLstm
 from dataloader import LSTMDataset
-
+import pandas as pd
 
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -71,12 +71,13 @@ else:
     
 # Read weighted fatalities and serial interval
 wf_file = join(data_dir, 'us_data', 'weighted_fatality.csv')
-weighted_fatalities = np.loadtxt(wf_file, skiprows=1, delimiter=',', dtype=str)
-ifrs = {}
-for i in range(weighted_fatalities.shape[0]):
-    ifrs[weighted_fatalities[i,0]] = weighted_fatalities[i,-1]
+weighted_fatalities = pd.read_csv(wf_file, encoding='latin1', dtype={'FIPS':str}, index_col='FIPS')
+ifrs = weighted_fatalities[['fatality_rate']]
+#ifrs = weighted_fatalities[weighted_fatalities['FIPS'].isin(regions)]
+ifrs = ifrs.to_dict()
+print(ifrs)
+
 serial_interval = np.loadtxt(join(data_dir, 'serial_interval.csv'), skiprows=1, delimiter=',')
-print(ifrs.keys())
 
 lr = 1e-4
 batch = 16
