@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 import torch.nn as nn
 from statsmodels.distributions.empirical_distribution import ECDF
@@ -6,9 +7,9 @@ class NpiLoss(nn.Module):
 
     def __init__(self, N2, regions, ifrs, si, device):
         self.N2 = N2
-        self.regions = regions
         self.ifrs = ifrs
         self.si = si
+        self.regions = regions
 
         self.calculate_fatality_rate()
         self.loss_fn = nn.MSELoss()
@@ -20,7 +21,7 @@ class NpiLoss(nn.Module):
         return loss
 
 
-    def calculate_fatality_rate():
+    def calculate_fatality_rate(self):
         SI = self.si[0:self.N2,1]
 
         # infection to onset
@@ -49,7 +50,7 @@ class NpiLoss(nn.Module):
             h[0] = (conv(1.5) - conv(0.0))
 
             for i in range(1, N2):
-                h[i] = (conv(i+.5) - conv(i-.5)) / (1-conv(i-.5))
+                h[i] = (conv(i+.5) - conv(i-.5)) / (1-ocnv(i-.5))
             s = np.zeros(N2)
             s[0] = 1
             for i in range(1, N2):

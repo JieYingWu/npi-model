@@ -23,13 +23,17 @@ save = lambda ep, model, model_path, error, optimizer, scheduler: torch.save({
         'scheduler': scheduler.state_dict()
     }, str(model_path))
 
+data_dir = sys.argv[1]
+
 FEATURES = 9
 HIDDEN_DIM = 16
 OUTPUT_DIM = 1
 num_epochs = 1
+N2 = 100
 
 lr = 1e-4
 batch = 16
+use_previous_model = False
 
 # set up device 
 
@@ -43,7 +47,9 @@ train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch,
         
 val_loader = torch.utils.data.DataLoader(val_set, batch_size=batch,
                                                     shuffle=False, num_workers=0)
-
+train_regions = train_set.counties
+val_regions = val_set.counties
+regions = train_regions + val_regions
 
 # Read existing weights for both G and D models
 if use_previous_model:
@@ -70,15 +76,16 @@ ifrs = {}
 for i in range(weighted_fatalities.shape[0]):
     ifrs[weighted_fatalities[i,0]] = weighted_fatalities[i,-1]
 serial_interval = np.loadtxt(join(data_dir, 'serial_interval.csv'), skiprows=1, delimiter=',')
+print(ifrs.keys())
 
 lr = 1e-4
 batch = 16
 n_epochs = 500
 
-model = NpiLstm(FEATURES, HIDDEN_DIM, batch, OUTPUT_DIM)
+model = NpiLstm(N2, FEATURES, HIDDEN_DIM, batch, OUTPUT_DIM)
 print(f'The model has {count_parameters(model):,} trainable parameters')
 
-loss_fn = torch.nn.PoissonLoss()
+loss_fn = NpiLoss(N2, regions, ifrs, serial_interval, device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 scheduler = ReduceLROnPlateau(optimizer)
 
