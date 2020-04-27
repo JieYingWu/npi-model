@@ -11,8 +11,8 @@ class Encoder(nn.Module):
         self.num_layers = num_layers
         self.lstm = nn.LSTM(input_dim, hidden_dim, num_layers)
                 
-    def forward(self, x):        
-        y, (hidden, cell) = self.lstm(x)
+    def forward(self, x, hidden):        
+        y, (hidden, cell) = self.lstm(x, hidden)
         return hidden, cell
     
 
@@ -42,14 +42,14 @@ class NpiLstm(nn.Module):
         
         
     def forward(self, x):
-
+        
         # Use the first N days to get cell state
-        hidden, cell = self.encoder(src)
+        self.hidden, cell = self.encoder(x, self.hidden)
         output = torch.zeros(self.N2, self.batch).to(self.device)
 
         # Predict to N2 - probably shouldn't start at 1? But how to do county specific
         for t in range(1, self.N2):
-            y, (hidden, cell) = self.lstm(x)
+            y, (self.hidden, cell) = self.lstm(x, self.hidden)
             output[t] = y
         
         return output

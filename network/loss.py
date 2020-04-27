@@ -1,11 +1,13 @@
 import numpy as np
 import torch
 import torch.nn as nn
+from os.path import exists
 from statsmodels.distributions.empirical_distribution import ECDF
 
 class NpiLoss(nn.Module):
 
     def __init__(self, N2, regions, ifrs, si, device):
+        super(NpiLoss, self).__init__()
         self.N2 = N2
         self.ifrs = ifrs
         self.si = si
@@ -22,6 +24,11 @@ class NpiLoss(nn.Module):
 
 
     def calculate_fatality_rate(self):
+        name = 'cached_loss_' + str(self.N2) + '.csv'
+        if exists(name):
+            self.f = np.loadtxt(name)
+            return
+            
         SI = self.si[0:self.N2,1]
 
         # infection to onset
@@ -46,18 +53,20 @@ class NpiLoss(nn.Module):
             def conv(u): # IFR is the country's probability of death
                 return ifr * f(u)
 
-            h = np.zeros(N2) # Discrete hazard rate from time t = 1, ..., 100
+            h = np.zeros(self.N2) # Discrete hazard rate from time t = 1, ..., 100
             h[0] = (conv(1.5) - conv(0.0))
 
-            for i in range(1, N2):
-                h[i] = (conv(i+.5) - conv(i-.5)) / (1-ocnv(i-.5))
-            s = np.zeros(N2)
+            for i in range(1, self.N2):
+                h[i] = (conv(i+.5) - conv(i-.5)) / (1-conv(i-.5))
+            s = np.zeros(self.N2)
             s[0] = 1
-            for i in range(1, N2):
+            for i in range(1, self.N2):
                 s[i] = s[i-1]*(1-h[i-1])
                 
             all_f[:,r] = s * h
         self.f = all_f
+
+        np.savetxt(name, all_f)
 
     def predict_cases(rt):
         prediction = torch.zeros(self.N2, self.M)
