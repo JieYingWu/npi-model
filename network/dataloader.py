@@ -20,32 +20,30 @@ class LSTMDataset(Dataset):
     
     Returns (through __getitem__):
         Dict with keys:
-            -'infections': list of (cumulative) infections for one time point
-            -'deaths': list of (cumulative) deaths for one time point
-            -'interventions': list with length of counties which contains a boolean list for each 
-                            county with length of the interventions, showing whether at this 
+            -'infections': tensor of (cumulative) infections for one  county
+            -'deaths': tensor of (cumulative) deaths for one county
+            -'interventions': 3-dim tensor with dimensions: [numCounties x numInterventions x availableDates] showing whether at this 
                             time point the intervention is in place (1) or not(0)
-            -'densities': dictionary with keys:
-                        -'density_population': list of length counties
-                        -'density_housing': list of length counties
-            -'mobility': list of the 6 mobility pattern that Google is tracking;
-                            -list of length counties with data for pattern 1
-                            :
-                            -list of length counties with data for pattern 6 
+            -'densities': tuple of two tensor:
+                           - population density of selected county
+                           - housing density of selected county 
+            -'mobility': tensor of mobility data for one county for retail and recreation  
+            
+            
+            """
 
-    """
-
-    def __init__(self, data_dir='../data/us_data', counties='all', split='train', retail_only=True, verbose=True):
+    def __init__(self, data_dir='../data/us_data', counties='all', split='train', retail_only=True, verbose=True, return_mode='county'):
         self.data_dir = data_dir
         self.counties = counties
         # split with factor 0.9
         assert split in ['train', 'val'], ValueError(f'Split can be train or val')
+        assert return_mode in ['county', 'date'] , ValueError()
+            
+        
         self.split = split
-
-
         self.retail_only = retail_only
         self.verbose = verbose
-
+        self.return_mode = return_mode
         # make the fips list
         self.fips_lookup_path = join(self.data_dir, 'FIPS_lookup.csv')
         self.parse_fips_lookup(self.fips_lookup_path)
@@ -66,14 +64,16 @@ class LSTMDataset(Dataset):
 
         self.google_traffic_paths = glob(join(self.data_dir, 'Google_traffic', '*baseline.csv'))
 
+        self.min_date, self.max_date = self.available_dates()
         # Get intersection of fips codes throughout all datasets
         self.valid_fips_list = self.get_fips_list(self.counties, verbose=self.verbose)
 
         # Parsing the data
-        self.min_date, self.max_date = self.available_dates()
+
         self.infections = self.parse_infections(self.infections_path)
         self.deaths = self.parse_deaths(self.deaths_path)
         self.interventions = self.parse_interventions(self.interventions_path)
+        self.interventions = self.process_interventions(self.interventions, self.date_range)
         self.densities = self.parse_densities(self.counties_path)
         
         self.google_reports_list = []
@@ -174,13 +174,12 @@ class LSTMDataset(Dataset):
             csv_reader = csv.reader(csv_file, delimiter=',')
             header = next(csv_reader)
 
-            self.date_range
 
             self.interventions_descriptions = header[3:]
 
             interventions_list = []
             # The google reports contain fips duplicates. Here only the first is considered
-            valid_fips_list_copy = self.valid_fips_list .copy()
+            valid_fips_list_copy = self.valid_fips_list.copy()
             
             for row in csv_reader:
                 if row[0] in valid_fips_list_copy:
@@ -201,7 +200,24 @@ class LSTMDataset(Dataset):
 
         return dict(zip(['density_population', 'density_housing'], [torch.tensor(df[density_pop].to_numpy()),
                                                      torch.tensor(df[density_housing].to_numpy())]))
-    
+   
+
+    def process_interventions(self, interventions_array, date_range):
+        """ create 6 timeseries arrays for each county with boolean whether an intervention is in place or not"""
+        
+        county_length, num_interventions = interventions_array.shape
+        final_arr = np.empty([county_length, num_interventions, len(date_range)]) 
+        for i in range(county_length):
+            for j in range(num_interventions):
+                final_arr[i,j,:] = np.where(np.array(date_range) < interventions_array[i,j],0,1)
+        return final_arr
+
+    def get_densities(self, idx):
+      
+        return (self.densities['density_population'][idx], self.densities['density_housing'])
+
+
+
     def get_interventions(self, idx):
         """ Returns the interventions for one time instance"""
 
@@ -274,6 +290,16 @@ class LSTMDataset(Dataset):
                 valid_fips_list.remove(fips_code)
 
         print(f'From {len(fips_list)} requested counties {len(valid_fips_list)} are valid.')
+        
+
+        if self.return_mode == 'county':
+            length = len(valid_fips_list)
+            train_size = int(0.9*length)
+            if self.split == 'train':
+                valid_fips_list = valid_fips_list[:train_size+1]
+            
+            if self.split == 'val':
+                valid_fips_list = valid_fips_list[train_size+1:]
 
         return valid_fips_list
 
@@ -322,14 +348,15 @@ class LSTMDataset(Dataset):
         min_date = max(min_list)
         self.date_range = np.arange(min_date, max_date + 1)
         # split into train and val:
-        length = len(self.date_range)
-        train_size = int(0.9*length)
-        if self.split == 'train':
-            self.date_range = self.date_range[:train_size+1]
-            max_date = self.date_range[train_size]
-        if self.split == 'val':
-            self.date_range = self.date_range[train_size+1:]
-            min_date = self.date_range[0]
+        if self.return_mode == 'date':
+            length = len(self.date_range)
+            train_size = int(0.9*length)
+            if self.split == 'train':
+                self.date_range = self.date_range[:train_size+1]
+                max_date = self.date_range[train_size]
+            if self.split == 'val':
+                self.date_range = self.date_range[train_size+1:]
+                min_date = self.date_range[0]
         return min_date, max_date
 
     
@@ -340,13 +367,24 @@ class LSTMDataset(Dataset):
 
     def __getitem__(self, idx):
         return_dict = {}
-        return_dict['infections'] = torch.tensor(self.infections[idx])
-        return_dict['deaths'] = torch.tensor(self.deaths[idx])
-        return_dict['interventions'] = torch.tensor(self.get_interventions(idx))
-        return_dict['densities'] = self.densities
+        if self.return_mode == 'county':
+            
 
-        if self.retail_only:
-            return_dict['mobility'] = torch.tensor(self.google_report_retail[idx])
+            return_dict['infections'] = torch.tensor(self.infections.T[idx])
+            return_dict['deaths'] = torch.tensor(self.deaths.T[idx])
+            return_dict['interventions'] = torch.tensor(self.interventions[idx])
+            return_dict['densities'] = self.get_densities(idx) 
+
+            if self.retail_only:
+                return_dict['mobility'] = torch.tensor(self.google_report_retail.T[idx])
+        else:
+            return_dict['infections'] = torch.tensor(self.infections[idx])
+            return_dict['deaths'] = torch.tensor(self.deaths[idx])
+            return_dict['interventions'] = torch.tensor(self.get_interventions(idx))
+            return_dict['densities'] = self.densities
+
+            if self.retail_only:
+                return_dict['mobility'] = torch.tensor(self.google_report_retail[idx])
         # return_dict['mobility'] = torch.tensor(self.google_reports_list[idx])
         return return_dict
 
@@ -354,11 +392,12 @@ class LSTMDataset(Dataset):
 if __name__ == '__main__':
     counties=['10010', '1001', '1039', '13069', '20181']
     counties='all'
-    dataset = LSTMDataset(data_dir='data/us_data', counties=counties, split='train', verbose=True)
+    dataset = LSTMDataset(data_dir='data/us_data', counties=counties, split='train', verbose=True, return_mode='county')
+    print('Test:')
     # print(dataset.infections.shape)
-    # print(dataset.deaths.shape)
-    # print(len(dataset.google_reports_list))
-    print(type(dataset.infections[0,1]))
-    print(dataset.infections[0])
-    print(dataset.valid_fips_list)
-    # print(dataset[0])
+    #print(dataset.deaths.shape)
+    print(len(dataset.google_reports_list))
+    print(dataset.infections[0].shape)
+    print(dataset[0]['infections'])
+    print(dataset[0]['infections'].shape)
+    print(dataset[0]['mobility']) 
