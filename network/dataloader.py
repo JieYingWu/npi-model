@@ -361,7 +361,10 @@ class LSTMDataset(Dataset):
 
     
     def __len__(self):
-        length_total = self.max_date - self.min_date + 1
+        if self.return_mode == 'county':
+            length_total = len(self.valid_fips_list)
+        elif self.return_mode == 'date':
+            length_total = self.max_date - self.min_date + 1
         return length_total
 
 

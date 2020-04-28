@@ -99,27 +99,29 @@ for e in range(n_epochs):
     model.train()
     epoch_loss = 0
     for i, data in enumerate(train_loader):
-        deaths = data['deaths'].permute(1,0).unsqueeze(2).type(torch.float32).to(device)
+        deaths = data['deaths'].permute(1,0).type(torch.float32).to(device)
         interventions = data['interventions'].permute(2,0,1).type(torch.float32).to(device)
         idx = data['idx']
-        features = torch.cat((deaths, interventions), axis=2)
+        features = torch.cat((deaths.unsqueeze(2), interventions), axis=2)
         
         # Forward pass
         rt_pred = model(features)
-        loss = loss_fn(rt_pred, deaths.squeeze(), idx)
+        loss = loss_fn(rt_pred, deaths, idx)
         mean_loss = loss.item()
         
         # Backward pass
-        optimizer.zero_grad()
+        model.zero_grad()
         loss.backward()
         optimizer.step()
 
         tq.update(batch)
         tq.set_postfix(loss=' loss={:.5f}'.format(mean_loss))
         epoch_loss += mean_loss
-
+        print('Finished one batch')
+        
     tq.set_postfix(loss=' loss={:.5f}'.format(epoch_loss/len(train_loader)))
     train_loss[e] = epoch_loss
+    print('Finished one epoch')
     
     # Validate
     if e % validate_each == 0:
