@@ -374,6 +374,7 @@ class LSTMDataset(Dataset):
             return_dict['deaths'] = torch.tensor(self.deaths.T[idx])
             return_dict['interventions'] = torch.tensor(self.interventions[idx])
             return_dict['densities'] = self.get_densities(idx) 
+            return_dict['idx'] = idx
 
             if self.retail_only:
                 return_dict['mobility'] = torch.tensor(self.google_report_retail.T[idx])
@@ -382,7 +383,7 @@ class LSTMDataset(Dataset):
             return_dict['deaths'] = torch.tensor(self.deaths[idx])
             return_dict['interventions'] = torch.tensor(self.get_interventions(idx))
             return_dict['densities'] = self.densities
-
+            
             if self.retail_only:
                 return_dict['mobility'] = torch.tensor(self.google_report_retail[idx])
         # return_dict['mobility'] = torch.tensor(self.google_reports_list[idx])

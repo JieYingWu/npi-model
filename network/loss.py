@@ -10,8 +10,10 @@ class NpiLoss(nn.Module):
         super(NpiLoss, self).__init__()
         self.N2 = N2
         self.ifrs = ifrs
-        self.si = si
+        self.si = torch.from_numpy(si).to(device).type(torch.float32)
         self.regions = regions
+        self.M  = len(regions)
+        self.device = device
 
         self.calculate_fatality_rate()
         self.loss_fn = nn.MSELoss()
@@ -64,31 +66,32 @@ class NpiLoss(nn.Module):
                 s[i] = s[i-1]*(1-h[i-1])
                 
             all_f[:,r] = s * h
-        self.f = all_f
+        self.f = all_f.to(device)
 
         np.savetxt(name, all_f)
 
-    def predict_cases(rt):
-        prediction = torch.zeros(self.N2, self.M)
-        for m in range(M):
-            for i in range(start, self.N2):
+    def predict_cases(self, rt):
+        prediction = torch.zeros(rt.size()[0], rt.size()[1]).to(self.device)
+        for m in range(rt.size()[1]):
+            for i in range(rt.size()[0]):
                 convolution = 0
-                for j in range(i):
-                    convolution += prediction[j, m]*SI[i-j]
+                for j in range(i-1):
+                    convolution += prediction[j, m] * self.si[i-j]
                 prediction[i,m] = rt[i,m] * convolution
         return prediction
 
-    def predict_deaths(rt, prediction):
-        E_deaths[0,m] = 1e-9
-        for m in range(self.M):
-            for i in range(start, end):
+    def predict_deaths(self, rt, prediction, idx):
+        E_deaths = torch.zeros(rt.size()[0], rt.size()[1]).to(self.device)
+        for m in range(len(idx)):
+            E_deaths[0,m] = 1e-9
+            for i in range(1,rt.size()[0]):
                 E_deaths[i,m] = 0;
-                for j in range(0,i-1):
-                    E_deaths[i,m] += prediction[j,m] * self.f[i-j,m]
+                for j in range(i-1):
+                    E_deaths[i,m] += prediction[j,m] * self.f[i-j,idx[m]]
         return E_deaths
 
-    def forward(rt, deaths_gt):
-        cases_pred = predict_cases(rt)
-        deaths_pred = predict_deaths(rt, cases_pred)
-        loss = loss_fn(deaths_pred, deaths_gt)
+    def forward(self, rt, deaths_gt, idx):
+        cases_pred = self.predict_cases(rt)
+        deaths_pred = self.predict_deaths(rt, cases_pred, idx)
+        loss = self.loss_fn(deaths_pred, deaths_gt)
         return loss

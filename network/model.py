@@ -11,8 +11,8 @@ class Encoder(nn.Module):
         self.num_layers = num_layers
         self.lstm = nn.LSTM(input_dim, hidden_dim, num_layers)
                 
-    def forward(self, x, hidden):        
-        y, (hidden, cell) = self.lstm(x, hidden)
+    def forward(self, x):        
+        y, (hidden, cell) = self.lstm(x)
         return hidden, cell
     
 
@@ -37,20 +37,21 @@ class NpiLstm(nn.Module):
 
     def init_hidden(self):
         # This is what we'll initialise our hidden state as
-        self.hidden =  (torch.zeros(self.num_layers, self.batch, self.hidden_dim),
-                        torch.zeros(self.num_layers, self.batch, self.hidden_dim))
+        self.hidden =  (torch.zeros(self.num_layers, self.batch, self.hidden_dim).to(self.device),
+                        torch.zeros(self.num_layers, self.batch, self.hidden_dim).to(self.device))
         
         
     def forward(self, x):
-        
         # Use the first N days to get cell state
-        self.hidden, cell = self.encoder(x, self.hidden)
-        output = torch.zeros(self.N2, self.batch).to(self.device)
-
+#        self.hidden = self.encoder(x)
+        output = torch.zeros(x.size()[0], self.batch).to(self.device)
+        
         # Predict to N2 - probably shouldn't start at 1? But how to do county specific
-        for t in range(1, self.N2):
-            y, (self.hidden, cell) = self.lstm(x, self.hidden)
-            output[t] = y
+        for t in range(1, x.size()[0]):
+            cur_x = x[t].unsqueeze(0)
+            y, self.hidden = self.lstm(cur_x, self.hidden)
+            y = self.linear(y)
+            output[t] = y.squeeze()
         
         return output
     
