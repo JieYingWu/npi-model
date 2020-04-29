@@ -51,7 +51,8 @@ def get_data_county(num_counties, data_dir, show=False, interpolate=False, filte
 
     return final_dict, fips_list, dict_of_start_dates, dict_of_geo
 
-def get_data_state(num_states, data_dir, show=False, interpolate=False, filter_data=False):
+def get_data_state(num_states, data_dir, show=False, interpolate=False,
+        filter_data=False, validation=0):
 
     df_cases, df_deaths, interventions = preprocessing_us_data(data_dir)
 
@@ -89,6 +90,10 @@ def get_data_state(num_states, data_dir, show=False, interpolate=False, filter_d
 
     if filter_data:
         state_cases, state_deaths = filter_negative_counts(state_cases, state_deaths, idx=1)
+    if validation > 0:
+        state_cases, state_deaths, state_interventions, fips_list, val_cases,
+        val_deaths \
+            = filtering(state_cases, state_deaths, state_interventions, num_states)
 
     state_cases, state_deaths, state_interventions, fips_list \
         = filtering(state_cases, state_deaths, state_interventions, num_states)

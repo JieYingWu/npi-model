@@ -27,7 +27,7 @@ def filter_negative_counts(df_cases, df_deaths, idx):
 
     return df_cases, df_deaths
 
-def filtering(df_cases, df_deaths, interventions, num_counties):
+def filtering(df_cases, df_deaths, interventions, num_counties, validation=0):
     """"
     Returns:
         df_cases: Infections timeseries for top N places
@@ -36,7 +36,6 @@ def filtering(df_cases, df_deaths, interventions, num_counties):
         fips_list: FIPS of top N places
     """
 
-    # Pick top 20 counties with most cases
     headers = df_cases.columns.values
     last_day = headers[-1]
     observed_days = len(headers[2:])
@@ -57,8 +56,19 @@ def filtering(df_cases, df_deaths, interventions, num_counties):
     interventions = pd.merge(merge_df, interventions, left_on='merge', right_on='FIPS', how='outer')
     interventions = interventions.reset_index(drop=True)
 
+    
     #print("Inside filtering function:", df_cases.shape, df_deaths.shape)
-    return df_cases, df_deaths, interventions, fips_list
+    if validation > 0:
+        df_cases = df_cases.iloc[:, :-(validation+1)] 
+        df_cases_val = df_cases.iloc[:, -(validation+1):] 
+        
+        df_deaths = df_cases.iloc[:, :-(validation+1)] 
+        df_deaths_val = df_deaths.iloc[:, -(validation+1):] 
+        
+        return df_cases, df_deaths, interventions, fips_list, df_cases_val,
+                df_deaths_val
+    else:
+        return df_cases, df_deaths, interventions, fips_list
 
 def check_monotonicity(L):
     is_monotonic = np.sum([x<= y for x, y in zip(L, L[1:])])
@@ -225,6 +235,7 @@ def preprocessing_us_data(data_dir, mode='county'):
         interventions: Interventions data with dates converted to date format
     """
     assert mode in ['county', 'state'], ValueError()
+    # remove all states from the counties file 
     if mode == 'county':
         cases_path = join(data_dir, 'us_data/infections_timeseries.csv')
         deaths_path = join(data_dir, 'us_data/deaths_timeseries.csv')
