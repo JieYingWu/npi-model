@@ -232,4 +232,4 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, fips_l
 
 if __name__ == '__main__':
     stan_data, regions, start_date, geocode = get_data_county(50, 'data', show=True, interpolate=True)
-
+    print(stan_data['cases']) 

@@ -171,6 +171,10 @@ def impute(df, allow_decrease_towards_end=True):
             if i not in change_list:
                 change_list.append(i)
 
+
+            if cell < 0:
+                county[i] = 0
+
             # Special Case where series is decreasing towards the end
             if i == (len(county)-1) and len(change_list) > 1 and not allow_decrease_towards_end:
                 first_idx = change_list[0]
@@ -192,7 +196,7 @@ def impute(df, allow_decrease_towards_end=True):
                     change_list = [last_]
                 else:
                     change_list = [change_list[-1]]
-                    
+
     df = pd.DataFrame(df, columns=header)
     if COMBINED_KEY_EXISTS:
         df = pd.concat([combined_key, df], axis=1)
