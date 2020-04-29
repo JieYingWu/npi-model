@@ -33,7 +33,9 @@ num_epochs = 1
 N2 = 100
 
 lr = 1e-4
-batch = 16
+batch = 25
+n_epochs = 500
+validate_each = 5
 use_previous_model = False
 #train_counties = ['22071','36061','53033','34031','36059','06037','34003','17031','12086','34017','36103','34027','36119','48201','05119','22103','25017','12011','22033','34039','36087','09009','22095','42077','22017','44007','22105','09001','39101','22055']
 #val_counties = ['22051','36029','22087','09003','26163']
@@ -80,13 +82,9 @@ for r in regions:
     ifrs[r] = weighted_fatalities.loc[int(r), 'fatality_rate']
 
 serial_interval = np.loadtxt(join(data_dir, 'serial_interval.csv'), skiprows=1, delimiter=',')
+serial_interval = serial_interval[:,1]
 
-lr = 1e-4
-batch = 16
-n_epochs = 500
-validate_each = 5
-
-model = NpiLstm(N2, FEATURES, HIDDEN_DIM, batch, OUTPUT_DIM)
+model = NpiLstm(FEATURES, HIDDEN_DIM, batch, N2=N2, output_dim=OUTPUT_DIM, device=device).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 scheduler = ReduceLROnPlateau(optimizer)
 print(f'The model has {count_parameters(model):,} trainable parameters')
@@ -101,23 +99,30 @@ for e in range(n_epochs):
     model.train()
     epoch_loss = 0
     for i, data in enumerate(train_loader):
+        deaths = data['deaths'].permute(1,0).type(torch.float32).to(device)
+        interventions = data['interventions'].permute(2,0,1).type(torch.float32).to(device)
+        idx = data['idx']
+        features = torch.cat((deaths.unsqueeze(2), interventions), axis=2)
         
         # Forward pass
-        rt_pred = model(data['deaths'])
-        loss = loss_fn(rt_pred, data['deaths'])
+        model.init_hidden()
+        rt_pred = model(features)
+        loss = loss_fn(rt_pred, deaths, idx)
         mean_loss = loss.item()
         
         # Backward pass
-        optimiser.zero_grad()
+        optimizer.zero_grad()
         loss.backward()
-        optimiser.step()
-
-        tq.update(batch_size)
+        optimizer.step()
+        
+        tq.update(batch)
         tq.set_postfix(loss=' loss={:.5f}'.format(mean_loss))
         epoch_loss += mean_loss
-
+        print('Finished one batch')
+        
     tq.set_postfix(loss=' loss={:.5f}'.format(epoch_loss/len(train_loader)))
     train_loss[e] = epoch_loss
+    print('Finished one epoch')
     
     # Validate
     if e % validate_each == 0:

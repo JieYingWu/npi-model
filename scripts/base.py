@@ -42,44 +42,44 @@ stan_data['deaths'] = stan_data['deaths'].astype(np.int)
 
 # Build a dictionary for shelter-in-place score for US cases, also load correct model for region
 if sys.argv[2][0:2] == 'US':
-    foot_traffic_path = join(data_dir, 'us_data', 'Google_traffic', 'retail_and_recreation_percent_change_from_baseline.csv')
-    foot_traffic = pd.read_csv(foot_traffic_path, index_col=0, encoding='latin1')
-    id_cols = ['County', 'State']
-    dates = [col for col in foot_traffic.columns.tolist() if col not in id_cols]
-    foot_traffic['scores'] = foot_traffic[dates].values.tolist()
+#     foot_traffic_path = join(data_dir, 'us_data', 'Google_traffic', 'retail_and_recreation_percent_change_from_baseline.csv')
+#     foot_traffic = pd.read_csv(foot_traffic_path, index_col=0, encoding='latin1')
+#     id_cols = ['County', 'State']
+#     dates = [col for col in foot_traffic.columns.tolist() if col not in id_cols]
+#     foot_traffic['scores'] = foot_traffic[dates].values.tolist()
 
-    foot_traffic_start = dt.datetime(2020, 2, 15)
-    foot_traffic_end = dt.datetime(2020, 4, 11)
-    covariate9 = np.zeros((N2, M))
+#     foot_traffic_start = dt.datetime(2020, 2, 15)
+#     foot_traffic_end = dt.datetime(2020, 4, 11)
+#     covariate9 = np.zeros((N2, M))
 
-    features_path = join(data_dir, 'us_data', 'features.csv')
-    features = pd.read_csv(features_path, index_col=0)
-    covariate10 = np.zeros((N2, M))
-    covariate11 = np.zeros((N2, M))
+#     features_path = join(data_dir, 'us_data', 'features.csv')
+#     features = pd.read_csv(features_path, index_col=0)
+#     covariate10 = np.zeros((N2, M))
+#     covariate11 = np.zeros((N2, M))
     
-    for i in range(len(regions)):
-        r = regions[i]
-        cur_start = parse(start_date[i])
-        cur_foot_traffic = np.array(foot_traffic.loc[r, 'scores'])
+#     for i in range(len(regions)):
+#         r = regions[i]
+#         cur_start = parse(start_date[i])
+#         cur_foot_traffic = np.array(foot_traffic.loc[r, 'scores'])
 
-        start_pad = (foot_traffic_start - cur_start).days
-        end_pad = (cur_start + dt.timedelta(days=N2) - foot_traffic_end).days - 1
-        if start_pad > 0:
-            cur_foot_traffic = np.pad(cur_foot_traffic, (start_pad, end_pad), 'constant', constant_values=(0, cur_foot_traffic[-1]))
-        elif start_pad < 0:
-            cur_foot_traffic = cur_foot_traffic[-1*start_pad:]
-            cur_foot_traffic = np.pad(cur_foot_traffic, (0, end_pad), 'constant', constant_values=(0, cur_foot_traffic[-1]))
-        else:
-            cur_foot_traffic = np.pad(cur_foot_traffic, (0, end_pad), 'constant', constant_values=(0, cur_foot_traffic[-1]))
+#         start_pad = (foot_traffic_start - cur_start).days
+#         end_pad = (cur_start + dt.timedelta(days=N2) - foot_traffic_end).days - 1
+#         if start_pad > 0:
+#             cur_foot_traffic = np.pad(cur_foot_traffic, (start_pad, end_pad), 'constant', constant_values=(0, cur_foot_traffic[-1]))
+#         elif start_pad < 0:
+#             cur_foot_traffic = cur_foot_traffic[-1*start_pad:]
+#             cur_foot_traffic = np.pad(cur_foot_traffic, (0, end_pad), 'constant', constant_values=(0, cur_foot_traffic[-1]))
+#         else:
+#             cur_foot_traffic = np.pad(cur_foot_traffic, (0, end_pad), 'constant', constant_values=(0, cur_foot_traffic[-1]))
 
-        density = features.loc[r, 'Density per square mile of land area - Population']
-        code = features.loc[r, 'Rural-urban_Continuum Code_2013']
+#         density = features.loc[r, 'Density per square mile of land area - Population']
+#         code = features.loc[r, 'Rural-urban_Continuum Code_2013']
         
-        covariate9[:, i] = cur_foot_traffic
-        covariate10[:, i] = np.repeat([density], N2)
-#        covariate11[:, i] = np.repeat([code], N2)
-    stan_data['covariate9'] = covariate9
-    stan_data['covariate10'] = covariate10
+#         covariate9[:, i] = cur_foot_traffic
+#         covariate10[:, i] = np.repeat([density], N2)
+# #        covariate11[:, i] = np.repeat([code], N2)
+#     stan_data['covariate9'] = covariate9
+#     stan_data['covariate10'] = covariate10
 #    stan_data['covariate11'] = covariate11
     # Train the model and generate samples - returns a StanFit4Model
     sm = pystan.StanModel(file='stan-models/base_us.stan')
@@ -130,7 +130,7 @@ for r in range(len(regions)):
 stan_data['f'] = all_f
 
     
-fit = sm.sampling(data=stan_data, iter=200, chains=6, warmup=100, thin=4, control={'adapt_delta':0.9, 'max_treedepth':15})
+fit = sm.sampling(data=stan_data, iter=4000, chains=6, warmup=2000, thin=4, control={'adapt_delta':0.9, 'max_treedepth':15})
 # fit = sm.sampling(data=stan_data, iter=2000, chains=4, warmup=10, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
 
 summary_dict = fit.summary()
