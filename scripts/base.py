@@ -130,7 +130,7 @@ for r in range(len(regions)):
 stan_data['f'] = all_f
 
     
-fit = sm.sampling(data=stan_data, iter=4000, chains=6, warmup=2000, thin=4, control={'adapt_delta':0.9, 'max_treedepth':15})
+fit = sm.sampling(data=stan_data, iter=2000, chains=6, warmup=1000, thin=4, control={'adapt_delta':0.9, 'max_treedepth':10})
 # fit = sm.sampling(data=stan_data, iter=2000, chains=4, warmup=10, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
 
 summary_dict = fit.summary()
