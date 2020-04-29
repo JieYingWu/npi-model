@@ -219,8 +219,8 @@ def preprocessing_us_data(data_dir):
         interventions: Interventions data with dates converted to date format
     """
 
-    cases_path = join(data_dir, 'us_data/infections_timeseries.csv')
-    deaths_path = join(data_dir, 'us_data/deaths_timeseries.csv')
+    cases_path = join(data_dir, 'us_data/infections_timeseries_w_states.csv')
+    deaths_path = join(data_dir, 'us_data/deaths_timeseries_w_states.csv')
     interventions_path = join(data_dir, 'us_data/interventions.csv')
 
     df_cases = pd.read_csv(cases_path)

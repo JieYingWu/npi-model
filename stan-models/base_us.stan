@@ -14,8 +14,6 @@ data {
   matrix[N2, M] covariate6;
   matrix[N2, M] covariate7;
   matrix[N2, M] covariate8;
-  matrix[N2, M] covariate9;
-  matrix[N2, M] covariate10;
   int EpidemicStart[M];
   real SI[N2]; // fixed pre-calculated SI using emprical data from Neil
 }
@@ -26,7 +24,7 @@ transformed data {
 
 parameters {
   real<lower=0> mu; // intercept for Rt
-  real<lower=0> alpha_hier[10]; // the hier term
+  real<lower=0> alpha_hier[8]; // the hier term
   real<lower=0> kappa;
   real<lower=0> y[M];
   real<lower=0> phi;
@@ -36,21 +34,20 @@ parameters {
 
 transformed parameters {
     real convolution;
-    real alpha[9];
+    real alpha[8];
     matrix[N2, M] prediction = rep_matrix(0,N2,M);
     matrix[N2, M] E_deaths  = rep_matrix(0,N2,M);
     matrix[N2, M] Rt = rep_matrix(0,N2,M);
 
-    for(i in 1:9){
+    for(i in 1:8){
         alpha[i] = alpha_hier[i] - ( log(1.20) / 6.0 );
     }
     for (m in 1:M){
       prediction[1:N0,m] = rep_vector(y[m],N0); // learn the number of cases in the first N0 days
-        Rt[,m] = mu * exp(covariate2[,m] * (-alpha[2]) +
+        Rt[,m] = mu * exp(covariate1[,m] * (-alpha[1]) + covariate2[,m] * (-alpha[2]) +
                              covariate3[,m] * (-alpha[3]) + covariate4[,m] * (-alpha[4]) +
                              covariate5[,m] * (-alpha[5]) + covariate6[,m] * (-alpha[6]) +
-                             covariate7[,m] * (-alpha[7]) + covariate8[,m] * (-alpha[8]) +
-                             covariate9[,m] * (-alpha[9]) + covariate10[,m] * (-alpha[1]));
+                             covariate7[,m] * (-alpha[7]) + covariate8[,m] * (-alpha[8]));
      
  for (i in (N0+1):N2) {
         convolution=0;
@@ -77,7 +74,7 @@ model {
   phi ~ normal(0,5);
 //  kappa ~ normal(0,0.5);
   kappa ~ normal(1.5,3);
-  mu ~ normal(2.4, kappa); // citation needed
+  mu ~ normal(3.28, kappa); // citation needed
 
 // Huber regression without rural-urban code
 //[-0.02422716 -0.00017786  0.01367269 -0.08787214 -0.01466833 -0.01466833

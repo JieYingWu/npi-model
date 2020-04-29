@@ -26,7 +26,7 @@ save = lambda ep, model, model_path, error, optimizer, scheduler: torch.save({
 
 data_dir = sys.argv[1]
 
-FEATURES = 8
+FEATURES = 9
 HIDDEN_DIM = 16
 OUTPUT_DIM = 1
 num_epochs = 1
@@ -105,15 +105,16 @@ for e in range(n_epochs):
         features = torch.cat((deaths.unsqueeze(2), interventions), axis=2)
         
         # Forward pass
+        model.init_hidden()
         rt_pred = model(features)
         loss = loss_fn(rt_pred, deaths, idx)
         mean_loss = loss.item()
         
         # Backward pass
-        model.zero_grad()
+        optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-
+        
         tq.update(batch)
         tq.set_postfix(loss=' loss={:.5f}'.format(mean_loss))
         epoch_loss += mean_loss
