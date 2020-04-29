@@ -16,8 +16,8 @@ def get_data_county(num_counties, data_dir, show=False, interpolate=False, filte
     interventions = interventions[interventions['FIPS'] % 1000 != 0]
 
     if interpolate:
-        df_cases = impute(df_cases)
-        df_deaths = impute(df_deaths)
+        df_cases = impute(df_cases, allow_decrease_towards_end=True)
+        df_deaths = impute(df_deaths, allow_decrease_towards_end=True)
 
     if filter_data:
         df_cases, df_deaths = filter_negative_counts(df_cases, df_deaths, idx=2)
@@ -84,8 +84,8 @@ def get_data_state(num_states, data_dir, show=False, interpolate=False, filter_d
     state_deaths.insert(0, 'FIPS', state_deaths.index)
 
     if interpolate:
-        state_cases = impute(state_cases)
-        state_deaths = impute(state_deaths)
+        state_cases = impute(state_cases, allow_decrease_towards_end=True)
+        state_deaths = impute(state_deaths, allow_decrease_towards_end=True)
 
     if filter_data:
         state_cases, state_deaths = filter_negative_counts(state_cases, state_deaths, idx=1)
@@ -229,4 +229,7 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, fips_l
     
     return dict_of_start_dates, final_dict
 
+
+if __name__ == '__main__':
+    stan_data, regions, start_date, geocode = get_data_county(50, 'data', show=True, interpolate=True)
 

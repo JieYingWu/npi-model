@@ -129,7 +129,7 @@ def advanced_impute_data(arr):
     arr = arr.T
     return arr
 
-def impute(df):
+def impute(df, allow_decrease_towards_end=True):
     """
     Impute the dataframe directly via linear interpolation
 
@@ -142,6 +142,7 @@ def impute(df):
     """
     FIPS_EXISTS = False
     COMBINED_KEY_EXISTS = False
+    
     if 'FIPS' in df:
         fips = df['FIPS']
         fips = fips.reset_index(drop=True)
@@ -171,7 +172,7 @@ def impute(df):
                 change_list.append(i)
 
             # Special Case where series is decreasing towards the end
-            if i == (len(county)-1) and len(change_list) > 1:
+            if i == (len(county)-1) and len(change_list) > 1 and not allow_decrease_towards_end:
                 first_idx = change_list[0]
                 diff = county[first_idx] - county[first_idx - 1]
                 new_value = county[first_idx] + diff
@@ -191,6 +192,7 @@ def impute(df):
                     change_list = [last_]
                 else:
                     change_list = [change_list[-1]]
+                    
     df = pd.DataFrame(df, columns=header)
     if COMBINED_KEY_EXISTS:
         df = pd.concat([combined_key, df], axis=1)
@@ -210,7 +212,7 @@ def interpolate(change_list, lower, upper):
     interpolated_values = np.interp(x, xp, fp)
     return np.ceil(interpolated_values)
 
-def preprocessing_us_data(data_dir):
+def preprocessing_us_data(data_dir, mode='county'):
     """"
     Loads and cleans data
     Returns:
@@ -218,9 +220,15 @@ def preprocessing_us_data(data_dir):
         df_deaths: Deaths timeseries based on daily count
         interventions: Interventions data with dates converted to date format
     """
-
-    cases_path = join(data_dir, 'us_data/infections_timeseries_w_states.csv')
-    deaths_path = join(data_dir, 'us_data/deaths_timeseries_w_states.csv')
+    assert mode in ['county', 'state'], ValueError()
+    if mode == 'county':
+        cases_path = join(data_dir, 'us_data/infections_timeseries.csv')
+        deaths_path = join(data_dir, 'us_data/deaths_timeseries.csv')
+    else:
+        cases_path = join(data_dir, 'us_data/infections_timeseries_w_states.csv')
+        deaths_path = join(data_dir, 'us_data/deaths_timeseries_w_states.csv')
+        
+        
     interventions_path = join(data_dir, 'us_data/interventions.csv')
 
     df_cases = pd.read_csv(cases_path)
