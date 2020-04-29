@@ -129,7 +129,7 @@ def advanced_impute_data(arr):
     arr = arr.T
     return arr
 
-def impute(df):
+def impute(df, allow_decrease_towards_end=True):
     """
     Impute the dataframe directly via linear interpolation
 
@@ -142,6 +142,7 @@ def impute(df):
     """
     FIPS_EXISTS = False
     COMBINED_KEY_EXISTS = False
+    
     if 'FIPS' in df:
         fips = df['FIPS']
         fips = fips.reset_index(drop=True)
@@ -171,7 +172,7 @@ def impute(df):
                 change_list.append(i)
 
             # Special Case where series is decreasing towards the end
-            if i == (len(county)-1) and len(change_list) > 1:
+            if i == (len(county)-1) and len(change_list) > 1 and not allow_decrease_towards_end:
                 first_idx = change_list[0]
                 diff = county[first_idx] - county[first_idx - 1]
                 new_value = county[first_idx] + diff
@@ -191,6 +192,7 @@ def impute(df):
                     change_list = [last_]
                 else:
                     change_list = [change_list[-1]]
+                    
     df = pd.DataFrame(df, columns=header)
     if COMBINED_KEY_EXISTS:
         df = pd.concat([combined_key, df], axis=1)
