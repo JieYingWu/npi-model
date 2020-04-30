@@ -62,7 +62,7 @@ def filtering(df_cases, df_deaths, interventions, num_counties, validation=0):
         df_cases = df_cases.iloc[:, :-(validation+1)] 
         df_cases_val = df_cases.iloc[:, -(validation+1):] 
         
-        df_deaths = df_deaths.iloc[:, :-(validation+1)] 
+        df_deaths = df_cases.iloc[:, :-(validation+1)] 
         df_deaths_val = df_deaths.iloc[:, -(validation+1):] 
         
         return df_cases, df_deaths, interventions, fips_list, df_cases_val, \
@@ -271,3 +271,12 @@ def preprocessing_us_data(data_dir, mode='county'):
     df_deaths.iloc[:, 2:] = df_deaths.iloc[:, 2:].apply(get_daily_counts, axis=1)
 
     return df_cases, df_deaths, interventions
+
+
+def remove_negative_values(cases, deaths):
+    """ replace negative values with 0"""
+    num_cases = cases._get_numeric_data()
+    num_deaths = deaths._get_numeric_data()
+    num_cases[num_cases < 0] = 0
+    num_deaths[num_deaths < 0] = 0
+    return cases, deaths
