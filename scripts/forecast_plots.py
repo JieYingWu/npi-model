@@ -10,7 +10,7 @@ from data_parser import impute
 plot_settings = 'usa'  # choose 'eu' for europe and 'usa' for usa plots
 base_model = True  # True for prediction/E_deaths, False for prediction0/E_deaths0
 # to match with IC paper select base_model==True
-last_day_to_plot = '4/10/20'  # predict to this date
+last_day_to_plot = '4/27/20'  # predict to this date
 
 
 # saving some params for plot settings
@@ -87,7 +87,7 @@ def plot_forecasts_wo_dates_quantiles(quantiles_dict, confirmed_cases, county_na
     if save_image:
         name = str(metric) + str(dict_of_eu_geog[num_of_country].values[0])
         plt.tight_layout()
-        fig.savefig('results/plots/{}/{}.jpg'.format(results_folder, name))
+        fig.savefig('results/plots/{}/{}.png'.format(results_folder, name))
         fig.clf()
     else:
         plt.show()
