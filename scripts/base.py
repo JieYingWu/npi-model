@@ -160,3 +160,5 @@ def main():
     df_geo.to_csv('results/' + sys.argv[2] + '_geocode.csv', sep=',')
 
 
+if __name__ == '__main__':
+    main()
