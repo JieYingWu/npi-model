@@ -99,7 +99,7 @@ def plot_rt_US(simulation_file, interventions_file, county_number, fips, start_d
     interventions, interventions_data = get_interventions_US(interventions_file, state_level=state_level)
     interventions_data = interventions_data[interventions_data['FIPS'] == fips]
     # time_data = list(pd.date_range(start=start_date, periods=num_days))
-    time_data = list(pd.date_range(start=start_date, end='04/07/20'))
+    time_data = list(pd.date_range(start=start_date, end='05/01/20'))
     num_days = len(time_data)
     # remove those interventions, that are not considered in the report
 #    interventions.remove('foreign travel ban')

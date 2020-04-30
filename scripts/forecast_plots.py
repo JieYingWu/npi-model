@@ -10,7 +10,7 @@ from data_parser import impute
 plot_settings = 'usa'  # choose 'eu' for europe and 'usa' for usa plots
 base_model = True  # True for prediction/E_deaths, False for prediction0/E_deaths0
 # to match with IC paper select base_model==True
-last_day_to_plot = '4/10/20'  # predict to this date
+last_day_to_plot = '4/27/20'  # predict to this date
 
 
 # saving some params for plot settings
@@ -185,7 +185,7 @@ def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of
         new_df[col_names[i]] = df[col_names[i]] - df[col_names[i-1]]
 
     # interpolate
-    df = impute(new_df)
+#    df = impute(new_df)
     df = df.set_index('FIPS')
 
     fips = int(dict_of_eu_geog[num_of_country].values)
