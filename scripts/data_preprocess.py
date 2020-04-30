@@ -260,3 +260,9 @@ def preprocessing_us_data(data_dir, mode='county'):
     df_deaths.iloc[:, 2:] = df_deaths.iloc[:, 2:].apply(get_daily_counts, axis=1)
 
     return df_cases, df_deaths, interventions
+
+def remove_negative_values(df):
+    """ replaces all negative values with 0"""
+    num = df._get_numeric_data()
+    num[num < 0] = 0
+    return df
