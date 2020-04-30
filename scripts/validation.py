@@ -1,24 +1,13 @@
-import sys
-import pystan
-import datetime as dt
-import numpy as np
-import pandas as pd
-import argparse
 from os.path import join
-from statsmodels.distributions.empirical_distribution import ECDF
-from dateutil.parser import parse
+import sys
+import numpy as np
 from data_parser import get_data_state, get_data_county
 from data_parser_europe import get_data_europe
-
-
-
-# class PyStanModel():
-
-#     def __init__(self, args):
-#         self.args = args
-#         for k, v in args.__dict__.items():
-#             setattr(self, k, v)
-
+import pystan
+import datetime as dt
+from dateutil.parser import parse
+import pandas as pd
+from statsmodels.distributions.empirical_distribution import ECDF
 
 assert len(sys.argv) < 5
 
@@ -30,18 +19,17 @@ if sys.argv[2] == 'europe':
 
 elif sys.argv[2] == 'US_county':
     M = int(sys.argv[3])
-    stan_data, regions, start_date, geocode = get_data_county(M, data_dir, interpolate=True)
+    stan_data, regions, start_date, geocode = get_data_county(M, data_dir, interpolate=True, show=True, validation=0)
     wf_file = join(data_dir, 'us_data', 'weighted_fatality.csv')
     weighted_fatalities = np.loadtxt(wf_file, skiprows=1, delimiter=',', dtype=str)
 
 elif sys.argv[2] == 'US_state':
     M = int(sys.argv[3])
-    stan_data, regions, start_date, geocode = get_data_state(M, data_dir, interpolate=True)
+    stan_data, regions, start_date, geocode, val_cases, val_deaths = get_data_state(M, data_dir, interpolate=True, show=True, validation=3)
     wf_file = join(data_dir, 'us_data', 'state_weighted_fatality.csv')
     weighted_fatalities = np.loadtxt(wf_file, skiprows=1, delimiter=',', dtype=str)
 
 N2 = stan_data['N2']
-
 
 def main():
     # Build a dictionary of region identifier to weighted fatality rate
@@ -158,6 +146,7 @@ def main():
     df_geo = pd.DataFrame(geocode, index=[0])
     df_sd.to_csv('results/' + sys.argv[2] + '_start_dates.csv', sep=',')
     df_geo.to_csv('results/' + sys.argv[2] + '_geocode.csv', sep=',')
+
 
 
 if __name__ == '__main__':

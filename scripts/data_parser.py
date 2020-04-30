@@ -8,7 +8,7 @@ from data_preprocess import *
 
 pd.set_option('mode.chained_assignment', None)
 
-def get_data_county(num_counties, data_dir, show=False, interpolate=False, filter_data=False):
+def get_data_county(num_counties, data_dir, show=False, interpolate=False, filter_data=False, validation=0):
 
     df_cases, df_deaths, interventions = preprocessing_us_data(data_dir)
 
@@ -21,8 +21,11 @@ def get_data_county(num_counties, data_dir, show=False, interpolate=False, filte
 
     if filter_data:
         df_cases, df_deaths = filter_negative_counts(df_cases, df_deaths, idx=2)
-
-    df_cases, df_deaths, interventions, fips_list = filtering(df_cases, df_deaths, interventions, num_counties)
+    
+    if validation > 0:
+        df_cases, df_deaths, interventions, fips_list, val_cases, val_deaths = filtering(df_cases, df_deaths, interventions, num_counties, validation)
+    else:
+        df_cases, df_deaths, interventions, fips_list = filtering(df_cases, df_deaths, interventions, num_counties)
     
     dict_of_geo = {} ## map geocode
     for i in range(len(fips_list)):
@@ -48,6 +51,8 @@ def get_data_county(num_counties, data_dir, show=False, interpolate=False, filte
     if show:
         for i in range(len(fips_list)):
             print("County with FIPS {fips} has start date: ".format(fips=fips_list[i]), dict_of_start_dates[i])
+    if validation > 0:
+        return final_dict, fips_list, dict_of_start_dates, dict_of_geo, val_cases, val_deaths
 
     return final_dict, fips_list, dict_of_start_dates, dict_of_geo
 
@@ -91,12 +96,12 @@ def get_data_state(num_states, data_dir, show=False, interpolate=False,
     if filter_data:
         state_cases, state_deaths = filter_negative_counts(state_cases, state_deaths, idx=1)
     if validation > 0:
-        state_cases, state_deaths, state_interventions, fips_list, val_cases,
+        state_cases, state_deaths, state_interventions, fips_list, val_cases,\
         val_deaths \
+            = filtering(state_cases, state_deaths, state_interventions, num_states, validation=validation)
+    else:
+        state_cases, state_deaths, state_interventions, fips_list \
             = filtering(state_cases, state_deaths, state_interventions, num_states)
-
-    state_cases, state_deaths, state_interventions, fips_list \
-        = filtering(state_cases, state_deaths, state_interventions, num_states)
 
     dict_of_geo = {}
     for i in range(len(fips_list)):
@@ -123,6 +128,8 @@ def get_data_state(num_states, data_dir, show=False, interpolate=False,
         for i in range(len(fips_list)):
             print("State with FIPS {fips} has start date: ".format(fips=fips_list[i]), dict_of_start_dates[i])
 
+    if validation > 0:
+        return final_dict, fips_list, dict_of_start_dates, dict_of_geo, val_cases, val_deaths
 
     return final_dict, fips_list, dict_of_start_dates, dict_of_geo
 
