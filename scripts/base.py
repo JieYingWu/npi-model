@@ -9,7 +9,7 @@ from dateutil.parser import parse
 import pandas as pd
 from statsmodels.distributions.empirical_distribution import ECDF
 
-assert len(sys.argv) < 5
+assert len(sys.argv) < 6
 
 # Compile the model
 data_dir = sys.argv[1]
@@ -82,7 +82,10 @@ if sys.argv[2][0:2] == 'US':
 #     stan_data['covariate10'] = covariate10
 #    stan_data['covariate11'] = covariate11
     # Train the model and generate samples - returns a StanFit4Model
-    sm = pystan.StanModel(file='stan-models/base_us.stan')
+    if sys.argv[4] == 'old-alpha':
+        sm = pystan.StanModel(file='stan-models/base_us.stan')
+    elif sys.argv[4] == 'new-alpha':
+        sm = pystan.StanModel(file='stan-models/base_us_new_alpha.stan')
 else:
     # Train the model and generate samples - returns a StanFit4Model
     sm = pystan.StanModel(file='stan-models/base_europe.stan')
