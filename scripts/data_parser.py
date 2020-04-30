@@ -34,12 +34,12 @@ def get_data_county(num_counties, data_dir, show=False, interpolate=False,
 
     #### drop non-numeric columns
 
-    df_cases = df_cases.drop(['FIPS', 'Combined_Key'], axis=1)
+    df_cases = df_cases.drop(['merge', 'FIPS', 'Combined_Key'], axis=1)
     df_cases = df_cases.T  ### Dates are now row-wise
     df_cases_dates = np.array(df_cases.index)
     df_cases = df_cases.to_numpy()
 
-    df_deaths = df_deaths.drop(['merge', 'FIPS', 'Combined_Key'], axis=1)
+    df_deaths = df_deaths.drop(['FIPS', 'Combined_Key'], axis=1)
     df_deaths = df_deaths.T
     df_deaths = df_deaths.to_numpy()
 

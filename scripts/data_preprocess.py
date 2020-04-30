@@ -41,17 +41,17 @@ def filtering(df_cases, df_deaths, interventions, num_counties):
     last_day = headers[-1]
     observed_days = len(headers[2:])
 
-    df_cases = df_cases.sort_values(by=[last_day], ascending=False)
-    df_cases = df_cases.iloc[:num_counties].copy()
-    df_cases = df_cases.reset_index(drop=True)
+    df_deaths = df_deaths.sort_values(by=[last_day], ascending=False)
+    df_deaths = df_deaths.iloc[:num_counties].copy()
+    df_deaths = df_deaths.reset_index(drop=True)
 
-    fips_list = df_cases['FIPS'].tolist()
+    fips_list = df_deaths['FIPS'].tolist()
 
     merge_df = pd.DataFrame({'merge': fips_list})
-    df_deaths = df_deaths.loc[df_deaths['FIPS'].isin(fips_list)]
+    df_cases = df_cases.loc[df_cases['FIPS'].isin(fips_list)]
     # Select the 20 counties in the same order from the deaths dataframe by merging
-    df_deaths = pd.merge(merge_df, df_deaths, left_on='merge', right_on='FIPS', how='outer')
-    df_deaths = df_deaths.reset_index(drop=True)
+    df_cases = pd.merge(merge_df, df_cases, left_on='merge', right_on='FIPS', how='outer')
+    df_cases = df_cases.reset_index(drop=True)
 
     interventions = interventions.loc[interventions['FIPS'].isin(fips_list)]
     interventions = pd.merge(merge_df, interventions, left_on='merge', right_on='FIPS', how='outer')

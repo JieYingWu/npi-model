@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import datetime
-from data_parser import impute
+from data_parser import impute, remove_negative_values
 
 # change here variables for different plotting options
 plot_settings = 'usa'  # choose 'eu' for europe and 'usa' for usa plots
@@ -184,8 +184,7 @@ def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of
     for i in range(0, len(col_names)):
         new_df[col_names[i]] = df[col_names[i]] - df[col_names[i-1]]
 
-    # interpolate
-#    df = impute(new_df)
+    df = remove_negative_values(new_df)
     df = df.set_index('FIPS')
 
     fips = int(dict_of_eu_geog[num_of_country].values)
