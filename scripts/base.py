@@ -86,6 +86,9 @@ if sys.argv[2][0:2] == 'US':
         sm = pystan.StanModel(file='stan-models/base_us.stan')
     elif sys.argv[4] == 'new-alpha':
         sm = pystan.StanModel(file='stan-models/base_us_new_alpha.stan')
+    else:
+        print("Please choose a stan model in the 4th argument")
+        exit()
 else:
     # Train the model and generate samples - returns a StanFit4Model
     sm = pystan.StanModel(file='stan-models/base_europe.stan')
