@@ -289,9 +289,10 @@ if __name__ == '__main__':
     startdate_file = join('results',sys.argv[1] + '_start_dates.csv')
 
     fips_list, start_dates = get_geo_startdate_data(geo_file, startdate_file)
+    state_level = sys.argv[1] == 'US_state'
 
     # model output indices start at 1
     county_numbers = np.arange(1, len(fips_list) + 1)
 
     for county, fips, date in zip(county_numbers, fips_list, start_dates):
-        plot_rt_US(simulation_file, interventions_file, county, fips, date, False, save_img=True, show_img=False)
+        plot_rt_US(simulation_file, interventions_file, county, fips, date, state_level=state_level, save_img=True, show_img=False)
