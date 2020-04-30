@@ -24,7 +24,7 @@ transformed data {
 
 parameters {
   real<lower=0> mu; // intercept for Rt
-  real<lower=0> alpha_hier[8]; // the hier term
+  real<lower=0> alpha[8]; // the hier term
   real<lower=0> kappa;
   real<lower=0> y[M];
   real<lower=0> phi;
@@ -40,7 +40,7 @@ transformed parameters {
     matrix[N2, M] Rt = rep_matrix(0,N2,M);
 
     for(i in 1:8){
-        alpha[i] = alpha_hier[i] - ( log(1.20) / 6.0 );
+        alpha[i] = alpha_hier[i] - ( log(1.05) / 6.0 );
     }
     for (m in 1:M){
       prediction[1:N0,m] = rep_vector(y[m],N0); // learn the number of cases in the first N0 days
@@ -66,6 +66,7 @@ transformed parameters {
       }
     }
 }
+
 model {
   tau ~ exponential(0.03);
   for (m in 1:M){
@@ -83,7 +84,7 @@ model {
 //[-0.22954335 -0.23819761 -0.14980378 -0.0564555  -0.0564555  -0.07641312
 // -0.01684891 -0.00439128 -0.13421353]
 
-  alpha_hier ~ gamma(0.1667,1);
+  alpha_hier ~ gamma(0.1667, 1);
   ifr_noise ~ normal(1,0.1);
   for(m in 1:M){
     for(i in EpidemicStart[m]:N[m]){
