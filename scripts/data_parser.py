@@ -23,7 +23,7 @@ def get_data_county(num_counties, data_dir, show=False, interpolate=False, filte
         df_cases, df_deaths = filter_negative_counts(df_cases, df_deaths, idx=2)
     
     if validation > 0:
-        df_cases, df_deaths, interventions, fips_list, val_cases, val_deaths = filtering(df_cases, df_deaths, interventions, num_counties)
+        df_cases, df_deaths, interventions, fips_list, val_cases, val_deaths = filtering(df_cases, df_deaths, interventions, num_counties, validation)
     else:
         df_cases, df_deaths, interventions, fips_list = filtering(df_cases, df_deaths, interventions, num_counties)
     

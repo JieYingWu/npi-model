@@ -19,7 +19,7 @@ if sys.argv[2] == 'europe':
 
 elif sys.argv[2] == 'US_county':
     M = int(sys.argv[3])
-    stan_data, regions, start_date, geocode = get_data_county(M, data_dir, interpolate=True, show=True, validation=3)
+    stan_data, regions, start_date, geocode = get_data_county(M, data_dir, interpolate=True, show=True, validation=0)
     wf_file = join(data_dir, 'us_data', 'weighted_fatality.csv')
     weighted_fatalities = np.loadtxt(wf_file, skiprows=1, delimiter=',', dtype=str)
 
