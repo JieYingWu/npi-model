@@ -24,7 +24,7 @@ def plot_rt_europe(simulation_file, interventions_file, country_number, country_
     num_days = len(time_data)
     # remove those interventions, that are not considered in the report
     interventions.remove('sport')
-    interventions.remove('travel_restrictions')
+#    interventions.remove('travel_restrictions')
 #    interventions.remove('any government intervention')
 
     start = 'Rt[1,' + str(country_number) + ']'
@@ -102,7 +102,7 @@ def plot_rt_US(simulation_file, interventions_file, county_number, fips, start_d
     time_data = list(pd.date_range(start=start_date, end='04/07/20'))
     num_days = len(time_data)
     # remove those interventions, that are not considered in the report
-    interventions.remove('foreign travel ban')
+#    interventions.remove('foreign travel ban')
 
     start = 'Rt[1,' + str(county_number) + ']'
     end = 'Rt[' + str(num_days) + ',' + str(county_number) + ']'
