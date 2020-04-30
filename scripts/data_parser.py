@@ -8,7 +8,8 @@ from data_preprocess import *
 
 pd.set_option('mode.chained_assignment', None)
 
-def get_data_county(num_counties, data_dir, show=False, interpolate=False, filter_data=False):
+def get_data_county(num_counties, data_dir, show=False, interpolate=False,
+        filter_data=False, remove_negatives=False):
 
     df_cases, df_deaths, interventions = preprocessing_us_data(data_dir)
 
@@ -18,7 +19,10 @@ def get_data_county(num_counties, data_dir, show=False, interpolate=False, filte
     if interpolate:
         df_cases = impute(df_cases, allow_decrease_towards_end=False)
         df_deaths = impute(df_deaths, allow_decrease_towards_end=False)
-
+    
+    if remove_negatives:
+        df_cases = remove_negative_values(df_cases)
+        df_deaths = remove_negative_values(df_deaths)
     if filter_data:
         df_cases, df_deaths = filter_negative_counts(df_cases, df_deaths, idx=2)
 
@@ -51,7 +55,8 @@ def get_data_county(num_counties, data_dir, show=False, interpolate=False, filte
 
     return final_dict, fips_list, dict_of_start_dates, dict_of_geo
 
-def get_data_state(num_states, data_dir, show=False, interpolate=False, filter_data=False):
+def get_data_state(num_states, data_dir, show=False, interpolate=False,
+        filter_data=False, remove_negatives=False):
 
     df_cases, df_deaths, interventions = preprocessing_us_data(data_dir)
 
@@ -87,6 +92,10 @@ def get_data_state(num_states, data_dir, show=False, interpolate=False, filter_d
         state_cases = impute(state_cases, allow_decrease_towards_end=False)
         state_deaths = impute(state_deaths, allow_decrease_towards_end=False)
 
+    if remove_negatives:
+        df_cases = remove_negative_values(df_cases)
+        df_deaths = remove_negative_values(df_deaths)
+    
     if filter_data:
         state_cases, state_deaths = filter_negative_counts(state_cases, state_deaths, idx=1)
 
@@ -231,7 +240,8 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, fips_l
 
 
 if __name__ == '__main__':
-    stan_data, regions, start_date, geocode = get_data_county(50, 'data', show=True, interpolate=True)
+    stan_data, regions, start_date, geocode = get_data_county(50, 'data', show=True,
+            interpolate=False, remove_negatives=True)
     print(stan_data['cases']) 
     print(stan_data['deaths'][:,1])
 
