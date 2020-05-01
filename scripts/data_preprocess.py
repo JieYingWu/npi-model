@@ -38,7 +38,7 @@ def filtering(df_cases, df_deaths, interventions, num_counties):
 
     # Pick top 20 counties with most cases
     headers = df_cases.columns.values
-    last_day = headers[-1]
+    last_day = headers[-5]
     observed_days = len(headers[2:])
 
     df_deaths = df_deaths.sort_values(by=[last_day], ascending=False)
