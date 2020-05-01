@@ -6,27 +6,51 @@ from future.backports import datetime
 from os.path import join, exists
 from data_preprocess import *
 
+from enum import Enum
 pd.set_option('mode.chained_assignment', None)
 
-def get_data_county(num_counties, data_dir, show=False, interpolate=False,
-        filter_data=False, remove_negatives=False):
+class Processing(Enum):
+    INTERPOLATE = 0
+    REMOVE_NEGATIVE_VALUES = 1
+    REMOVE_NEGATIVE_REGIONS = 2
 
-    df_cases, df_deaths, interventions = preprocessing_us_data(data_dir)
+def get_data(M, data_dir, processing=None, state=False, fips_list=None):
 
-    ## select counties
-    interventions = interventions[interventions['FIPS'] % 1000 != 0]
+    cases, deaths, interventions = preprocessing_us_data(data_dir)
 
-    if interpolate:
-        df_cases = impute(df_cases, allow_decrease_towards_end=False)
-        df_deaths = impute(df_deaths, allow_decrease_towards_end=False)
-    
-    if remove_negatives:
-        df_cases = remove_negative_values(df_cases)
-        df_deaths = remove_negative_values(df_deaths)
-    if filter_data:
-        df_cases, df_deaths = filter_negative_counts(df_cases, df_deaths, idx=2)
+    if state:
+        cases = cases[cases['FIPS'] % 1000 == 0]
+        deaths = deaths[deaths['FIPS'] % 1000 == 0]
+    else:
+        cases = cases[cases['FIPS'] % 1000 != 0]
+        deaths = deaths[deaths['FIPS'] % 1000 != 0]
 
-    df_cases, df_deaths, interventions, fips_list = filtering(df_cases, df_deaths, interventions, num_counties)
+    # Not filtering interventions data since we're not selecting counties based on that
+
+    final_dict, fips_list, dict_of_start_dates, dict_of_geo = get_regions(M, cases, deaths, processing, interventions, fips_list)
+
+    return final_dict, fips_list, dict_of_start_dates, dict_of_geo
+
+
+def get_regions(M, cases, deaths, processing, interventions, fips_list=None):
+
+    if processing == Processing.INTERPOLATE:
+        cases = impute(cases, allow_decrease_towards_end=False)
+        deaths = impute(deaths, allow_decrease_towards_end=False)
+
+    elif processing == Processing.REMOVE_NEGATIVE_VALUES:
+        cases = remove_negative_values(cases)
+        deaths = remove_negative_values(deaths)
+        
+    elif processing == Processing.REMOVE_NEGATIVE_REGIONS:
+        cases, deaths = remove_negative_regions(cases, deaths, idx=2)
+
+    if fips_list is None:
+        cases, deaths, interventions, fips_list = select_top_regions(cases, deaths, interventions, M)
+    else:
+        cases, deaths, interventions = select_regions(cases, deaths, interventions, M, fips_list)
+        print(cases, deaths, interventions)
+
     
     dict_of_geo = {} ## map geocode
     for i in range(len(fips_list)):
@@ -34,101 +58,23 @@ def get_data_county(num_counties, data_dir, show=False, interpolate=False,
 
     #### drop non-numeric columns
 
-    df_cases = df_cases.drop(['merge', 'FIPS', 'Combined_Key'], axis=1)
-    df_cases = df_cases.T  ### Dates are now row-wise
-    df_cases_dates = np.array(df_cases.index)
-    df_cases = df_cases.to_numpy()
+    cases = cases.drop(['FIPS', 'Combined_Key'], axis=1)
+    cases = cases.T  ### Dates are now row-wise
+    cases_dates = np.array(cases.index)
+    cases = cases.to_numpy()
 
-    df_deaths = df_deaths.drop(['FIPS', 'Combined_Key'], axis=1)
-    df_deaths = df_deaths.T
-    df_deaths = df_deaths.to_numpy()
+    deaths = deaths.drop(['FIPS', 'Combined_Key'], axis=1)
+    deaths = deaths.T
+    deaths = deaths.to_numpy()
 
-    interventions.drop(['merge', 'FIPS', 'STATE', 'AREA_NAME'], axis=1, inplace=True)
+    interventions.drop(['FIPS', 'STATE', 'AREA_NAME'], axis=1, inplace=True)
     interventions_colnames = interventions.columns.values
     covariates = interventions.to_numpy()
 
-    dict_of_start_dates, final_dict = primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, fips_list)
-    
-    if show:
-        for i in range(len(fips_list)):
-            print("County with FIPS {fips} has start date: ".format(fips=fips_list[i]), dict_of_start_dates[i])
+    dict_of_start_dates, final_dict = primary_calculations(cases, deaths, covariates, cases_dates, fips_list)
 
     return final_dict, fips_list, dict_of_start_dates, dict_of_geo
 
-def get_data_state(num_states, data_dir, show=False, interpolate=False,
-        filter_data=False, remove_negatives=False):
-
-    df_cases, df_deaths, interventions = preprocessing_us_data(data_dir)
-
-    ## select states
-    beginning_ids_int = np.unique(np.array(interventions['FIPS'] / 1000).astype(np.int))
-    id_cols = ['FIPS', 'STATE', 'AREA_NAME', 'Combined_Key']
-    int_cols = [col for col in interventions.columns.tolist() if col not in id_cols]
-    int_cases_col = [col for col in df_cases.columns.tolist() if col not in id_cols]
-
-    state_interventions = pd.DataFrame(columns=int_cols, index=beginning_ids_int * 1000)
-    for i in beginning_ids_int:
-        county_int = interventions.loc[(interventions['FIPS'] / 1000).astype(int) == i, :]
-        ## set the latest date for intervention at any county as the date of intervention for the state
-        state_interventions.loc[i * 1000, :] = county_int[int_cols].max(axis=0)
-    state_interventions.insert(0, 'FIPS', state_interventions.index)
-
-    beginning_ids_cases = np.unique(np.array(df_cases['FIPS'] / 1000).astype(np.int))
-    cases_dates_cols = [col for col in df_cases.columns.tolist() if col not in id_cols]
-    deaths_dates_cols = [col for col in df_deaths.columns.tolist() if col not in id_cols]
-    state_cases = pd.DataFrame(columns=cases_dates_cols, index=beginning_ids_cases * 1000)
-    state_deaths = pd.DataFrame(columns=deaths_dates_cols, index=beginning_ids_cases * 1000)
-
-    ### get daily counts over states
-    for i in beginning_ids_cases:
-        county_case_int = df_cases.loc[(df_cases['FIPS'] / 1000).astype(int) == i, cases_dates_cols]
-        county_death_int = df_deaths.loc[(df_deaths['FIPS'] / 1000).astype(int) == i, deaths_dates_cols]
-        state_cases.loc[i * 1000, :] = county_case_int.sum(axis=0)
-        state_deaths.loc[i * 1000, :] = county_death_int.sum(axis=0)
-    state_cases.insert(0, 'FIPS', state_cases.index)
-    state_deaths.insert(0, 'FIPS', state_deaths.index)
-
-    if interpolate:
-        state_cases = impute(state_cases, allow_decrease_towards_end=False)
-        state_deaths = impute(state_deaths, allow_decrease_towards_end=False)
-
-    if remove_negatives:
-        df_cases = remove_negative_values(df_cases)
-        df_deaths = remove_negative_values(df_deaths)
-    
-    if filter_data:
-        state_cases, state_deaths = filter_negative_counts(state_cases, state_deaths, idx=1)
-
-    state_cases, state_deaths, state_interventions, fips_list \
-        = filtering(state_cases, state_deaths, state_interventions, num_states)
-
-    dict_of_geo = {}
-    for i in range(len(fips_list)):
-        dict_of_geo[i] = fips_list[i]
-
-    ### Drop non-numeric columns
-    state_cases = state_cases.drop(['FIPS'], axis=1)
-    state_cases = state_cases.T  ### Dates are now row-wise
-    state_cases_dates = np.array(state_cases.index)
-    state_cases = state_cases.to_numpy()
-
-    state_deaths = state_deaths.drop(['merge', 'FIPS'], axis=1)
-    state_deaths = state_deaths.T
-    state_deaths = state_deaths.to_numpy()
-
-    state_interventions.drop(['merge', 'FIPS'], axis=1, inplace=True)
-    state_interventions_colnames = state_interventions.columns.values
-    covariates = state_interventions.to_numpy()
-
-    dict_of_start_dates, final_dict = primary_calculations(state_cases, state_deaths,
-                                                           covariates, state_cases_dates, fips_list)
-    
-    if show:
-        for i in range(len(fips_list)):
-            print("State with FIPS {fips} has start date: ".format(fips=fips_list[i]), dict_of_start_dates[i])
-
-
-    return final_dict, fips_list, dict_of_start_dates, dict_of_geo
 
 def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, fips_list, interpolate=True):
     """"
@@ -240,8 +186,8 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, fips_l
 
 
 if __name__ == '__main__':
-    stan_data, regions, start_date, geocode = get_data_county(50, 'data', show=True,
-            interpolate=False, remove_negatives=True)
+    stan_data, regions, start_date, geocode = get_data(3, 'data', processing=Processing.REMOVE_NEGATIVE_VALUES, state=True, fips_list=[1000,2000,4000])
     print(stan_data['cases']) 
     print(stan_data['deaths'][:,1])
+    print(regions)
 

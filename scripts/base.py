@@ -1,7 +1,7 @@
 from os.path import join
 import sys
 import numpy as np
-from data_parser import get_data_state, get_data_county
+from data_parser import get_data, Processing
 from data_parser_europe import get_data_europe
 import pystan
 import datetime as dt
@@ -19,13 +19,13 @@ if sys.argv[2] == 'europe':
 
 elif sys.argv[2] == 'US_county':
     M = int(sys.argv[3])
-    stan_data, regions, start_date, geocode = get_data_county(M, data_dir, remove_negatives=True)
+    stan_data, regions, start_date, geocode = get_data(M, data_dir, processing=Processing.REMOVE_NEGATIVE_VALUES, state=False)
     wf_file = join(data_dir, 'us_data', 'weighted_fatality.csv')
     weighted_fatalities = np.loadtxt(wf_file, skiprows=1, delimiter=',', dtype=str)
 
 elif sys.argv[2] == 'US_state':
     M = int(sys.argv[3])
-    stan_data, regions, start_date, geocode = get_data_state(M, data_dir, remove_negatives=True)
+    stan_data, regions, start_date, geocode = get_data(M, data_dir, processing=Processing.REMOVE_NEGATIVE_VALUES, state=True)
     wf_file = join(data_dir, 'us_data', 'state_weighted_fatality.csv')
     weighted_fatalities = np.loadtxt(wf_file, skiprows=1, delimiter=',', dtype=str)
 
@@ -136,7 +136,7 @@ for r in range(len(regions)):
 stan_data['f'] = all_f
 
     
-fit = sm.sampling(data=stan_data, iter=200, chains=4, warmup=100, thin=4, control={'adapt_delta':0.9, 'max_treedepth':10})
+fit = sm.sampling(data=stan_data, iter=1000, chains=4, warmup=500, thin=4, control={'adapt_delta':0.9, 'max_treedepth':10})
 # fit = sm.sampling(data=stan_data, iter=2000, chains=4, warmup=10, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
 
 summary_dict = fit.summary()
