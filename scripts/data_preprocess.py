@@ -27,7 +27,7 @@ def filter_negative_counts(df_cases, df_deaths, idx):
 
     return df_cases, df_deaths
 
-def filtering(df_cases, df_deaths, interventions, num_counties):
+def filtering(df_cases, df_deaths, interventions, num_counties, population):
     """"
     Returns:
         df_cases: Infections timeseries for top N places
@@ -36,7 +36,6 @@ def filtering(df_cases, df_deaths, interventions, num_counties):
         fips_list: FIPS of top N places
     """
 
-    # Pick top 20 counties with most cases
     headers = df_cases.columns.values
     last_day = headers[-5]
     observed_days = len(headers[2:])
@@ -57,8 +56,12 @@ def filtering(df_cases, df_deaths, interventions, num_counties):
     interventions = pd.merge(merge_df, interventions, left_on='merge', right_on='FIPS', how='outer')
     interventions = interventions.reset_index(drop=True)
 
+    population = population.loc[population['FIPS'].isin(fips_list)]
+    population = pd.merge(merge_df, population, left_on='merge', right_on='FIPS', how='outer')
+    population = population.reset_index(drop=True)
+    
     #print("Inside filtering function:", df_cases.shape, df_deaths.shape)
-    return df_cases, df_deaths, interventions, fips_list
+    return df_cases, df_deaths, interventions, fips_list, population
 
 def check_monotonicity(L):
     is_monotonic = np.sum([x<= y for x, y in zip(L, L[1:])])
@@ -232,14 +235,15 @@ def preprocessing_us_data(data_dir, mode='county'):
         cases_path = join(data_dir, 'us_data/infections_timeseries_w_states.csv')
         deaths_path = join(data_dir, 'us_data/deaths_timeseries_w_states.csv')
         
-        
+    population_path = join(self.data_dir, 'us_data/counties.csv') #POP_ESTIMATE_2018     
     interventions_path = join(data_dir, 'us_data/interventions.csv')
 
     df_cases = pd.read_csv(cases_path)
     df_deaths = pd.read_csv(deaths_path)
     interventions = pd.read_csv(interventions_path)
+    counties = pd.read_csv(population_path)
 
-    id_cols = ['FIPS', 'STATE', 'AREA_NAME']
+    id_cols = ['FIPS', 'STATE', 'AREA_NAME']    
     int_cols = [col for col in interventions.columns.tolist() if col not in id_cols]
 
     interventions.drop([0], axis=0, inplace=True)
@@ -247,6 +251,10 @@ def preprocessing_us_data(data_dir, mode='county'):
 
     for col in int_cols: ### convert date from given format
         interventions[col] = interventions[col].apply(lambda x: dt.date.fromordinal(int(x)))
+    
+    cols_population = ['FIPS', 'POP_ESTIMATE_2018']
+    population = counties[counties[cols_population]]
+
 
     #issues_cases = county_monotonicity(df_cases)
     #issues_deaths = county_monotonicity(df_deaths)
@@ -259,7 +267,7 @@ def preprocessing_us_data(data_dir, mode='county'):
     df_cases.iloc[:, 2:] = df_cases.iloc[:, 2:].apply(get_daily_counts, axis=1)
     df_deaths.iloc[:, 2:] = df_deaths.iloc[:, 2:].apply(get_daily_counts, axis=1)
 
-    return df_cases, df_deaths, interventions
+    return df_cases, df_deaths, interventions, population
 
 def remove_negative_values(df):
     """ replaces all negative values with 0"""
