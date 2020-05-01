@@ -58,7 +58,23 @@ def select_top_regions(df_cases, df_deaths, interventions, num_counties):
     interventions = interventions.reset_index(drop=True)
 
     #print("Inside filtering function:", df_cases.shape, df_deaths.shape)
+    df_cases.drop(['merge'], axis=1, inplace=True)
+    interventions.drop(['merge'], axis=1, inplace=True)
     return df_cases, df_deaths, interventions, fips_list
+
+
+def select_regions(cases, deaths, interventions, M, fips_list):
+    """"
+    Returns:
+        df_cases: Infections timeseries for given fips
+        df_deaths: Death timeseries for given fips
+        interventions: Intervention starting dates for given fips
+    """
+
+    cases = cases.loc[cases['FIPS'].isin(fips_list)]
+    deaths = deaths.loc[deaths['FIPS'].isin(fips_list)]
+    interventions = interventions.loc[interventions['FIPS'].isin(fips_list)]
+    return cases, deaths, interventions
 
 
 def impute(df, allow_decrease_towards_end=True):

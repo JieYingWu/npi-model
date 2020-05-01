@@ -14,7 +14,7 @@ class Processing(Enum):
     REMOVE_NEGATIVE_VALUES = 1
     REMOVE_NEGATIVE_REGIONS = 2
 
-def get_data(M, data_dir, processing=None, state=False):
+def get_data(M, data_dir, processing=None, state=False, fips_list=None):
 
     cases, deaths, interventions = preprocessing_us_data(data_dir)
 
@@ -27,12 +27,12 @@ def get_data(M, data_dir, processing=None, state=False):
 
     # Not filtering interventions data since we're not selecting counties based on that
 
-    final_dict, fips_list, dict_of_start_dates, dict_of_geo = get_relevant_regions(M, cases, deaths, processing, interventions)
+    final_dict, fips_list, dict_of_start_dates, dict_of_geo = get_regions(M, cases, deaths, processing, interventions, fips_list)
 
     return final_dict, fips_list, dict_of_start_dates, dict_of_geo
 
 
-def get_relevant_regions(M, cases, deaths, processing, interventions):
+def get_regions(M, cases, deaths, processing, interventions, fips_list=None):
 
     if processing == Processing.INTERPOLATE:
         cases = impute(cases, allow_decrease_towards_end=False)
@@ -45,7 +45,12 @@ def get_relevant_regions(M, cases, deaths, processing, interventions):
     elif processing == Processing.REMOVE_NEGATIVE_REGIONS:
         cases, deaths = remove_negative_regions(cases, deaths, idx=2)
 
-    cases, deaths, interventions, fips_list = select_top_regions(cases, deaths, interventions, M)
+    if fips_list is None:
+        cases, deaths, interventions, fips_list = select_top_regions(cases, deaths, interventions, M)
+    else:
+        cases, deaths, interventions = select_regions(cases, deaths, interventions, M, fips_list)
+        print(cases, deaths, interventions)
+
     
     dict_of_geo = {} ## map geocode
     for i in range(len(fips_list)):
@@ -53,7 +58,7 @@ def get_relevant_regions(M, cases, deaths, processing, interventions):
 
     #### drop non-numeric columns
 
-    cases = cases.drop(['merge', 'FIPS', 'Combined_Key'], axis=1)
+    cases = cases.drop(['FIPS', 'Combined_Key'], axis=1)
     cases = cases.T  ### Dates are now row-wise
     cases_dates = np.array(cases.index)
     cases = cases.to_numpy()
@@ -62,7 +67,7 @@ def get_relevant_regions(M, cases, deaths, processing, interventions):
     deaths = deaths.T
     deaths = deaths.to_numpy()
 
-    interventions.drop(['merge', 'FIPS', 'STATE', 'AREA_NAME'], axis=1, inplace=True)
+    interventions.drop(['FIPS', 'STATE', 'AREA_NAME'], axis=1, inplace=True)
     interventions_colnames = interventions.columns.values
     covariates = interventions.to_numpy()
 
@@ -181,7 +186,8 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, fips_l
 
 
 if __name__ == '__main__':
-    stan_data, regions, start_date, geocode = get_data_county(50, 'data', processing=Processing.REMOVE_NEGATIVE_VALUES)
+    stan_data, regions, start_date, geocode = get_data(3, 'data', processing=Processing.REMOVE_NEGATIVE_VALUES, state=True, fips_list=[1000,2000,4000])
     print(stan_data['cases']) 
     print(stan_data['deaths'][:,1])
+    print(regions)
 
