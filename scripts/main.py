@@ -17,25 +17,21 @@ class MainStanModel():
         for k, v in args.__dict__.items():
             setattr(self, k, v)
 
+        if isinstance(self.processing, int):
+            self.processing = data_parser.Processing(self.processing)
 
         # Compile the model
         if self.mode == 'europe':
             stan_data, regions, start_date, geocode = data_parser.get_data_europe(self.data_dir, show=False)
             weighted_fatalities = np.loadtxt(join(self.data_dir, 'europe_data', 'weighted_fatality.csv'), skiprows=1, delimiter=',', dtype=str)
-
+            
         elif self.mode == 'US_county':
-            stan_data, regions, start_date, geocode = data_parser.get_data_county(self.M, self.data_dir,
-                    remove_negatives=self.remove_negatives,
-                    interpolate=self.interpolation,
-                    filter_data=self.filter_data)
+            stan_data, regions, start_date, geocode = data_parser.get_data(self.M, self.data_dir, processing=self.processing, state=False, fips_list=self.fips_list)
             wf_file = join(self.data_dir, 'us_data', 'weighted_fatality.csv')
             weighted_fatalities = np.loadtxt(wf_file, skiprows=1, delimiter=',', dtype=str)
 
         elif self.mode == 'US_state':
-            stan_data, regions, start_date, geocode = data_parser.get_data_state(self.M, self.data_dir,
-                    remove_negatives=self.remove_negatives,
-                    interpolate=self.interpolation,
-                    filter_data=self.filter_data)
+            stan_data, regions, start_date, geocode = data_parser.get_data(self.M, self.data_dir, processing=self.processing, state=True, fips_list=self.fips_list)
             wf_file = join(self.data_dir, 'us_data', 'state_weighted_fatality.csv')
             weighted_fatalities = np.loadtxt(wf_file, skiprows=1, delimiter=',', dtype=str)
 
@@ -51,7 +47,7 @@ class MainStanModel():
     # np.savetxt('deaths.csv', stan_data['deaths'].astype(int), delimiter=',', fmt='%i')
 
     # Build a dictionary for shelter-in-place score for US cases, also load correct model for region
-            if self.mode[0:2] == 'US':
+        if self.mode[0:2] == 'US':
     #     foot_traffic_path = join(data_dir, 'us_data', 'Google_traffic', 'retail_and_recreation_percent_change_from_baseline.csv')
     #     foot_traffic = pd.read_csv(foot_traffic_path, index_col=0, encoding='latin1')
     #     id_cols = ['County', 'State']
@@ -96,8 +92,18 @@ class MainStanModel():
                     sm = pystan.StanModel(file='stan-models/base_us.stan')
                 elif self.model == 'new-alpha':
                     sm = pystan.StanModel(file='stan-models/base_us_new_alpha.stan')
-                elif self.model == 'population':
-                    sm = pystan.StanModel(file='stan-model/us_new')   
+                elif self.model == 'pop':
+                    # create X array which contains the covariates
+                    #del stan_data['covariate1'] 
+                    # del stan_data['covariate2'] 
+                    # del stan_data['covariate3'] 
+                    # del stan_data['covariate4'] 
+                    # del stan_data['covariate5'] 
+                    # del stan_data['covariate6'] 
+                    # del stan_data['covariate7'] 
+                    # del stan_data['covariate8'] 
+                    
+                    sm = pystan.StanModel(file='stan-models/us_new.stan')
         else:
     # Train the model and generate samples - returns a StanFit4Model
             sm = pystan.StanModel(file='stan-models/base_europe.stan')
@@ -154,7 +160,7 @@ class MainStanModel():
                 columns=summary_dict['summary_colnames'],
                 index=summary_dict['summary_rownames'])
 
-
+        #TODO: make saving more intuitive
         df.to_csv('results/' + self.mode + '_summary.csv', sep=',')
 
         df_sd = pd.DataFrame(start_date, index=[0])
@@ -170,19 +176,12 @@ if __name__ == '__main__':
     parser.add_argument('--mode', default='US_county', choices=['europe', 'US_state', 'US_county'], help='choose which data to use')
     #Preprocessing arguments
 
-    parser.add_argument('--interpolation', action='store_true',
-    help='apply interpolation on the whole timeseries')
-    parser.add_argument('--interpolation-with-decrease',
-    action='store_true', help='apply interpolation on the timeseries except the end')
-    parser.add_argument('--filter-data', action='store_true',
-    help='filter counties so that all time series are valid, i.e. no negative values')
-    parser.add_argument('--remove_negatives', action='store_true',
-            help='replace negative values with 0 in the timeseries')    
+    parser.add_argument('--processing', type=int, choices=[0,1,2], help=' choose the processing technique to remove negative values. \n 0 : interpolation \n 1 : replacing with 0 \n 2 : discarding regions with negative values')
     parser.add_argument('-M', default=10, type=int, help='threshold for relevant counties')
     parser.add_argument('-val','--validation', default=0, type=int, help='how many days to use for validation, defaulf=0')
-    parser.add_argument('--model', choices=['old_alpha', 'new_alpha', 'pop'], help='which model to use')
+    parser.add_argument('--model', default='pop', choices=['old_alpha', 'new_alpha', 'pop'], help='which model to use')
     parser.add_argument('--plot', action='store_true', help='add for generating plots')
-    
+    parser.add_argument('--fips-list', default=None, type=list, help='list of fips codes to run the model on')
 
     args = parser.parse_args()
     model = MainStanModel(args)

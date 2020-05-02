@@ -63,10 +63,11 @@ def select_top_regions(df_cases, df_deaths, interventions, num_counties, populat
     #print("Inside filtering function:", df_cases.shape, df_deaths.shape)
     df_cases.drop(['merge'], axis=1, inplace=True)
     interventions.drop(['merge'], axis=1, inplace=True)
-    return df_cases, df_deaths, interventions, fips_list, population
+    population.drop(['merge'], axis=1, inplace=True)
+    return df_cases, df_deaths, interventions,population, fips_list
 
 
-def select_regions(cases, deaths, interventions, M, fips_list):
+def select_regions(cases, deaths, interventions, M, fips_list, population):
     """"
     Returns:
         df_cases: Infections timeseries for given fips
@@ -77,7 +78,8 @@ def select_regions(cases, deaths, interventions, M, fips_list):
     cases = cases.loc[cases['FIPS'].isin(fips_list)]
     deaths = deaths.loc[deaths['FIPS'].isin(fips_list)]
     interventions = interventions.loc[interventions['FIPS'].isin(fips_list)]
-    return cases, deaths, interventions
+    population = population.loc[population['FIPS'].isin(fips_list)]
+    return cases, deaths, interventions, population
 
 
 def impute(df, allow_decrease_towards_end=True):
@@ -179,7 +181,7 @@ def preprocessing_us_data(data_dir, mode='county'):
     cases_path = join(data_dir, 'us_data/infections_timeseries_w_states.csv')
     deaths_path = join(data_dir, 'us_data/deaths_timeseries_w_states.csv')
         
-    population_path = join(self.data_dir, 'us_data/counties.csv') #POP_ESTIMATE_2018     
+    population_path = join(data_dir, 'us_data/counties.csv') #POP_ESTIMATE_2018     
     interventions_path = join(data_dir, 'us_data/interventions.csv')
 
     df_cases = pd.read_csv(cases_path)
@@ -197,7 +199,7 @@ def preprocessing_us_data(data_dir, mode='county'):
         interventions[col] = interventions[col].apply(lambda x: dt.date.fromordinal(int(x)))
     
     cols_population = ['FIPS', 'POP_ESTIMATE_2018']
-    population = counties[counties[cols_population]]
+    population = counties[cols_population]
 
 
     def get_daily_counts(L):
