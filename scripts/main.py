@@ -88,9 +88,9 @@ class MainStanModel():
     #     stan_data['covariate10'] = covariate10
     #    stan_data['covariate11'] = covariate11
     # Train the model and generate samples - returns a StanFit4Model
-                if self.model == 'old-alpha':
+                if self.model == 'old_alpha':
                     sm = pystan.StanModel(file='stan-models/base_us.stan')
-                elif self.model == 'new-alpha':
+                elif self.model == 'new_alpha':
                     sm = pystan.StanModel(file='stan-models/base_us_new_alpha.stan')
                 elif self.model == 'pop':
                     # create X array which contains the covariates
@@ -177,7 +177,7 @@ if __name__ == '__main__':
     #Preprocessing arguments
 
     parser.add_argument('--processing', type=int, choices=[0,1,2], help=' choose the processing technique to remove negative values. \n 0 : interpolation \n 1 : replacing with 0 \n 2 : discarding regions with negative values')
-    parser.add_argument('-M', default=10, type=int, help='threshold for relevant counties')
+    parser.add_argument('-M', default=25, type=int, help='threshold for relevant counties')
     parser.add_argument('-val','--validation', default=0, type=int, help='how many days to use for validation, defaulf=0')
     parser.add_argument('--model', default='pop', choices=['old_alpha', 'new_alpha', 'pop'], help='which model to use')
     parser.add_argument('--plot', action='store_true', help='add for generating plots')
@@ -185,13 +185,4 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     model = MainStanModel(args)
-
-
-
-
-
-
-
-
-
 
