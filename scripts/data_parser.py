@@ -34,8 +34,6 @@ def get_data(M, data_dir, processing=None, state=False, fips_list=None):
 
 
 def get_regions(M, cases, deaths, processing, interventions, population, fips_list=None):
-
-def get_regions(M, cases, deaths, processing, interventions, fips_list=None):
     if processing == Processing.INTERPOLATE:
         cases = impute(cases, allow_decrease_towards_end=False)
         deaths = impute(deaths, allow_decrease_towards_end=False)
