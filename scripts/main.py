@@ -41,8 +41,8 @@ class MainStanModel():
         ifrs = {}
         for i in range(weighted_fatalities.shape[0]):
             ifrs[weighted_fatalities[i,0]] = weighted_fatalities[i,-1]
-            stan_data['cases'] = stan_data['cases'].astype(np.int)
-            stan_data['deaths'] = stan_data['deaths'].astype(np.int)
+        stan_data['cases'] = stan_data['cases'].astype(np.int)
+        stan_data['deaths'] = stan_data['deaths'].astype(np.int)
     # np.savetxt('cases.csv', stan_data['cases'].astype(int), delimiter=',', fmt='%i')
     # np.savetxt('deaths.csv', stan_data['deaths'].astype(int), delimiter=',', fmt='%i')
 
@@ -149,10 +149,10 @@ class MainStanModel():
 
                 all_f[:,r] = s * h
 
-            stan_data['f'] = all_f
+        stan_data['f'] = all_f
 
 
-            fit = sm.sampling(data=stan_data, iter=200, chains=4, warmup=100, thin=4, control={'adapt_delta':0.9, 'max_treedepth':10})
+        fit = sm.sampling(data=stan_data, iter=200, chains=4, warmup=100, thin=4, control={'adapt_delta':0.9, 'max_treedepth':10})
     # fit = sm.sampling(data=stan_data, iter=2000, chains=4, warmup=10, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
 
         summary_dict = fit.summary()

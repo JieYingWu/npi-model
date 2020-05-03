@@ -28,7 +28,7 @@ for i in range(weighted_fatalities.shape[0]):
 stan_data['cases'] = stan_data['cases'].astype(np.int)
 stan_data['deaths'] = stan_data['deaths'].astype(np.int)
 
-sm = pystan.StanModel(file='stan-models/base_us.stan')
+sm = pystan.StanModel(file='stan-models/us_new.stan')
 
 
 serial_interval = np.loadtxt(join(data_dir, 'serial_interval.csv'), skiprows=1, delimiter=',')
@@ -74,7 +74,7 @@ for r in range(len(regions)):
 stan_data['f'] = all_f
 
     
-fit = sm.sampling(data=stan_data, iter=1000, chains=4, warmup=500, thin=4, control={'adapt_delta':0.9, 'max_treedepth':10})
+fit = sm.sampling(data=stan_data, iter=200, chains=4, warmup=100, thin=4, control={'adapt_delta':0.9, 'max_treedepth':10})
 # fit = sm.sampling(data=stan_data, iter=2000, chains=4, warmup=10, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
 
 summary_dict = fit.summary()
