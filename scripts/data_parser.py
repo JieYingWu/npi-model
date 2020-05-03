@@ -16,7 +16,7 @@ class Processing(Enum):
 
 def get_data(M, data_dir, processing=None, state=False, fips_list=None):
 
-    cases, deaths, interventions = preprocessing_us_data(data_dir)
+    cases, deaths, interventions, population = preprocessing_us_data(data_dir)
 
     if state:
         cases = cases[cases['FIPS'] % 1000 == 0]
@@ -27,10 +27,13 @@ def get_data(M, data_dir, processing=None, state=False, fips_list=None):
 
     # Not filtering interventions data since we're not selecting counties based on that
 
-    final_dict, fips_list, dict_of_start_dates, dict_of_geo = get_regions(M, cases, deaths, processing, interventions, fips_list)
+    final_dict, fips_list, dict_of_start_dates, dict_of_geo = get_regions(M, cases, deaths,
+            processing, interventions, population, fips_list)
 
     return final_dict, fips_list, dict_of_start_dates, dict_of_geo
 
+
+def get_regions(M, cases, deaths, processing, interventions, population, fips_list=None):
 
 def get_regions(M, cases, deaths, processing, interventions, fips_list=None):
     if processing == Processing.INTERPOLATE:
@@ -45,9 +48,11 @@ def get_regions(M, cases, deaths, processing, interventions, fips_list=None):
         cases, deaths = remove_negative_regions(cases, deaths, idx=2)
 
     if fips_list is None:
-        cases, deaths, interventions, fips_list = select_top_regions(cases, deaths, interventions, M)
+        cases, deaths, interventions, population, fips_list = select_top_regions(cases, deaths,
+                interventions, M, population)
     else:
-        cases, deaths, interventions = select_regions(cases, deaths, interventions, M, fips_list)
+        cases, deaths, interventions, population = select_regions(cases, deaths, interventions, M, fips_list,
+                population)
 
     
     dict_of_geo = {} ## map geocode
@@ -68,13 +73,17 @@ def get_regions(M, cases, deaths, processing, interventions, fips_list=None):
     interventions.drop(['FIPS', 'STATE', 'AREA_NAME'], axis=1, inplace=True)
     interventions_colnames = interventions.columns.values
     covariates = interventions.to_numpy()
-
-    dict_of_start_dates, final_dict = primary_calculations(cases, deaths, covariates, cases_dates, fips_list)
+    
+    population = population.drop(['FIPS'], axis=1)
+    population = population.to_numpy()
+    
+    dict_of_start_dates, final_dict = primary_calculations(cases, deaths, covariates, cases_dates,
+            population, fips_list)
 
     return final_dict, fips_list, dict_of_start_dates, dict_of_geo
 
 
-def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, fips_list, interpolate=True):
+def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, population, fips_list, interpolate=True):
     """"
     Returns:
         final_dict: Stan_data used to feed main sampler
@@ -157,11 +166,14 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, fips_l
     deaths = np.array(deaths).T
     #print(np.sum(cases<-1))
     #print(np.sum(deaths<-1))
-
-
+    X = np.dstack([covariate1, covariate2, covariate3, covariate4, covariate5, covariate6,
+        covariate7, covariate8])
+    X = np.moveaxis(X, 1, 0)
+        
     final_dict = {}
     final_dict['M'] = len(fips_list)
     final_dict['N0'] = 6
+    final_dict['P'] = 8 # num of covariates
     final_dict['N'] = np.asarray(N_arr, dtype=np.int)
     final_dict['N2'] = N2
     final_dict['p'] = covariates.shape[1] - 1
@@ -177,15 +189,15 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, fips_l
     final_dict['covariate6'] = covariate6
     final_dict['covariate7'] = covariate7
     final_dict['covariate8'] = covariate8
-    
+    final_dict['pop'] = population.astype(np.float).reshape((len(fips_list)))
+    final_dict['X'] = X
     ## New covariate for foot traffic data
     
     return dict_of_start_dates, final_dict
 
 
 if __name__ == '__main__':
-    stan_data, regions, start_date, geocode = get_data(3, 'data', processing=Processing.REMOVE_NEGATIVE_VALUES, state=True, fips_list=[1000,2000,4000])
-    print(stan_data['cases']) 
-    print(stan_data['deaths'][:,1])
-    print(regions)
-
+    stan_data, regions, start_date, geocode = get_data(25, 'data', processing=None, state=False, fips_list=None)
+    print(stan_data['X'].shape)
+    print(stan_data['pop'])
+    print(stan_data['deaths'])  
