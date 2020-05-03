@@ -13,6 +13,8 @@ regions = [55079, 53033, 42101, 36119, 36103, 36087, 36071, 36061, 36059, 36055,
 regions = regions[::-1]
 M = len(regions) # 56 I think
 
+print('Running for ' + str(M) + ' FIPS')
+
 data_dir = 'data'
 stan_data, regions, start_date, geocode = get_data(M, data_dir, processing=Processing.REMOVE_NEGATIVE_VALUES, state=False, fips_list=regions)
 wf_file = join(data_dir, 'us_data', 'weighted_fatality.csv')
