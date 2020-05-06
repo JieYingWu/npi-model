@@ -1,3 +1,4 @@
+""" Run from root directory """
 import os
 import sys
 import argparse
@@ -8,6 +9,9 @@ import numpy as np
 import data_parser
 from statsmodels.distributions.empirical_distribution import ECDF
 from os.path import join, exists
+
+import forecast_plots
+import plot_rt
 
 
 
@@ -20,89 +24,49 @@ class MainStanModel():
         if isinstance(self.processing, int):
             self.processing = data_parser.Processing(self.processing)
 
-        # Compile the model
-        if self.mode == 'europe':
-            stan_data, regions, start_date, geocode = data_parser.get_data_europe(self.data_dir, show=False)
-            weighted_fatalities = np.loadtxt(join(self.data_dir, 'europe_data', 'weighted_fatality.csv'), skiprows=1, delimiter=',', dtype=str)
+        stan_data, regions, start_date, geocode, weighted_fatalities = self.preprocess_data(self.M, self.mode, self.data_dir)
+        result_df = self.run_model(stan_data, weighted_fatalities, regions, start_date, geocode)
+        self.save_results_to_file(self.output_path, result_df, start_date, geocode)
+        
+        if self.plot:
+            self.make_plots()
+
+
+
+    def preprocess_data(self, M, mode, data_dir):
+        if mode == 'europe':
+            stan_data, regions, start_date, geocode = data_parser.get_data_europe(data_dir, show=False)
+            weighted_fatalities = np.loadtxt(join(data_dir, 'europe_data', 'weighted_fatality.csv'), skiprows=1, delimiter=',', dtype=str)
             
-        elif self.mode == 'US_county':
-            stan_data, regions, start_date, geocode = data_parser.get_data(self.M, self.data_dir, processing=self.processing, state=False, fips_list=self.fips_list)
+        elif mode == 'US_county':
+            stan_data, regions, start_date, geocode = data_parser.get_data(M, data_dir, processing=self.processing, state=False, fips_list=self.fips_list)
             wf_file = join(self.data_dir, 'us_data', 'weighted_fatality.csv')
             weighted_fatalities = np.loadtxt(wf_file, skiprows=1, delimiter=',', dtype=str)
 
-        elif self.mode == 'US_state':
-            stan_data, regions, start_date, geocode = data_parser.get_data(self.M, self.data_dir, processing=self.processing, state=True, fips_list=self.fips_list)
-            wf_file = join(self.data_dir, 'us_data', 'state_weighted_fatality.csv')
+        elif mode == 'US_state':
+            stan_data, regions, start_date, geocode = data_parser.get_data(M, data_dir, processing=self.processing, state=True, fips_list=self.fips_list)
+            wf_file = join(data_dir, 'us_data', 'state_weighted_fatality.csv')
             weighted_fatalities = np.loadtxt(wf_file, skiprows=1, delimiter=',', dtype=str)
 
-        N2 = stan_data['N2']
+        self.N2 = stan_data['N2']
 
+        return stan_data, regions, start_date, geocode, weighted_fatalities
+   
+
+
+    def run_model(self, stan_data, weighted_fatalities, regions, start_date, geocode):
     # Build a dictionary of region identifier to weighted fatality rate
         ifrs = {}
         for i in range(weighted_fatalities.shape[0]):
             ifrs[weighted_fatalities[i,0]] = weighted_fatalities[i,-1]
         stan_data['cases'] = stan_data['cases'].astype(np.int)
         stan_data['deaths'] = stan_data['deaths'].astype(np.int)
-    # np.savetxt('cases.csv', stan_data['cases'].astype(int), delimiter=',', fmt='%i')
-    # np.savetxt('deaths.csv', stan_data['deaths'].astype(int), delimiter=',', fmt='%i')
-
-    # Build a dictionary for shelter-in-place score for US cases, also load correct model for region
         if self.mode[0:2] == 'US':
-    #     foot_traffic_path = join(data_dir, 'us_data', 'Google_traffic', 'retail_and_recreation_percent_change_from_baseline.csv')
-    #     foot_traffic = pd.read_csv(foot_traffic_path, index_col=0, encoding='latin1')
-    #     id_cols = ['County', 'State']
-    #     dates = [col for col in foot_traffic.columns.tolist() if col not in id_cols]
-    #     foot_traffic['scores'] = foot_traffic[dates].values.tolist()
-
-    #     foot_traffic_start = dt.datetime(2020, 2, 15)
-    #     foot_traffic_end = dt.datetime(2020, 4, 11)
-    #     covariate9 = np.zeros((N2, M))
-
-    #     features_path = join(data_dir, 'us_data', 'features.csv')
-    #     features = pd.read_csv(features_path, index_col=0)
-    #     covariate10 = np.zeros((N2, M))
-    #     covariate11 = np.zeros((N2, M))
-
-    #     for i in range(len(regions)):
-    #         r = regions[i]
-    #         cur_start = parse(start_date[i])
-    #         cur_foot_traffic = np.array(foot_traffic.loc[r, 'scores'])
-
-    #         start_pad = (foot_traffic_start - cur_start).days
-    #         end_pad = (cur_start + dt.timedelta(days=N2) - foot_traffic_end).days - 1
-    #         if start_pad > 0:
-    #             cur_foot_traffic = np.pad(cur_foot_traffic, (start_pad, end_pad), 'constant', constant_values=(0, cur_foot_traffic[-1]))
-    #         elif start_pad < 0:
-    #             cur_foot_traffic = cur_foot_traffic[-1*start_pad:]
-    #             cur_foot_traffic = np.pad(cur_foot_traffic, (0, end_pad), 'constant', constant_values=(0, cur_foot_traffic[-1]))
-    #         else:
-    #             cur_foot_traffic = np.pad(cur_foot_traffic, (0, end_pad), 'constant', constant_values=(0, cur_foot_traffic[-1]))
-
-    #         density = features.loc[r, 'Density per square mile of land area - Population']
-    #         code = features.loc[r, 'Rural-urban_Continuum Code_2013']
-
-    #         covariate9[:, i] = cur_foot_traffic
-    #         covariate10[:, i] = np.repeat([density], N2)
-    # #        covariate11[:, i] = np.repeat([code], N2)
-    #     stan_data['covariate9'] = covariate9
-    #     stan_data['covariate10'] = covariate10
-    #    stan_data['covariate11'] = covariate11
-    # Train the model and generate samples - returns a StanFit4Model
                 if self.model == 'old_alpha':
                     sm = pystan.StanModel(file='stan-models/base_us.stan')
                 elif self.model == 'new_alpha':
                     sm = pystan.StanModel(file='stan-models/base_us_new_alpha.stan')
                 elif self.model == 'pop':
-                    # create X array which contains the covariates
-                    #del stan_data['covariate1'] 
-                    # del stan_data['covariate2'] 
-                    # del stan_data['covariate3'] 
-                    # del stan_data['covariate4'] 
-                    # del stan_data['covariate5'] 
-                    # del stan_data['covariate6'] 
-                    # del stan_data['covariate7'] 
-                    # del stan_data['covariate8'] 
-                    
                     sm = pystan.StanModel(file='stan-models/us_new.stan')
         else:
     # Train the model and generate samples - returns a StanFit4Model
@@ -125,7 +89,7 @@ class MainStanModel():
         alpha2 = cv2**-2
         beta2 = mean2/alpha2
 
-        all_f = np.zeros((N2, len(regions)))
+        all_f = np.zeros((self.N2, len(regions)))
         
         for r in range(len(regions)):
             ifr = float(ifrs[str(regions[r])])
@@ -137,14 +101,14 @@ class MainStanModel():
             def conv(u): # IFR is the country's probability of death
                 return ifr * f(u)
 
-            h = np.zeros(N2) # Discrete hazard rate from time t = 1, ..., 100
+            h = np.zeros(self.N2) # Discrete hazard rate from time t = 1, ..., 100
             h[0] = (conv(1.5) - conv(0.0))
 
-            for i in range(1, N2):
+            for i in range(1, self.N2):
                 h[i] = (conv(i+.5) - conv(i-.5)) / (1-conv(i-.5))
-            s = np.zeros(N2)
+            s = np.zeros(self.N2)
             s[0] = 1
-            for i in range(1, N2):
+            for i in range(1, self.N2):
                 s[i] = s[i-1]*(1-h[i-1])
 
                 all_f[:,r] = s * h
@@ -160,29 +124,74 @@ class MainStanModel():
                 columns=summary_dict['summary_colnames'],
                 index=summary_dict['summary_rownames'])
 
-        #TODO: make saving more intuitive
-        df.to_csv('results/' + self.mode + '_summary.csv', sep=',')
+        return df 
+
+
+
+    def save_results_to_file(self, results_path, df, start_date, geocode):
+        """ save the result dict, geocodes and start_dates into a unique folder """
+        # results example:
+        #        - 05_06_2020_15_40_35_validation_iter_200_warmup_100_processing_REMOVE_NEGATIVE_VALUES 
+        timestamp = dt.datetime.now().strftime('%m_%d_%y_%H_%M_%S')
+        unique_folder_name_list = [timestamp, str(self.mode), 'iter', str(self.iter), 'warmup', str(self.warmup_iter), 'processing', str(data_parser.Processing(self.processing))]
+        if self.validation > 0:
+            unique_folder_name_list.insert(2, 'validation')
+        
+        #make unique results folder
+        self.unique_results_path = join(results_path, '_'.join(unique_folder_name_list))
+        os.mkdir(self.unique_results_path)
+        
+        self.summary_path = join(self.unique_results_path, 'summary.csv')
+        self.start_dates_path = join(self.unique_results_path, 'start_dates.csv')
+        self.geocode_path = join(self.unique_results_path, 'geocode.csv')
+        logfile_path = join(self.unique_results_path, 'logfile.txt')
+        df.to_csv(self.summary_path, sep=',')
 
         df_sd = pd.DataFrame(start_date, index=[0])
         df_geo = pd.DataFrame(geocode, index=[0])
-        df_sd.to_csv('results/' + self.mode + '_start_dates.csv', sep=',')
-        df_geo.to_csv('results/' + self.mode + '_geocode.csv', sep=',')
+        df_sd.to_csv(self.start_dates_path, sep=',')
+        df_geo.to_csv(self.geocode_path, sep=',')
+
+
+
+
+    
+
+    def make_plots(self):
+        """ save plots of current run"""
+        forecast_plots_path =join(self.unique_results_path,'plots', 'forecast') 
+        rt_plots_path = join(self.unique_results_path,'plots', 'rt')
+        os.makedirs(forecast_plots_path)
+        os.makedirs(rt_plots_path)
+
+        interventions_path = join(self.data_dir,'us_data','interventions.csv')
+        if self.plot:
+            if self.mode == 'europe':
+                forecast_plots.make_all_eu_plots(self.start_dates_path, self.geocode_path, self.summary_path, forecast_plots_path)
+            elif self.mode == 'US_county':
+                forecast_plots.make_all_us_county_plots(self.start_dates_path, self.geocode_path, self.summary_path, forecast_plots_path)
+                plot_rt.make_all_us_plots(self.summary_path, self.geocode_path, self.start_dates_path, interventions_path, rt_plots_path, state_level=False)
+            elif self.mode == 'US_state':
+                forecast_plots.make_all_us_states_plots(self.start_dates_path, self.geocode_path, self.summary_path, forecast_plots_path)
+                plot_rt.make_all_us_plots(self.summary_path, self.geocode_path, self.start_dates_path, interventions_path, rt_plots_path, state_level=True)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--data-dir', default='./data/', help='directory for the data')
+    parser.add_argument('--output_path', default='./results', help='directory to save the results and plots in')
     parser.add_argument('--mode', default='US_county', choices=['europe', 'US_state', 'US_county'], help='choose which data to use')
-    #Preprocessing arguments
-
-    parser.add_argument('--processing', type=int, choices=[0,1,2], help=' choose the processing technique to remove negative values. \n 0 : interpolation \n 1 : replacing with 0 \n 2 : discarding regions with negative values')
+    parser.add_argument('--processing', type=int, default=1, choices=[0,1,2], help=' choose the processing technique to remove negative values. \n 0 : interpolation \n 1 : replacing with 0 \n 2 : discarding regions with negative values')
     parser.add_argument('-M', default=25, type=int, help='threshold for relevant counties')
-    parser.add_argument('-val','--validation', default=0, type=int, help='how many days to use for validation, defaulf=0')
+    parser.add_argument('-val','--validation', default=0, type=int, help='how many days to use for validation, default=0')
     parser.add_argument('--model', default='pop', choices=['old_alpha', 'new_alpha', 'pop'], help='which model to use')
     parser.add_argument('--plot', action='store_true', help='add for generating plots')
     parser.add_argument('--fips-list', default=None, type=list, help='list of fips codes to run the model on')
-
+    parser.add_argument('-s','--save-tag',default = '', type=str, help='tag for saving the summary, geocodes and start-dates.')
+    parser.add_argument('--iter', default=200, type=int, help='iterations for the model')
+    parser.add_argument('--warmup-iter', default=100, type=int, help='warmup iterations for the model')
     args = parser.parse_args()
+
     model = MainStanModel(args)
 
