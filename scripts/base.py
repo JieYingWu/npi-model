@@ -82,13 +82,7 @@ if sys.argv[2][0:2] == 'US':
 #     stan_data['covariate10'] = covariate10
 #    stan_data['covariate11'] = covariate11
     # Train the model and generate samples - returns a StanFit4Model
-    if sys.argv[4] == 'old-alpha':
-        sm = pystan.StanModel(file='stan-models/base_us.stan')
-    elif sys.argv[4] == 'new-alpha':
-        sm = pystan.StanModel(file='stan-models/base_us_new_alpha.stan')
-    else:
-        print("Please choose a stan model in the 4th argument")
-        exit()
+    sm = pystan.StanModel(file='stan-models/us_new.stan')
 else:
     # Train the model and generate samples - returns a StanFit4Model
     sm = pystan.StanModel(file='stan-models/base_europe.stan')
@@ -136,18 +130,22 @@ for r in range(len(regions)):
 stan_data['f'] = all_f
 
     
-fit = sm.sampling(data=stan_data, iter=1000, chains=4, warmup=500, thin=4, control={'adapt_delta':0.9, 'max_treedepth':10})
+fit = sm.sampling(data=stan_data, iter=1000, chains=4, warmup=500, thin=4, control={'adapt_delta':0.9, 'max_treedepth':12})
 # fit = sm.sampling(data=stan_data, iter=2000, chains=4, warmup=10, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
 
+print("Finished fitting")
+
 summary_dict = fit.summary()
+print("Summarized model")
+
 df = pd.DataFrame(summary_dict['summary'],
                  columns=summary_dict['summary_colnames'],
                  index=summary_dict['summary_rownames'])
 
 
-df.to_csv('results/' + sys.argv[2] + '_summary.csv', sep=',')
+df.to_csv('results/' + sys.argv[2] + '_summary_411.csv', sep=',')
 
 df_sd = pd.DataFrame(start_date, index=[0])
 df_geo = pd.DataFrame(geocode, index=[0])
-df_sd.to_csv('results/' + sys.argv[2] + '_start_dates.csv', sep=',')
-df_geo.to_csv('results/' + sys.argv[2] + '_geocode.csv', sep=',')
+df_sd.to_csv('results/' + sys.argv[2] + '_start_dates_411.csv', sep=',')
+df_geo.to_csv('results/' + sys.argv[2] + '_geocode_411.csv', sep=',')
