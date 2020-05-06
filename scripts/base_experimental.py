@@ -28,7 +28,7 @@ for i in range(weighted_fatalities.shape[0]):
 stan_data['cases'] = stan_data['cases'].astype(np.int)
 stan_data['deaths'] = stan_data['deaths'].astype(np.int)
 
-sm = pystan.StanModel(file='stan-models/base_us.stan')
+sm = pystan.StanModel(file='stan-models/us_new.stan')
 
 
 serial_interval = np.loadtxt(join(data_dir, 'serial_interval.csv'), skiprows=1, delimiter=',')
