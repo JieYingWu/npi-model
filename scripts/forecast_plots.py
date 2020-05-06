@@ -1,3 +1,4 @@
+import os
 from os.path import join, exists
 import sys
 import numpy as np
@@ -29,7 +30,8 @@ elif plot_settings == 'usa':
 
 
 def plot_forecasts_wo_dates_quantiles(quantiles_dict, confirmed_cases, county_name, plot_choice,
-                                      num_of_country, dict_of_start_dates, dict_of_eu_geog, save_image=True):
+                                      num_of_country, dict_of_start_dates,
+                                      dict_of_eu_geog, output_path, save_image=True):
     '''
     :param quantiles_dict: stores values of quantiles
     :param confirmed_cases: real confirmed cases
@@ -87,14 +89,14 @@ def plot_forecasts_wo_dates_quantiles(quantiles_dict, confirmed_cases, county_na
     if save_image:
         name = str(metric) + str(dict_of_eu_geog[num_of_country].values[0])
         plt.tight_layout()
-        fig.savefig('results/plots/{}/{}.jpg'.format(results_folder, name))
+        fig.savefig(join(output_path, name+'.png'))
         fig.clf()
     else:
         plt.show()
 
 
 def plot_daily_infections_num(path, confirmed_cases, county_name, plot_choice, num_of_country, dict_of_start_dates,
-                              dict_of_eu_geog):
+                              dict_of_eu_geog, output_path):
     print(county_name)
     # 1 for deaths; 0 for infections
     plot_name = ""
@@ -139,7 +141,7 @@ def plot_daily_infections_num(path, confirmed_cases, county_name, plot_choice, n
 
     quantiles_dict = {'2.5%': list2_5,'25%': list25, '50%': list50, '75%': list75, '97.5%': list97_5}
     plot_forecasts_wo_dates_quantiles(quantiles_dict, confirmed_cases, county_name,
-                                      plot_choice, num_of_country, dict_of_start_dates, dict_of_eu_geog)
+                                      plot_choice, num_of_country, dict_of_start_dates, dict_of_eu_geog, output_path)
 
 
 def read_true_cases_europe(plot_choice, num_of_country, dict_of_start_dates, dict_of_eu_geog):
@@ -206,25 +208,25 @@ def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of
 
 
 # create a batch of all possible plots for usa
-def make_all_us_county_plots():
-    dict_of_start_dates = pd.read_csv('results/US_county_start_dates.csv', delimiter=',', index_col=0)
-    dict_of_eu_geog = pd.read_csv('results/US_county_geocode.csv', delimiter=',', index_col=0)
-    path = "results/US_county_summary.csv"
+def make_all_us_county_plots(start_date_dict_path, geocode_dict_path, summary_path, output_path):
+    dict_of_start_dates = pd.read_csv(start_date_dict_path, delimiter=',', index_col=0)
+    dict_of_eu_geog = pd.read_csv(geocode_dict_path, delimiter=',', index_col=0)
+    path = summary_path 
 
     for plot_choice in range(0, 2):
         for num_of_country in dict_of_eu_geog.keys():
             confirmed_cases, county_name = read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates,
                                                               dict_of_eu_geog)
             plot_daily_infections_num(path, confirmed_cases, county_name, plot_choice, num_of_country,
-                                      dict_of_start_dates, dict_of_eu_geog)
+                                      dict_of_start_dates, dict_of_eu_geog, output_path)
     return
 
 
 # create a batch of all possible plots for usa
-def make_all_us_states_plots():
-    dict_of_start_dates = pd.read_csv('results/US_state_start_dates.csv', delimiter=',', index_col=0)
-    dict_of_eu_geog = pd.read_csv('results/US_state_geocode.csv', delimiter=',', index_col=0)
-    path = "results/US_state_summary.csv"
+def make_all_us_states_plots(start_date_dict_path, geocode_dict_path, summary_path, output_path):
+    dict_of_start_dates = pd.read_csv(start_date_dict_path, delimiter=',', index_col=0)
+    dict_of_eu_geog = pd.read_csv(geocode_dict_path, delimiter=',', index_col=0)
+    path = summary_path
 
     for plot_choice in range(0, 2):
         for num_of_country in dict_of_eu_geog.keys():
@@ -232,31 +234,39 @@ def make_all_us_states_plots():
             confirmed_cases, county_name = read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates,
                                                               dict_of_eu_geog)
             plot_daily_infections_num(path, confirmed_cases, county_name, plot_choice, num_of_country,
-                                      dict_of_start_dates, dict_of_eu_geog)
+                                      dict_of_start_dates, dict_of_eu_geog, output_path)
     return
 
 
 # create a batch of all possible plots for europe
-def make_all_eu_plots():
-    dict_of_start_dates = pd.read_csv('results/europe_start_dates.csv', delimiter=',', index_col=0)
-    dict_of_eu_geog = pd.read_csv('results/europe_geocode.csv', delimiter=',', index_col=0)
-    path = "results/europe_summary.csv"
+def make_all_eu_plots(start_date_dict_path, geocode_dict_path, summary_path, output_path):
+    dict_of_start_dates = pd.read_csv(start_date_dict_path, delimiter=',', index_col=0)
+    dict_of_eu_geog = pd.read_csv(geocode_dict_path, delimiter=',', index_col=0)
+    path = summary_path
 
     for plot_choice in range(0, 2):
         for num_of_country in dict_of_eu_geog.keys():
             confirmed_cases = read_true_cases_europe(plot_choice, num_of_country, dict_of_start_dates, dict_of_eu_geog)
             plot_daily_infections_num(path, confirmed_cases, "", plot_choice, num_of_country, dict_of_start_dates,
-                                      dict_of_eu_geog)
+                                      dict_of_eu_geog, output_path)
     return
 
 
-def main():
-    if sys.argv[1] == 'europe':
-        make_all_eu_plots()
-    if sys.argv[1] == 'US_county':
-        make_all_us_county_plots()
-    if sys.argv[1] == 'US_state':
-        make_all_us_states_plots()
+def main(path):
+    cwd = path.split('/')[-1]
+    print(cwd)
+    start_dates_path = join(path, 'start_dates.csv')
+    geocode_path = join(path, 'geocode.csv')
+    summary_path = join(path, 'summary.csv')
+    output_path = join(path, 'plots/forecast')
+    if 'europe' in cwd:
+        make_all_eu_plots(start_dates_path, geocode_path, summary_path, output_path)     
+    if 'county' in cwd:
+        make_all_us_county_plots(start_dates_path, geocode_path, summary_path, output_path)     
+    if 'state' in cwd :
+        make_all_us_states_plots(start_dates_path, geocode_path, summary_path, output_path)     
 
 if __name__ == '__main__':
-    main()
+    # run from base directory 
+    unique_results_path = sys.argv[1]    
+    main(unique_results_path)

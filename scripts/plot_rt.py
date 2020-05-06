@@ -93,7 +93,7 @@ def plot_rt_europe(simulation_file, interventions_file, country_number, country_
         plt.show()
 
 
-def plot_rt_US(simulation_file, interventions_file, county_number, fips, start_date, state_level, save_img=False, show_img=True):
+def plot_rt_US(simulation_file, interventions_file, county_number, fips, start_date, state_level, output_path, save_img=False, show_img=True):
     # read data
     simulation_data = pd.read_csv(simulation_file, delimiter=',', index_col=0)
     interventions, interventions_data = get_interventions_US(interventions_file, state_level=state_level)
@@ -165,10 +165,10 @@ def plot_rt_US(simulation_file, interventions_file, county_number, fips, start_d
 
     if save_img:
         if state_level:
-            path = join('results','plots','usa_interventions',r'Rt_state_{}.png'.format(fips))
+            path = join(output_path,r'Rt_state_{}.png'.format(fips))
             plt.savefig(path, bbox_extra_artists=(lgd,), bbox_inches='tight')
         else:
-            path = join('results','plots','usa_interventions',r'Rt_county_{}.png'.format(fips))
+            path = join(output_path,r'Rt_county_{}.png'.format(fips))
             plt.savefig(path, bbox_extra_artists=(lgd,),
                             bbox_inches='tight')
 
@@ -266,6 +266,44 @@ def get_geo_startdate_data(geo_file, startdate_file):
     return fips_list, start_dates
 
 
+
+def make_all_us_plots(summary_path, geocode_path, start_dates_path, interventions_path, output_path, state_level=False):
+
+    fips_list, start_dates = get_geo_startdate_data(geocode_path, start_dates_path)
+
+    county_numbers = np.arange(1, len(fips_list) + 1)
+    
+    for county, fips, date in zip(county_numbers, fips_list, start_dates):
+        plot_rt_US(summary_path, interventions_path , county, fips, date, state_level, output_path, save_img=True, show_img=False)
+
+
+
+def make_all_eu_plots(summary_path, geocode_path, start_dates_path, interventions_path, output_path):
+    country_list, start_dates = get_geo_startdate_data(geocode_path, start_dates_path)
+    
+    # model output indices start at 1
+    country_numbers = np.arange(1, len(country_list) + 1)
+    #
+    for country_ind, country_name, date in zip(country_numbers, country_list, start_dates):
+         plot_rt_europe(summary_path, interventions_path, country_ind, country_name, date, save_img=True)
+
+
+def main(path, interventions_path):
+    cwd = path.split('/')[-1]
+
+    print(cwd)
+    start_dates_path = join(path, 'start_dates.csv')
+    geocode_path = join(path, 'geocode.csv')
+    summary_path = join(path, 'summary.csv')
+    output_path = join(path, 'plots/rt')
+    
+    if 'europe' in cwd:
+        make_all_eu_plots(summary_path, geocode_path, start_dates_path, interventions_path, output_path)     
+    if 'county' in cwd:
+        make_all_us_plots(summary_path, geocode_path, start_dates_path, interventions_path, output_path, state_level=False)     
+    if 'state' in cwd :
+        make_all_us_plots(summary_path, geocode_path, start_dates_path, interventions_path, output_path, state_level=True)     
+
 if __name__ == '__main__':
 
     ### EUROPE ###
@@ -283,16 +321,8 @@ if __name__ == '__main__':
     #     plot_rt_europe(simulation_file, interventions_file, country_ind, country_name, date, save_img=True)
 
     ### USA counties ###
-    simulation_file = join('results', sys.argv[1] + '_summary.csv')
-    interventions_file = join('data','us_data','interventions.csv')
-    geo_file = join('results',sys.argv[1] + '_geocode.csv')
-    startdate_file = join('results',sys.argv[1] + '_start_dates.csv')
+    unique_results_path = sys.argv[1]
 
-    fips_list, start_dates = get_geo_startdate_data(geo_file, startdate_file)
-    state_level = sys.argv[1] == 'US_state'
+    interventions_path = sys.argv[2] #path to intervention.csv
 
-    # model output indices start at 1
-    county_numbers = np.arange(1, len(fips_list) + 1)
-
-    for county, fips, date in zip(county_numbers, fips_list, start_dates):
-        plot_rt_US(simulation_file, interventions_file, county, fips, date, state_level=state_level, save_img=True, show_img=False)
+    main(unique_results_path, interventions_path)
