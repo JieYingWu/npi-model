@@ -14,7 +14,7 @@ class Processing(Enum):
     REMOVE_NEGATIVE_VALUES = 1
     REMOVE_NEGATIVE_REGIONS = 2
 
-def get_data(M, data_dir, processing=None, state=False, fips_list=None):
+def get_data(M, data_dir, processing=None, state=False, fips_list=None, validation=0):
 
     cases, deaths, interventions, population = preprocessing_us_data(data_dir)
 
@@ -28,12 +28,12 @@ def get_data(M, data_dir, processing=None, state=False, fips_list=None):
     # Not filtering interventions data since we're not selecting counties based on that
 
     final_dict, fips_list, dict_of_start_dates, dict_of_geo = get_regions(M, cases, deaths,
-            processing, interventions, population, fips_list)
+            processing, interventions, population, fips_list, validation)
 
     return final_dict, fips_list, dict_of_start_dates, dict_of_geo
 
 
-def get_regions(M, cases, deaths, processing, interventions, population, fips_list=None):
+def get_regions(M, cases, deaths, processing, interventions, population, fips_list=None, validation=0):
     if processing == Processing.INTERPOLATE:
         cases = impute(cases, allow_decrease_towards_end=False)
         deaths = impute(deaths, allow_decrease_towards_end=False)
@@ -47,10 +47,10 @@ def get_regions(M, cases, deaths, processing, interventions, population, fips_li
 
     if fips_list is None:
         cases, deaths, interventions, population, fips_list = select_top_regions(cases, deaths,
-                interventions, M, population)
+                interventions, M, population, validation)
     else:
         cases, deaths, interventions, population = select_regions(cases, deaths, interventions, M, fips_list,
-                population)
+                population, validation)
 
     
     dict_of_geo = {} ## map geocode
