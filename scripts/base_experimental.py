@@ -8,10 +8,15 @@ import datetime as dt
 from dateutil.parser import parse
 import pandas as pd
 from statsmodels.distributions.empirical_distribution import ECDF
+from utils import get_cluster
 
-regions = [55079, 53033, 42101, 36119, 36103, 36087, 36071, 36061, 36059, 36055, 36029, 34039, 34035, 34031, 34029, 34027, 34025, 34023, 34021, 34017, 34013, 34007, 34005, 34003, 32003, 29189, 27053, 26163, 26125, 26099, 26049, 24033, 24031, 24005, 24003, 22103, 22071, 22051, 22033, 18097, 18089, 17197, 17097, 17043, 17031, 12099, 12086, 12011, 11001, 9009, 9007, 9003, 9001, 6073, 6065, 6037, ]
-regions = regions[::-1]
-M = len(regions) # 56 I think
+#regions = [55079, 53033, 42101, 36119, 36103, 36087, 36071, 36061, 36059, 36055, 36029, 34039, 34035, 34031, 34029, 34027, 34025, 34023, 34021, 34017, 34013, 34007, 34005, 34003, 32003, 29189, 27053, 26163, 26125, 26099, 26049, 24510, 24033, 24031, 24005, 24003, 22103, 22071, 22051, 22033, 18097, 18089, 17197, 17097, 17043, 17031, 13121, 12099, 12086, 12011, 11001, 9009, 9007, 9003, 9001, 6073, 6065, 6037, ]
+#regions = regions[::-1]
+filename = 'data/us_data/clustering.csv'
+cluster_num = 10
+regions = get_cluster(filename, cluster_num)
+M = len(regions) 
+print('Running for ' + str(M) + ' FIPS')
 
 data_dir = 'data'
 stan_data, regions, start_date, geocode = get_data(M, data_dir, processing=Processing.REMOVE_NEGATIVE_VALUES, state=False, fips_list=regions)
@@ -74,7 +79,7 @@ for r in range(len(regions)):
 stan_data['f'] = all_f
 
     
-fit = sm.sampling(data=stan_data, iter=500, chains=4, warmup=250, thin=4, control={'adapt_delta':0.9, 'max_treedepth':10})
+fit = sm.sampling(data=stan_data, iter=1000, chains=4, warmup=500, thin=4, control={'adapt_delta':0.9, 'max_treedepth':12})
 # fit = sm.sampling(data=stan_data, iter=2000, chains=4, warmup=10, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
 
 summary_dict = fit.summary()
@@ -83,9 +88,9 @@ df = pd.DataFrame(summary_dict['summary'],
                  index=summary_dict['summary_rownames'])
 
 region = 'US_county'
-df.to_csv('results/' + region + '_summary.csv', sep=',')
+df.to_csv('results/' + region + '_summary' + str(cluster_num) + '.csv', sep=',')
 
 df_sd = pd.DataFrame(start_date, index=[0])
 df_geo = pd.DataFrame(geocode, index=[0])
-df_sd.to_csv('results/' + region + '_start_dates.csv', sep=',')
-df_geo.to_csv('results/' + region + '_geocode.csv', sep=',')
+df_sd.to_csv('results/' + region + '_start_dates_cluster' + str(cluster_num) + '.csv', sep=',')
+df_geo.to_csv('results/' + region + '_geocode' + str(cluster_num) + '.csv', sep=',')
