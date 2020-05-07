@@ -116,7 +116,7 @@ class MainStanModel():
         stan_data['f'] = all_f
 
 
-        fit = sm.sampling(data=stan_data, iter=200, chains=4, warmup=100, thin=4, control={'adapt_delta':0.9, 'max_treedepth':10})
+        fit = sm.sampling(data=stan_data, iter=self.iter, chains=4, warmup=self.warmup_iter, thin=4, control={'adapt_delta':0.9, 'max_treedepth':10})
     # fit = sm.sampling(data=stan_data, iter=2000, chains=4, warmup=10, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
 
         summary_dict = fit.summary()
@@ -133,7 +133,7 @@ class MainStanModel():
         # results example:
         #        - 05_06_2020_15_40_35_validation_iter_200_warmup_100_processing_REMOVE_NEGATIVE_VALUES 
         timestamp = dt.datetime.now().strftime('%m_%d_%y_%H_%M_%S')
-        unique_folder_name_list = [timestamp, str(self.mode), 'iter', str(self.iter), 'warmup', str(self.warmup_iter), 'processing', str(data_parser.Processing(self.processing))]
+        unique_folder_name_list = [timestamp, str(self.mode), 'iter', str(self.iter), 'warmup', str(self.warmup_iter),'num_counties', str(self.M), 'processing', str(data_parser.Processing(self.processing))]
         if self.validation > 0:
             unique_folder_name_list.insert(2, 'validation')
         
@@ -152,7 +152,7 @@ class MainStanModel():
         df_sd.to_csv(self.start_dates_path, sep=',')
         df_geo.to_csv(self.geocode_path, sep=',')
 
-
+    
 
 
     

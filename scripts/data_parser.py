@@ -162,8 +162,7 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
     covariate8 = np.array(covariate8).T
     cases = np.array(cases).T
     deaths = np.array(deaths).T
-    #print(np.sum(cases<-1))
-    #print(np.sum(deaths<-1))
+    
     X = np.dstack([covariate1, covariate2, covariate3, covariate4, covariate5, covariate6,
         covariate7, covariate8])
     X = np.moveaxis(X, 1, 0)
