@@ -27,7 +27,7 @@ def remove_negative_regions(df_cases, df_deaths, idx):
 
     return df_cases, df_deaths
 
-def select_top_regions(df_cases, df_deaths, interventions, num_counties, population):
+def select_top_regions(df_cases, df_deaths, interventions, num_counties, population, validation=0):
     """"
     Returns:
         df_cases: Infections timeseries for top N places
@@ -64,10 +64,19 @@ def select_top_regions(df_cases, df_deaths, interventions, num_counties, populat
     df_cases.drop(['merge'], axis=1, inplace=True)
     interventions.drop(['merge'], axis=1, inplace=True)
     population.drop(['merge'], axis=1, inplace=True)
+
+    if validation > 0:
+        df_cases = df_cases.iloc[:,:-(validation-1)]
+        df_cases_val = df_cases.iloc[:,-(validation+1):]
+        
+        df_deaths = df_deaths.iloc[:,:-(validation-1)]
+        df_deaths_val = df_deaths.iloc[:,-(validation+1):]
+
+        return df_cases, df_deaths, interventions, fips_list
     return df_cases, df_deaths, interventions,population, fips_list
 
 
-def select_regions(cases, deaths, interventions, M, fips_list, population):
+def select_regions(cases, deaths, interventions, M, fips_list, population, validation=0):
     """"
     Returns:
         df_cases: Infections timeseries for given fips
@@ -79,6 +88,15 @@ def select_regions(cases, deaths, interventions, M, fips_list, population):
     deaths = deaths.loc[deaths['FIPS'].isin(fips_list)]
     interventions = interventions.loc[interventions['FIPS'].isin(fips_list)]
     population = population.loc[population['FIPS'].isin(fips_list)]
+    
+    if validation > 0:
+        cases = cases.iloc[:,:-(validation-1)]
+        cases_val = cases.iloc[:,-(validation+1):]
+        
+        deaths = deaths.iloc[:,:-(validation-1)]
+        deaths_val = deaths.iloc[:,-(validation+1):]
+
+        return cases, deaths, interventions, population 
     return cases, deaths, interventions, population
 
 

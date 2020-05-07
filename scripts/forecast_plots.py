@@ -259,6 +259,7 @@ def main(path):
     geocode_path = join(path, 'geocode.csv')
     summary_path = join(path, 'summary.csv')
     output_path = join(path, 'plots/forecast')
+    os.makedirs(output_path)
     if 'europe' in cwd:
         make_all_eu_plots(start_dates_path, geocode_path, summary_path, output_path)     
     if 'county' in cwd:

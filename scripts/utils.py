@@ -7,7 +7,7 @@ def get_cluster(filename, cluster_num):
     return fips.values
 
 def calculate_rt(r0, alphas, interventions):
-    rt = r0 - alpahs * covariates
+    rt = r0 - alphas * covariates
     return rt
 
 def calculate_cases(rt, population, si)
