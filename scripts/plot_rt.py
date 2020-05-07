@@ -1,3 +1,4 @@
+import os
 import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
@@ -296,7 +297,7 @@ def main(path, interventions_path):
     geocode_path = join(path, 'geocode.csv')
     summary_path = join(path, 'summary.csv')
     output_path = join(path, 'plots/rt')
-    
+    os.makedirs(output_path)  
     if 'europe' in cwd:
         make_all_eu_plots(summary_path, geocode_path, start_dates_path, interventions_path, output_path)     
     if 'county' in cwd:
