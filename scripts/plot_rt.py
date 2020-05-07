@@ -1,5 +1,4 @@
 import os
-import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from matplotlib.dates import DateFormatter
@@ -9,7 +8,7 @@ import numpy as np
 import sys
 import datetime as dt
 from pandas.plotting import register_matplotlib_converters
-from os.path import join
+from os.path import join, exists
 register_matplotlib_converters()
 # otherwise rotation of x-labels by 90 deg crashes from time to time
 ticker.Locator.MAXTICKS = 10000
@@ -243,7 +242,7 @@ def get_interventions_US(interventions_file, state_level=False):
         interventions = state_interventions
 
     else:
-        interventions = pd.read_csv(interventions_file)
+        interventions = pd.read_csv(interventions_file, engine='python')
         id_cols = ['FIPS', 'STATE', 'AREA_NAME', 'Combined_Key']
         #id_cols = ['FIPS', 'STATE', 'AREA_NAME']
         int_cols = [col for col in interventions.columns.tolist() if col not in id_cols]
@@ -290,14 +289,20 @@ def make_all_eu_plots(summary_path, geocode_path, start_dates_path, intervention
 
 
 def main(path, interventions_path):
-    cwd = path.split('/')[-1]
+    cwd = path.split(os.sep)
+    
+    if cwd[-1] == '':
+        cwd = cwd[-2]
+    else:
+        cwd = cwd[-1]
 
     print(cwd)
     start_dates_path = join(path, 'start_dates.csv')
     geocode_path = join(path, 'geocode.csv')
     summary_path = join(path, 'summary.csv')
     output_path = join(path, 'plots/rt')
-    os.makedirs(output_path)  
+    if not exists(output_path):
+        os.makedirs(output_path)
     if 'europe' in cwd:
         make_all_eu_plots(summary_path, geocode_path, start_dates_path, interventions_path, output_path)     
     if 'county' in cwd:
