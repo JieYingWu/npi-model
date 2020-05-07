@@ -72,8 +72,8 @@ def select_top_regions(df_cases, df_deaths, interventions, num_counties, populat
         df_deaths = df_deaths.iloc[:,:-(validation-1)]
         df_deaths_val = df_deaths.iloc[:,-(validation+1):]
 
-        return df_cases, df_deaths, interventions, fips_list
-    return df_cases, df_deaths, interventions,population, fips_list
+        return df_cases, df_deaths, interventions, population, fips_list
+    return df_cases, df_deaths, interventions, population, fips_list
 
 
 def select_regions(cases, deaths, interventions, M, fips_list, population, validation=0):
