@@ -2,6 +2,7 @@
 import os
 import sys
 import argparse
+import json
 import pystan
 import datetime as dt
 import pandas as pd
@@ -39,12 +40,12 @@ class MainStanModel():
             weighted_fatalities = np.loadtxt(join(data_dir, 'europe_data', 'weighted_fatality.csv'), skiprows=1, delimiter=',', dtype=str)
             
         elif mode == 'US_county':
-            stan_data, regions, start_date, geocode = data_parser.get_data(M, data_dir, processing=self.processing, state=False, fips_list=self.fips_list)
+            stan_data, regions, start_date, geocode = data_parser.get_data(M, data_dir, processing=self.processing, state=False, fips_list=self.fips_list, validation=self.validation)
             wf_file = join(self.data_dir, 'us_data', 'weighted_fatality.csv')
             weighted_fatalities = np.loadtxt(wf_file, skiprows=1, delimiter=',', dtype=str)
 
         elif mode == 'US_state':
-            stan_data, regions, start_date, geocode = data_parser.get_data(M, data_dir, processing=self.processing, state=True, fips_list=self.fips_list)
+            stan_data, regions, start_date, geocode = data_parser.get_data(M, data_dir, processing=self.processing, state=True, fips_list=self.fips_list, validation=self.validation)
             wf_file = join(data_dir, 'us_data', 'state_weighted_fatality.csv')
             weighted_fatalities = np.loadtxt(wf_file, skiprows=1, delimiter=',', dtype=str)
 
@@ -116,7 +117,7 @@ class MainStanModel():
         stan_data['f'] = all_f
 
 
-        fit = sm.sampling(data=stan_data, iter=200, chains=4, warmup=100, thin=4, control={'adapt_delta':0.9, 'max_treedepth':10})
+        fit = sm.sampling(data=stan_data, iter=self.iter, chains=4, warmup=self.warmup_iter, thin=4, control={'adapt_delta':0.9, 'max_treedepth':10})
     # fit = sm.sampling(data=stan_data, iter=2000, chains=4, warmup=10, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
 
         summary_dict = fit.summary()
@@ -133,14 +134,15 @@ class MainStanModel():
         # results example:
         #        - 05_06_2020_15_40_35_validation_iter_200_warmup_100_processing_REMOVE_NEGATIVE_VALUES 
         timestamp = dt.datetime.now().strftime('%m_%d_%y_%H_%M_%S')
-        unique_folder_name_list = [timestamp, str(self.mode), 'iter', str(self.iter), 'warmup', str(self.warmup_iter), 'processing', str(data_parser.Processing(self.processing))]
+        unique_folder_name_list = [timestamp, str(self.mode), 'iter', str(self.iter), 'warmup', str(self.warmup_iter),'num_counties', str(self.M), 'processing', str(data_parser.Processing(self.processing))]
         if self.validation > 0:
             unique_folder_name_list.insert(2, 'validation')
         
         #make unique results folder
         self.unique_results_path = join(results_path, '_'.join(unique_folder_name_list))
         os.mkdir(self.unique_results_path)
-        
+        print(f'Saving results to f{self.unique_results_path}')
+
         self.summary_path = join(self.unique_results_path, 'summary.csv')
         self.start_dates_path = join(self.unique_results_path, 'start_dates.csv')
         self.geocode_path = join(self.unique_results_path, 'geocode.csv')
@@ -152,13 +154,15 @@ class MainStanModel():
         df_sd.to_csv(self.start_dates_path, sep=',')
         df_geo.to_csv(self.geocode_path, sep=',')
 
-
-
+        with open(logfile_path, 'w') as f:
+            f.write(json.dumps(self.args.__dict__))
+        print('Done saving.')
 
     
 
     def make_plots(self):
         """ save plots of current run"""
+        print(f'Creating figures.')
         forecast_plots_path =join(self.unique_results_path,'plots', 'forecast') 
         rt_plots_path = join(self.unique_results_path,'plots', 'rt')
         os.makedirs(forecast_plots_path)
