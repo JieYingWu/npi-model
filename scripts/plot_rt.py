@@ -1,5 +1,3 @@
-import os
-import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from matplotlib.dates import DateFormatter
@@ -290,7 +288,12 @@ def make_all_eu_plots(summary_path, geocode_path, start_dates_path, intervention
 
 
 def main(path, interventions_path):
-    cwd = path.split('/')[-1]
+    cwd = path.split('/')
+    
+    if cwd[-1] == '':
+        cwd = cwd[-2]
+    else:
+        cwd = cwd[-1]
 
     print(cwd)
     start_dates_path = join(path, 'start_dates.csv')

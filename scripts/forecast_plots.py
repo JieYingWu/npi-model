@@ -254,7 +254,12 @@ def make_all_eu_plots(start_date_dict_path, geocode_dict_path, summary_path, out
 
 def main(path):
     cwd = path.split('/')[-1]
-    print(cwd)
+    
+    if cwd[-1] == '':
+        cwd = cwd[-2]
+    else:
+        cwd = cwd[-1]
+    
     start_dates_path = join(path, 'start_dates.csv')
     geocode_path = join(path, 'geocode.csv')
     summary_path = join(path, 'summary.csv')
