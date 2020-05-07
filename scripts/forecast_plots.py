@@ -253,7 +253,7 @@ def make_all_eu_plots(start_date_dict_path, geocode_dict_path, summary_path, out
 
 
 def main(path):
-    cwd = path.split('/')[-1]
+    cwd = path.split(os.sep)
     
     if cwd[-1] == '':
         cwd = cwd[-2]
@@ -264,7 +264,8 @@ def main(path):
     geocode_path = join(path, 'geocode.csv')
     summary_path = join(path, 'summary.csv')
     output_path = join(path, 'plots/forecast')
-    os.makedirs(output_path)
+    if not exists(output_path):
+        os.makedirs(output_path)
     if 'europe' in cwd:
         make_all_eu_plots(start_dates_path, geocode_path, summary_path, output_path)     
     if 'county' in cwd:
