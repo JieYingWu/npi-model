@@ -242,7 +242,7 @@ def get_interventions_US(interventions_file, state_level=False):
         interventions = state_interventions
 
     else:
-        interventions = pd.read_csv(interventions_file)
+        interventions = pd.read_csv(interventions_file, engine='python')
         id_cols = ['FIPS', 'STATE', 'AREA_NAME', 'Combined_Key']
         #id_cols = ['FIPS', 'STATE', 'AREA_NAME']
         int_cols = [col for col in interventions.columns.tolist() if col not in id_cols]
