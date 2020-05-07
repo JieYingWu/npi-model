@@ -141,7 +141,8 @@ class MainStanModel():
         #make unique results folder
         self.unique_results_path = join(results_path, '_'.join(unique_folder_name_list))
         os.mkdir(self.unique_results_path)
-        
+        print(f'Saving results to f{self.unique_results_path}')
+
         self.summary_path = join(self.unique_results_path, 'summary.csv')
         self.start_dates_path = join(self.unique_results_path, 'start_dates.csv')
         self.geocode_path = join(self.unique_results_path, 'geocode.csv')
@@ -155,12 +156,13 @@ class MainStanModel():
 
         with open(logfile_path, 'w') as f:
             f.write(json.dumps(self.args.__dict__))
-
+        print('Done saving.')
 
     
 
     def make_plots(self):
         """ save plots of current run"""
+        print(f'Creating figures.')
         forecast_plots_path =join(self.unique_results_path,'plots', 'forecast') 
         rt_plots_path = join(self.unique_results_path,'plots', 'rt')
         os.makedirs(forecast_plots_path)
