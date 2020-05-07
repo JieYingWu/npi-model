@@ -2,6 +2,7 @@
 import os
 import sys
 import argparse
+import json
 import pystan
 import datetime as dt
 import pandas as pd
@@ -152,7 +153,8 @@ class MainStanModel():
         df_sd.to_csv(self.start_dates_path, sep=',')
         df_geo.to_csv(self.geocode_path, sep=',')
 
-    
+        with open(logfile_path, 'w') as f:
+            f.write(json.dumps(self.args.__dict__))
 
 
     
