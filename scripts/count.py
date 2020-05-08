@@ -17,16 +17,16 @@ def read_timeseries(fips, end_date):
         total_deaths[i] = deaths.loc[f,end_date]
     return total_cases, total_deaths
 
-def count(region, end_date):
-    dict_of_start_dates = pd.read_csv('results/' + region + '_start_dates.csv', delimiter=',', index_col=0)
+def count(path, end_date):
+    dict_of_start_dates = pd.read_csv(path + 'start_dates.csv', delimiter=',', index_col=0)
     start_dates = dict_of_start_dates.values.tolist()[0]
-    dict_of_fips = pd.read_csv('results/' + region + '_geocode.csv', delimiter=',', index_col=0)
+    dict_of_fips = pd.read_csv(path + 'geocode.csv', delimiter=',', index_col=0)
     list_of_fips = dict_of_fips.values.tolist()[0]
 
     total_cases, total_deaths = read_timeseries(list_of_fips, end_date)
     predict_cases = np.zeros(len(list_of_fips))
     predict_deaths = np.zeros(len(list_of_fips))
-    df = pd.read_csv('results/' + region + '_summary.csv', delimiter=',', index_col=0)
+    df = pd.read_csv(path + 'summary.csv', delimiter=',', index_col=0)
     for i in range(len(start_dates)):
         fips = list_of_fips[i]
         base = datetime.datetime.strptime(str(start_dates[i]), '%m/%d/%y')
@@ -46,11 +46,11 @@ def count(region, end_date):
         predict_deaths[i] = predict_death
 
     write_out = np.stack((list_of_fips, total_cases, predict_cases, total_deaths, predict_deaths), axis=1)
-    np.savetxt('results/counts.csv', write_out, delimiter=',')
+    np.savetxt(path + 'counts.csv', write_out, delimiter=',')
         
 def main():
     region = sys.argv[1]
-    end_date = '4/27/20'  # Count to this date
+    end_date = '5/4/20'  # Count to this date
     count(region, end_date)
     
 if __name__ == '__main__':
