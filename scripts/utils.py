@@ -10,7 +10,7 @@ def calculate_rt(r0, alphas, interventions):
     rt = r0 - alphas * covariates
     return rt
 
-def calculate_cases(rt, population, si)
+def calculate_cases(rt, population, si):
     n = len(rt)
     cases = np.zeros(n) 
     for i in range(2,n):
