@@ -25,6 +25,9 @@ class MainStanModel():
         if isinstance(self.processing, int):
             self.processing = data_parser.Processing(self.processing)
 
+        if self.fips_list is None and self.cluster is not None:
+            self.fips_list = data_parser.get_cluster(self.data_dir, self.cluster)
+
         stan_data, regions, start_date, geocode, weighted_fatalities = self.preprocess_data(self.M, self.mode, self.data_dir)
         result_df = self.run_model(stan_data, weighted_fatalities, regions, start_date, geocode)
         self.save_results_to_file(self.output_path, result_df, start_date, geocode)
@@ -188,11 +191,12 @@ if __name__ == '__main__':
     parser.add_argument('--mode', default='US_county', choices=['europe', 'US_state', 'US_county'], help='choose which data to use')
     parser.add_argument('--processing', type=int, default=1, choices=[0,1,2], help=' choose the processing technique to remove negative values. \n 0 : interpolation \n 1 : replacing with 0 \n 2 : discarding regions with negative values')
     parser.add_argument('-M', default=25, type=int, help='threshold for relevant counties')
-    parser.add_argument('-val','--validation', default=0, type=int, help='how many days to use for validation, default=0')
+    parser.add_argument('-val', '--validation', default=0, type=int, help='how many days to use for validation, default=0')
     parser.add_argument('--model', default='pop', choices=['old_alpha', 'new_alpha', 'pop'], help='which model to use')
     parser.add_argument('--plot', action='store_true', help='add for generating plots')
-    parser.add_argument('--fips-list', default=None, type=list, help='list of fips codes to run the model on')
-    parser.add_argument('-s','--save-tag',default = '', type=str, help='tag for saving the summary, geocodes and start-dates.')
+    parser.add_argument('--fips-list', default=None, nargs='+', help='fips codes to run the model on')
+    parser.add_argument('--cluster', default=None, type=int, help='cluster label to draw fips-list from')
+    parser.add_argument('-s', '--save-tag', default = '', type=str, help='tag for saving the summary, geocodes and start-dates.')
     parser.add_argument('--iter', default=200, type=int, help='iterations for the model')
     parser.add_argument('--warmup-iter', default=100, type=int, help='warmup iterations for the model')
     args = parser.parse_args()
