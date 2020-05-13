@@ -15,7 +15,7 @@ def calculate_cases(rt, population, si):
     n = len(rt)
     cases = np.zeros(n) 
     for i in range(2,n):
-        case = np.sum(infected[0:i-1] * si[0:i-1])
+        case = np.sum(infected[0:i] * si[i-1::-1])
         rt_adj = (population -np.sum(infected)) / population * rt[i]
         cases[i] = rt_adj * case
     return cases
@@ -25,7 +25,7 @@ def calculate_deaths(cases, ifr, fatality):
     deaths = np.zeros(n)
     deaths[0] = 1e-15*infected[0]
     for i in range(1,n):
-        death = np.sum(cases[0:i-1] * fatality[0:i-1])
+        death = np.sum(cases[0:i] * fatality[i-1::-1])
         deaths[i] = ifr * death
     return deaths    
 
