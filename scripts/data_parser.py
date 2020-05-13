@@ -14,6 +14,23 @@ class Processing(Enum):
     REMOVE_NEGATIVE_VALUES = 1
     REMOVE_NEGATIVE_REGIONS = 2
 
+
+def get_cluster(data_dir, cluster):
+    """Get the fips codes for the 
+
+    :param data_dir: dir where data is
+    :param cluster: integer cluster label.
+    :returns: list of fips codes in cluster `cluster`
+    :rtype: list
+
+    """
+    dtype = dict(FIPS=str, cluster=int)
+    clustering = pd.read_csv(join(data_dir, 'us_data', 'clustering.csv'), dtype=dtype)
+    fips_list = list(clustering.loc[clustering['cluster'] == cluster, 'FIPS'])
+    print(f'obtained {len(fips_list)} counties from cluster {cluster}')
+    return fips_list
+
+    
 def get_data(M, data_dir, processing=None, state=False, fips_list=None, validation=0):
 
     cases, deaths, interventions, population = preprocessing_us_data(data_dir)
