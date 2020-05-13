@@ -120,7 +120,8 @@ class MainStanModel():
         stan_data['f'] = all_f
 
 
-        fit = sm.sampling(data=stan_data, iter=self.iter, chains=4, warmup=self.warmup_iter, thin=4, control={'adapt_delta':0.9, 'max_treedepth':10})
+        fit = sm.sampling(data=stan_data, iter=self.iter, chains=4, warmup=self.warmup_iter,
+                          thin=4, control={'adapt_delta': 0.9, 'max_treedepth': self.max_treedepth})
     # fit = sm.sampling(data=stan_data, iter=2000, chains=4, warmup=10, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
 
         summary_dict = fit.summary()
@@ -199,6 +200,7 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--save-tag', default = '', type=str, help='tag for saving the summary, geocodes and start-dates.')
     parser.add_argument('--iter', default=200, type=int, help='iterations for the model')
     parser.add_argument('--warmup-iter', default=100, type=int, help='warmup iterations for the model')
+    parser.add_argument('--max-treedepth', default=10, type=int, help='maximum tree depth for the model')
     args = parser.parse_args()
 
     model = MainStanModel(args)
