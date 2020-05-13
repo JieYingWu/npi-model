@@ -13,15 +13,15 @@ from utils import get_cluster
 #regions = [55079, 53033, 42101, 36119, 36103, 36087, 36071, 36061, 36059, 36055, 36029, 34039, 34035, 34031, 34029, 34027, 34025, 34023, 34021, 34017, 34013, 34007, 34005, 34003, 32003, 29189, 27053, 26163, 26125, 26099, 26049, 24510, 24033, 24031, 24005, 24003, 22103, 22071, 22051, 22033, 18097, 18089, 17197, 17097, 17043, 17031, 13121, 12099, 12086, 12011, 11001, 9009, 9007, 9003, 9001, 6073, 6065, 6037, ]
 #regions = regions[::-1]
 
-regions = [31079, 36087, 35045, 48419, 6107, 1073, 4017, 35031, 22097, 39095, 28035, 18089, 22045, 48479, 22039, 22047, 35029, 13299, 22057, 5119,
-           13035, 22037, 13141, 1005, 40107, 39101, 39121, 39141, 40003, 40005, 40035, 40055, 40063, 40151, 37177, 42053, 45005, 45037, 45049, 45061,
-           34029, 12099, 12081, 31081, 10005, 4015, 12103, 25001, 37089, 12021, 40041, 12071, 24029, 26007, 12085, 25003, 12101, 12069, 26001, 12127,
-           17031, 34003, 34031, 6037, 26163, 34013, 25017, 34017, 34023, 34039, 9001, 33011, 26125, 9003, 34027, 36119, 34025, 25009, 18097, 42091,
-           39093, 33013, 37047, 1017, 21085, 17027, 37037, 26155, 28075, 28057, 9011, 9005, 48477, 28069, 28085, 28109, 5075, 5069, 51065, 40097]
+# regions = [31079, 36087, 35045, 48419, 6107, 1073, 4017, 35031, 22097, 39095, 28035, 18089, 22045, 48479, 22039, 22047, 35029, 13299, 22057, 5119,
+#            13035, 22037, 13141, 1005, 40107, 39101, 39121, 39141, 40003, 40005, 40035, 40055, 40063, 40151, 37177, 42053, 45005, 45037, 45049, 45061,
+#            34029, 12099, 12081, 31081, 10005, 4015, 12103, 25001, 37089, 12021, 40041, 12071, 24029, 26007, 12085, 25003, 12101, 12069, 26001, 12127,
+#            17031, 34003, 34031, 6037, 26163, 34013, 25017, 34017, 34023, 34039, 9001, 33011, 26125, 9003, 34027, 36119, 34025, 25009, 18097, 42091,
+#            39093, 33013, 37047, 1017, 21085, 17027, 37037, 26155, 28075, 28057, 9011, 9005, 48477, 28069, 28085, 28109, 5075, 5069, 51065, 40097]
  
-#filename = 'data/us_data/clustering.csv'
-cluster_num = 100
-#regions = get_cluster(filename, cluster_num)
+filename = 'data/us_data/clustering.csv'
+cluster_num = 1
+regions = get_cluster(filename, cluster_num)
 regions.sort()
 M = len(regions) 
 print('Running for ' + str(M) + ' FIPS')
@@ -30,7 +30,6 @@ data_dir = 'data'
 stan_data, regions, start_date, geocode = get_data(M, data_dir, processing=Processing.REMOVE_NEGATIVE_VALUES, state=False, fips_list=regions)
 wf_file = join(data_dir, 'us_data', 'weighted_fatality.csv')
 weighted_fatalities = np.loadtxt(wf_file, skiprows=1, delimiter=',', dtype=str)
-
 
 N2 = stan_data['N2']
 
@@ -86,8 +85,8 @@ for r in range(len(regions)):
 
 stan_data['f'] = all_f
 
-    
-fit = sm.sampling(data=stan_data, iter=1000, chains=4, warmup=500, thin=4, control={'adapt_delta':0.9, 'max_treedepth':12})
+fit = sm.sampling(data=stan_data, iter=500, chains=4, warmup=500, thin=4, control={'adapt_delta':0.9, 'max_treedepth':10})
+# fit = sm.sampling(data=stan_data, iter=1000, chains=4, warmup=500, thin=4, control={'adapt_delta':0.9, 'max_treedepth':12})
 # fit = sm.sampling(data=stan_data, iter=2000, chains=4, warmup=10, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
 
 summary_dict = fit.summary()
