@@ -27,7 +27,7 @@ def remove_negative_regions(df_cases, df_deaths, idx):
 
     return df_cases, df_deaths
 
-def select_top_regions(df_cases, df_deaths, interventions, num_counties, population, validation=0):
+def select_top_regions(df_cases, df_deaths, interventions, num_counties, population, validation=0, threshold=50):
     """"
     Returns:
         df_cases: Infections timeseries for top N places
@@ -40,9 +40,14 @@ def select_top_regions(df_cases, df_deaths, interventions, num_counties, populat
     last_day = headers[-5]
     observed_days = len(headers[2:])
 
-    df_deaths = df_deaths.sort_values(by=[last_day], ascending=False)
-    df_deaths = df_deaths.iloc[:num_counties].copy()
-    df_deaths = df_deaths.reset_index(drop=True)
+    if threshold is None:
+        df_deaths = df_deaths.sort_values(by=[last_day], ascending=False)
+        df_deaths = df_deaths.iloc[:num_counties].copy()
+        df_deaths = df_deaths.reset_index(drop=True)
+    else:
+        cumulative_deaths = df_deaths.iloc[:, 2:].sum(axis=1).to_numpy()
+        df_deaths = df_deaths.iloc[cumulative_deaths > threshold].copy()
+        df_deaths = df_deaths.reset_index(drop=True)
 
     fips_list = df_deaths['FIPS'].tolist()
 
@@ -55,6 +60,7 @@ def select_top_regions(df_cases, df_deaths, interventions, num_counties, populat
     interventions = interventions.loc[interventions['FIPS'].isin(fips_list)]
     interventions = pd.merge(merge_df, interventions, left_on='merge', right_on='FIPS', how='outer')
     interventions = interventions.reset_index(drop=True)
+    # interventions.fillna(dt.date.today().toordinal() + 365)
 
     population = population.loc[population['FIPS'].isin(fips_list)]
     population = pd.merge(merge_df, population, left_on='merge', right_on='FIPS', how='outer')
@@ -124,13 +130,13 @@ def merge_supercounties(cases, deaths, interventions, population, threshold=5):
         state_fips_to_counties_included[state_fips] = state_fips_to_counties_included.get(state_fips, []) + [fips]
 
         # going to be adding to supercounty, so get rid of identifying info
-        cases_row['FIPS'] = state_fips
+        cases_row['FIPS'] = int(state_fips)
         cases_row['Combined_Key'] = ''
-        deaths_row['FIPS'] = state_fips
+        deaths_row['FIPS'] = int(state_fips)
         deaths_row['Combined_Key'] = ''
-        interventions_row['FIPS'] = state_fips
+        interventions_row['FIPS'] = int(state_fips)
         interventions_row['AREA_NAME'] = ''
-        population_row['FIPS'] = state_fips
+        population_row['FIPS'] = int(state_fips)
                     
         if state_fips_to_cases_idx.get(state_fips) is None:
             print(f'added supercounty for {state_fips}')

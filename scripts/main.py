@@ -96,6 +96,7 @@ class MainStanModel():
         all_f = np.zeros((self.N2, len(regions)))
         
         for r in range(len(regions)):
+            print(regions)
             ifr = float(ifrs[str(regions[r])])
 
     ## assume that IFR is probability of dying given infection
