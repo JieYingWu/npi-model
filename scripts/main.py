@@ -35,7 +35,15 @@ class MainStanModel():
         if self.plot:
             self.make_plots()
 
-
+    def load_supercounties_fatalities(self):
+        fatalities = np.loadtxt(
+            join(self.data_dir, 'us_data', 'weighted_fatality_supercounties.csv'),
+            skiprows=1, delimiter=',', dtype=str)
+        indexing = [int(x.split('_')[1]) == self.cluster for x in fatalities[:, 0]]
+        fatalities[:, 0] = [str(int(x.split('_')[0])) for x in fatalities[:, 0]]
+        fatalities = fatalities[indexing]
+        # fatalities = np.concatenate([fatalities[:, 0:1], np.zeros((fatalities.shape[0], 2), dtype=str), fatalities[:, 1:]], axis=1) 
+        return fatalities
 
     def preprocess_data(self, M, mode, data_dir):
         if mode == 'europe':
@@ -44,9 +52,13 @@ class MainStanModel():
             
         elif mode == 'US_county':
             stan_data, regions, start_date, geocode = data_parser.get_data(M, data_dir, processing=self.processing, state=False, fips_list=self.fips_list, validation=self.validation)
-            wf_file = join(self.data_dir, 'us_data', 'weighted_fatality.csv')
+            wf_file = join(self.data_dir, 'us_data', 'weighted_fatality_new.csv')
+            # wf_file = join(self.data_dir, 'us_data', 'weighted_fatality_new.csv')
             weighted_fatalities = np.loadtxt(wf_file, skiprows=1, delimiter=',', dtype=str)
-
+            if self.supercounties:
+                supercounty_weighted_fatalities = self.load_supercounties_fatalities()
+                weighted_fatalities = np.concatenate([weighted_fatalities, supercounty_weighted_fatalities], axis=0)
+                
         elif mode == 'US_state':
             stan_data, regions, start_date, geocode = data_parser.get_data(M, data_dir, processing=self.processing, state=True, fips_list=self.fips_list, validation=self.validation)
             wf_file = join(data_dir, 'us_data', 'state_weighted_fatality.csv')
@@ -56,7 +68,6 @@ class MainStanModel():
 
         return stan_data, regions, start_date, geocode, weighted_fatalities
    
-
 
     def run_model(self, stan_data, weighted_fatalities, regions, start_date, geocode):
     # Build a dictionary of region identifier to weighted fatality rate
@@ -198,10 +209,11 @@ if __name__ == '__main__':
     parser.add_argument('--plot', action='store_true', help='add for generating plots')
     parser.add_argument('--fips-list', default=None, nargs='+', help='fips codes to run the model on')
     parser.add_argument('--cluster', default=None, type=int, help='cluster label to draw fips-list from')
-    parser.add_argument('-s', '--save-tag', default = '', type=str, help='tag for saving the summary, geocodes and start-dates.')
+    parser.add_argument('-s', '--save-tag', default='', type=str, help='tag for saving the summary, geocodes and start-dates.')
     parser.add_argument('--iter', default=200, type=int, help='iterations for the model')
     parser.add_argument('--warmup-iter', default=100, type=int, help='warmup iterations for the model')
     parser.add_argument('--max-treedepth', default=10, type=int, help='maximum tree depth for the model')
+    parser.add_argument('--supercounties', default=True, type=bool, help='merge counties in the same state AND cluster with insufficient cases')
     args = parser.parse_args()
 
     model = MainStanModel(args)
