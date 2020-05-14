@@ -347,10 +347,15 @@ def remove_negative_values(df):
 def get_validation_dict(data_dir, cases, deaths, fips_list, cases_dates):
     """ get the dict with fips_codes as keys and list of days to hold out"""
     validation_days_path = join(data_dir, 'us_data', 'validation_days.csv')
+    
+    # set seed for numpy
+    np.random.seed(0)
 
-    # get last day of current data 
+    # get last day of current data
+    first_day_cases = cases_dates[0]
     last_day_cases = cases_dates[-1]
     ordinal_last_day_cases = dt.datetime.strptime(last_day_cases, '%m/%d/%y').toordinal()
+    ordinal_first_day_cases = dt.datetime.strptime(first_day_cases, '%m/%d/%y').toordinal()
     validation_days_dict  = {} 
    
 
@@ -360,8 +365,10 @@ def get_validation_dict(data_dir, cases, deaths, fips_list, cases_dates):
     if exists(validation_days_path):
         with open(validation_days_path, 'r') as f:
             reader = csv.reader(f, delimiter=',')
-            last_date = next(reader)
-            ordinal_last_day = dt.datetime.strptime(last_date[0], '%m/%d/%y').toordinal()
+            dates = next(reader)
+            first_date, last_date = dates
+            ordinal_last_date = dt.datetime.strptime(first_date, '%m/%d/%y').toordinal()
+            ordinal_first_date = dt.datetime.strptime(last_date, '%m/%d/%y').toordinal()
             if ordinal_last_day_cases > ordinal_last_day:
                 FLAG_NEW_DATA_AVAILABLE = True
             next(reader)
@@ -391,7 +398,7 @@ def get_validation_dict(data_dir, cases, deaths, fips_list, cases_dates):
                 print(f'Very few datapoints available for this FIPS code: {fips}.')
         with open(validation_days_path, 'w', newline='' ) as f:
             writer = csv.writer(f, delimiter=',')
-            writer.writerow([last_day_cases])
+            writer.writerow([first_day_cases, last_day_cases])
             writer.writerow(['FIPS', 'Indices of val days'])
             for key, val in validation_days_dict.items():
                 list_to_write = [key] + list(val)
@@ -412,7 +419,7 @@ def get_validation_dict(data_dir, cases, deaths, fips_list, cases_dates):
                 print('Very few datapoints available for this FIPS code.')
         with open(validation_days_path, 'w', newline='' ) as f:
             writer = csv.writer(f, delimiter=',')
-            writer.writerow([last_day_cases])
+            writer.writerow([first_day_cases, last_day_cases])
             writer.writerow(['FIPS', 'Indices of val days'])
             for key, val in validation_days_dict.items():
                 list_to_write = [key] + list(val)
