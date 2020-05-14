@@ -1,3 +1,4 @@
+import csv
 import numpy as np
 import pandas as pd
 import datetime as dt
@@ -27,7 +28,7 @@ def remove_negative_regions(df_cases, df_deaths, idx):
 
     return df_cases, df_deaths
 
-def select_top_regions(df_cases, df_deaths, interventions, num_counties, population, validation=0):
+def select_top_regions(df_cases, df_deaths, interventions, num_counties, population, validation=False):
     """"
     Returns:
         df_cases: Infections timeseries for top N places
@@ -39,7 +40,6 @@ def select_top_regions(df_cases, df_deaths, interventions, num_counties, populat
     headers = df_cases.columns.values
     last_day = headers[-5]
     observed_days = len(headers[2:])
-
     df_deaths = df_deaths.sort_values(by=[last_day], ascending=False)
     df_deaths = df_deaths.iloc[:num_counties].copy()
     df_deaths = df_deaths.reset_index(drop=True)
@@ -60,23 +60,22 @@ def select_top_regions(df_cases, df_deaths, interventions, num_counties, populat
     population = pd.merge(merge_df, population, left_on='merge', right_on='FIPS', how='outer')
     population = population.reset_index(drop=True)
     
-    #print("Inside filtering function:", df_cases.shape, df_deaths.shape)
     df_cases.drop(['merge'], axis=1, inplace=True)
     interventions.drop(['merge'], axis=1, inplace=True)
     population.drop(['merge'], axis=1, inplace=True)
 
-    if validation > 0:
-        df_cases = df_cases.iloc[:,:-(validation-1)]
-        df_cases_val = df_cases.iloc[:,-(validation+1):]
-        
-        df_deaths = df_deaths.iloc[:,:-(validation-1)]
-        df_deaths_val = df_deaths.iloc[:,-(validation+1):]
+    #if validation > 0:
+     #   df_cases = df_cases.iloc[:,:-(validation-1)]
+     #   df_cases_val = df_cases.iloc[:,-(validation+1):]
+     #   
+     #   df_deaths = df_deaths.iloc[:,:-(validation-1)]
+     #   df_deaths_val = df_deaths.iloc[:,-(validation+1):]
 
-        return df_cases, df_deaths, interventions, population, fips_list
+      #  return df_cases, df_deaths, interventions, population, fips_list
     return df_cases, df_deaths, interventions, population, fips_list
 
 
-def select_regions(cases, deaths, interventions, M, fips_list, population, validation=0):
+def select_regions(cases, deaths, interventions, M, fips_list, population, validation=False):
     """"
     Returns:
         df_cases: Infections timeseries for given fips
@@ -89,14 +88,14 @@ def select_regions(cases, deaths, interventions, M, fips_list, population, valid
     interventions = interventions.loc[interventions['FIPS'].isin(fips_list)]
     population = population.loc[population['FIPS'].isin(fips_list)]
     
-    if validation > 0:
-        cases = cases.iloc[:,:-(validation-1)]
-        cases_val = cases.iloc[:,-(validation+1):]
-        
-        deaths = deaths.iloc[:,:-(validation-1)]
-        deaths_val = deaths.iloc[:,-(validation+1):]
-
-        return cases, deaths, interventions, population 
+    #if validation > 0:
+    #    cases = cases.iloc[:,:-(validation-1)]
+    #    cases_val = cases.iloc[:,-(validation+1):]
+    #    
+    #    deaths = deaths.iloc[:,:-(validation-1)]
+    #    deaths_val = deaths.iloc[:,-(validation+1):]
+#
+    #    return cases, deaths, interventions, population 
     return cases, deaths, interventions, population
 
 
@@ -236,3 +235,90 @@ def remove_negative_values(df):
     num = df._get_numeric_data()
     num[num < 0] = 0
     return df
+
+
+def get_validation_dict(data_dir, cases, deaths, fips_list, cases_dates):
+    """ get the dict with fips_codes as keys and list of days to hold out"""
+    validation_days_path = join(data_dir, 'us_data', 'validation_days.csv')
+
+    # get last day of current data 
+    last_day_cases = cases_dates[-1]
+    ordinal_last_day_cases = dt.datetime.strptime(last_day_cases, '%m/%d/%y').toordinal()
+    validation_days_dict  = {} 
+   
+
+    FLAG_NEW_DATA_AVAILABLE = False
+    FLAG_NEW_FIPS = False
+    # read the days ot be withheld if the file exists
+    if exists(validation_days_path):
+        with open(validation_days_path, 'r') as f:
+            reader = csv.reader(f, delimiter=',')
+            last_date = next(reader)
+            ordinal_last_day = dt.datetime.strptime(last_date[0], '%m/%d/%y').toordinal()
+            if ordinal_last_day_cases > ordinal_last_day:
+                FLAG_NEW_DATA_AVAILABLE = True
+            next(reader)
+            if not FLAG_NEW_DATA_AVAILABLE:
+                for row in reader:
+                    validation_days_dict[int(row[0])] = row[1:]
+                
+                not_included = []
+                for j, i in enumerate(fips_list):
+                    if i not in validation_days_dict.keys():
+                        not_included.append((i,j))
+                        FLAG_NEW_FIPS = True
+    else:
+        FLAG_NEW_DATA_AVAILABLE = True 
+
+    if FLAG_NEW_DATA_AVAILABLE:
+        validation_days_dict = {}
+        for death, fips in zip(deaths.T, fips_list):
+            for j in range(len(death)):
+                if death[j] > 0:
+                    validation_days_dict.setdefault(fips, []).append(j)
+            try:
+                validation_days_dict[fips] = np.random.choice(validation_days_dict[fips], 3, replace=False)
+            except ValueError as e:
+                validation_days_dict[fips] = []
+                print(e)
+                print(f'Very few datapoints available for this FIPS code: {fips}.')
+        with open(validation_days_path, 'w', newline='' ) as f:
+            writer = csv.writer(f, delimiter=',')
+            writer.writerow([last_day_cases])
+            writer.writerow(['FIPS', 'Indices of val days'])
+            for key, val in validation_days_dict.items():
+                list_to_write = [key] + list(val)
+                writer.writerow(list_to_write)
+    
+
+    if FLAG_NEW_FIPS:
+        for fips, i in not_included:
+            # i is the position of fips in fips_list
+            for j in range(len(deaths.T[i])):
+                if deaths.T[i,j] > 0:
+                    validation_days_dict.setdefault(fips, []).append(j)
+            try:
+                validation_days_dict[fips] = np.random.choice(validation_days_dict[fips], 3, replace=False)
+            except ValueError as e:
+                validation_days_dict[fips] = []
+                print(e)
+                print('Very few datapoints available for this FIPS code.')
+        with open(validation_days_path, 'w', newline='' ) as f:
+            writer = csv.writer(f, delimiter=',')
+            writer.writerow([last_day_cases])
+            writer.writerow(['FIPS', 'Indices of val days'])
+            for key, val in validation_days_dict.items():
+                list_to_write = [key] + list(val)
+                writer.writerow(list_to_write)
+
+    return validation_days_dict
+                    
+
+
+
+def apply_validation(deaths, fips_list, validation_days_dict):
+    """ sets the deaths of the days in the validation_days_dict to 0"""
+    for i, fips in enumerate(fips_list):
+        if validation_days_dict[fips]:   
+            deaths[np.array(validation_days_dict[fips], dtype=np.int) , i] = 0
+    return deaths
