@@ -31,7 +31,7 @@ def get_cluster(data_dir, cluster):
     return fips_list
 
     
-def get_data(M, data_dir, processing=None, state=False, fips_list=None, validation=0):
+def get_data(M, data_dir, processing=None, state=False, fips_list=None, validation=False):
 
     cases, deaths, interventions, population = preprocessing_us_data(data_dir)
 
@@ -44,13 +44,13 @@ def get_data(M, data_dir, processing=None, state=False, fips_list=None, validati
 
     # Not filtering interventions data since we're not selecting counties based on that
 
-    final_dict, fips_list, dict_of_start_dates, dict_of_geo = get_regions(M, cases, deaths,
+    final_dict, fips_list, dict_of_start_dates, dict_of_geo = get_regions(data_dir, M, cases, deaths,
             processing, interventions, population, fips_list, validation)
 
     return final_dict, fips_list, dict_of_start_dates, dict_of_geo
 
 
-def get_regions(M, cases, deaths, processing, interventions, population, fips_list=None, validation=0):
+def get_regions(data_dir, M, cases, deaths, processing, interventions, population, fips_list=None, validation=False):
     if processing == Processing.INTERPOLATE:
         cases = impute(cases, allow_decrease_towards_end=False)
         deaths = impute(deaths, allow_decrease_towards_end=False)
@@ -61,16 +61,17 @@ def get_regions(M, cases, deaths, processing, interventions, population, fips_li
         
     elif processing == Processing.REMOVE_NEGATIVE_REGIONS:
         cases, deaths = remove_negative_regions(cases, deaths, idx=2)
-
+    
+    
+        
     if fips_list is None:
-        cases, deaths, interventions, population, fips_list = select_top_regions(
-            cases, deaths, interventions, M, population, validation)
+        cases, deaths, interventions, population, fips_list = select_top_regions(cases, deaths,
+                interventions, M, population)
     else:
-        cases, deaths, interventions, population = select_regions(
-            cases, deaths, interventions, M, fips_list, population, validation)
-
-        cases, deaths, interventions, population, fips_list = select_top_regions(
-            cases, deaths, interventions, M, population, validation)
+        cases, deaths, interventions, population = select_regions(cases, deaths, interventions, M, fips_list,
+                population)
+        cases, deaths, interventions, population, fips_list = select_top_regions(cases, deaths,
+                interventions, M, population)
 
     
     dict_of_geo = {} ## map geocode
@@ -95,6 +96,12 @@ def get_regions(M, cases, deaths, processing, interventions, population, fips_li
     population = population.drop(['FIPS'], axis=1)
     population = population.to_numpy()
     
+    
+    if validation:
+        validation_days_dict = get_validation_dict(data_dir, cases, deaths,fips_list, cases_dates)
+        deaths = apply_validation(deaths, fips_list, validation_days_dict)
+
+
     dict_of_start_dates, final_dict = primary_calculations(cases, deaths, covariates, cases_dates,
             population, fips_list)
 
@@ -214,7 +221,8 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
 
 
 if __name__ == '__main__':
-    stan_data, regions, start_date, geocode = get_data(25, 'data', processing=None, state=False, fips_list=None)
-    print(stan_data['X'].shape)
-    print(stan_data['pop'])
-    print(stan_data['deaths'])  
+    stan_data, regions, start_date, geocode = get_data(100, 'data', processing=Processing.REMOVE_NEGATIVE_VALUES, state=False, fips_list=None, validation=True)
+    print(stan_data['deaths'])
+    print(stan_data['deaths'][:,0])
+    print(geocode[0])
+    
