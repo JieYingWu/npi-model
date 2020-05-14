@@ -63,13 +63,14 @@ def get_regions(M, cases, deaths, processing, interventions, population, fips_li
         cases, deaths = remove_negative_regions(cases, deaths, idx=2)
 
     if fips_list is None:
-        cases, deaths, interventions, population, fips_list = select_top_regions(cases, deaths,
-                interventions, M, population, validation)
+        cases, deaths, interventions, population, fips_list = select_top_regions(
+            cases, deaths, interventions, M, population, validation)
     else:
-        cases, deaths, interventions, population = select_regions(cases, deaths, interventions, M, fips_list,
-                population, validation)
-        cases, deaths, interventions, population, fips_list = select_top_regions(cases, deaths,
-                interventions, M, population, validation)
+        cases, deaths, interventions, population = select_regions(
+            cases, deaths, interventions, M, fips_list, population, validation)
+
+        cases, deaths, interventions, population, fips_list = select_top_regions(
+            cases, deaths, interventions, M, population, validation)
 
     
     dict_of_geo = {} ## map geocode
