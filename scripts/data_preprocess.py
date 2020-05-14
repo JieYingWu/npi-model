@@ -75,7 +75,109 @@ def select_top_regions(df_cases, df_deaths, interventions, num_counties, populat
     return df_cases, df_deaths, interventions, population, fips_list
 
 
-def select_regions(cases, deaths, interventions, M, fips_list, population, validation=False):
+def merge_supercounties(cases, deaths, interventions, population, threshold=5):
+    """Join counties in the same state if they don't have enough deaths.
+
+    Checks that the average daily deaths for the past 10 days is more than `threshold`. If the
+    daily deaths are zero, completely drops the county.
+
+    :param cases: 
+    :param deaths: 
+    :param interventions: 
+    :param population: 
+    :returns: 
+    :rtype:
+
+    """
+    new_cases = []              # list of dictionaries, serving as rows
+        new_deaths = []
+    new_interventions = []
+    new_population = []
+    state_fips_to_cases_idx = {}         # map state fips strings to index in the above rows, for that supercounty
+    state_fips_to_deaths_idx = {}
+
+    state_fips_to_interventions_idx = {}
+    state_fips_to_population_idx = {}
+    state_fips_to_counties_included = {}  # map state fips to list of FIPS for counties in that supercounty
+    for i, deaths_row in deaths.iterrows():
+        fips = deaths_row['FIPS']
+        
+        cases_row = cases.loc[cases['FIPS'] == fips].copy().iloc[0]
+        interventions_row = interventions.loc[interventions['FIPS'] == fips].copy().iloc[0]
+        population_row = population.loc[population['FIPS'] == fips].copy().iloc[0]
+        # print('CASES:\n', cases_row)
+        # print('INTERVENTIONS:\n', interventions_row)
+        
+        county_deaths = deaths_row[2:].to_numpy()
+        if np.all(county_deaths == 0):
+            # county has no data to contribute at all
+            continue
+        if county_deaths[-5:].mean() >= threshold:
+            # county should have enough data on its own
+            new_cases.append(cases_row)
+            new_deaths.append(deaths_row)
+            new_interventions.append(interventions_row)
+            new_population.append(population_row)
+            continue
+
+        state_fips = str(fips).zfill(5)[:2] + '000'
+        state_fips_to_counties_included[state_fips] = state_fips_to_counties_included.get(state_fips, []) + [fips]
+
+        # going to be adding to supercounty, so get rid of identifying info
+        cases_row['FIPS'] = state_fips
+        cases_row['Combined_Key'] = ''
+        deaths_row['FIPS'] = state_fips
+        deaths_row['Combined_Key'] = ''
+        interventions_row['FIPS'] = state_fips
+        interventions_row['AREA_NAME'] = ''
+        population_row['FIPS'] = state_fips
+                    
+        if state_fips_to_cases_idx.get(state_fips) is None:
+            print(f'added supercounty for {state_fips}')
+            # first county encountered in state, just continue
+            state_fips_to_cases_idx[state_fips] = len(new_cases)
+            new_cases.append(cases_row)
+            
+            state_fips_to_deaths_idx[state_fips] = len(new_deaths)
+            new_deaths.append(deaths_row)
+            
+            state_fips_to_population_idx[state_fips] = len(new_population)
+            new_population.append(population_row)
+
+            state_fips_to_interventions_idx[state_fips] = len(new_interventions)
+            new_interventions.append(interventions_row)
+            continue
+
+        interventions_idx = state_fips_to_interventions_idx.get(state_fips)
+        if np.any(interventions_row[2:] != new_interventions[interventions_idx][2:]):
+            print(f"WARNING: couldn't merge {fips} with {state_fips} due to non-matching interventions")
+            continue
+
+        # encountered supercounty for which there is existing record and the interventions match, so merge all teh other info
+        cases_idx = state_fips_to_cases_idx.get(state_fips)
+        new_cases[cases_idx][2:] += cases_row[2:]
+        
+        deaths_idx = state_fips_to_deaths_idx.get(state_fips)
+        new_deaths[deaths_idx][2:] += deaths_row[2:]
+                
+        population_idx = state_fips_to_population_idx.get(state_fips)
+        new_population[population_idx][1] += population_row[1]
+        print(f'MERGED {fips} with supercounty for {state_fips}')
+
+    cases = pd.DataFrame(new_cases)
+    deaths = pd.DataFrame(new_deaths)
+    interventions = pd.DataFrame(new_interventions)
+    population = pd.DataFrame(new_population)
+    # print('CASES', cases, sep='\n')
+    # print('DEATHS', deaths, sep='\n')
+    # print('INTERVENTIONS', interventions, sep='\n')
+    # print('POPULATION', population, sep='\n')
+
+    print('supercounties:', state_fips_to_counties_included)
+    return cases, deaths, interventions, population        
+    
+
+def select_regions(cases, deaths, interventions, M, fips_list, population, validation=False, supercounties=True):
     """"
     Returns:
         df_cases: Infections timeseries for given fips
@@ -87,15 +189,20 @@ def select_regions(cases, deaths, interventions, M, fips_list, population, valid
     deaths = deaths.loc[deaths['FIPS'].isin(fips_list)]
     interventions = interventions.loc[interventions['FIPS'].isin(fips_list)]
     population = population.loc[population['FIPS'].isin(fips_list)]
-    
+
+    if supercounties:
+        # join counties with less than a given threshold of deaths with other counties in the same state.
+        # and if their interventions are the same as the other counties
+        cases, deaths, interventions, population = merge_supercounties(cases, deaths, interventions, population)
+
     #if validation > 0:
-    #    cases = cases.iloc[:,:-(validation-1)]
-    #    cases_val = cases.iloc[:,-(validation+1):]
-    #    
-    #    deaths = deaths.iloc[:,:-(validation-1)]
-    #    deaths_val = deaths.iloc[:,-(validation+1):]
-#
-    #    return cases, deaths, interventions, population 
+     #   cases = cases.iloc[:,:-(validation-1)]
+     #   cases_val = cases.iloc[:,-(validation+1):]
+     #   
+     #   deaths = deaths.iloc[:,:-(validation-1)]
+     #   deaths_val = deaths.iloc[:,-(validation+1):]
+
+     #   return cases, deaths, interventions, population 
     return cases, deaths, interventions, population
 
 
