@@ -32,11 +32,19 @@ class MainStanModel():
         stan_data, regions, start_date, geocode, weighted_fatalities = self.preprocess_data(self.M, self.mode, self.data_dir)
         result_df = self.run_model(stan_data, weighted_fatalities, regions, start_date, geocode)
         self.save_results_to_file(self.output_path, result_df, start_date, geocode)
-        
+
         if self.plot:
             self.make_plots()
 
-
+    def load_supercounties_fatalities(self):
+        fatalities = np.loadtxt(
+            join(self.data_dir, 'us_data', 'weighted_fatality_supercounties.csv'),
+            skiprows=1, delimiter=',', dtype=str)
+        indexing = [int(x.split('_')[1]) == self.cluster for x in fatalities[:, 0]]
+        fatalities[:, 0] = [str(int(x.split('_')[0])) for x in fatalities[:, 0]]
+        fatalities = fatalities[indexing]
+        # fatalities = np.concatenate([fatalities[:, 0:1], np.zeros((fatalities.shape[0], 2), dtype=str), fatalities[:, 1:]], axis=1) 
+        return fatalities
 
     def preprocess_data(self, M, mode, data_dir):
         if mode == 'europe':
@@ -44,12 +52,17 @@ class MainStanModel():
             weighted_fatalities = np.loadtxt(join(data_dir, 'europe_data', 'weighted_fatality.csv'), skiprows=1, delimiter=',', dtype=str)
             
         elif mode == 'US_county':
-            stan_data, regions, start_date, geocode = data_parser.get_data(M, data_dir, processing=self.processing, state=False, fips_list=self.fips_list, validation=self.validation_withholding)
-            wf_file = join(self.data_dir, 'us_data', 'weighted_fatality.csv')
-            weighted_fatalities = np.loadtxt(wf_file, skiprows=1, delimiter=',', dtype=str)
+            stan_data, regions, start_date, geocode = data_parser.get_data(M, data_dir, processing=self.processing, state=False, fips_list=self.fips_list, validation=self.validation_withholding, cluster=self.cluster)
+            # wf_file = join(self.data_dir, 'us_data', 'weighted_fatality.csv')
+            wf_file = join(self.data_dir, 'us_data', 'weighted_fatality_new.csv')
 
+            weighted_fatalities = np.loadtxt(wf_file, skiprows=1, delimiter=',', dtype=str)
+            if self.supercounties:
+                supercounty_weighted_fatalities = self.load_supercounties_fatalities()
+                weighted_fatalities = np.concatenate([weighted_fatalities, supercounty_weighted_fatalities], axis=0)
+                
         elif mode == 'US_state':
-            stan_data, regions, start_date, geocode = data_parser.get_data(M, data_dir, processing=self.processing, state=True, fips_list=self.fips_list, validation=self.validation_withholding)
+            stan_data, regions, start_date, geocode = data_parser.get_data(M, data_dir, processing=self.processing, state=True, fips_list=self.fips_list, validation=self.validation_withholding, supercounties=self.supercounties)
             wf_file = join(data_dir, 'us_data', 'state_weighted_fatality.csv')
             weighted_fatalities = np.loadtxt(wf_file, skiprows=1, delimiter=',', dtype=str)
 
@@ -57,7 +70,6 @@ class MainStanModel():
 
         return stan_data, regions, start_date, geocode, weighted_fatalities
    
-
 
     def run_model(self, stan_data, weighted_fatalities, regions, start_date, geocode):
     # Build a dictionary of region identifier to weighted fatality rate
@@ -120,7 +132,6 @@ class MainStanModel():
 
         stan_data['f'] = all_f
 
-
         fit = sm.sampling(data=stan_data, iter=self.iter, chains=4, warmup=self.warmup_iter,
                           thin=4, control={'adapt_delta': 0.9, 'max_treedepth': self.max_treedepth})
     # fit = sm.sampling(data=stan_data, iter=2000, chains=4, warmup=10, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
@@ -176,21 +187,25 @@ class MainStanModel():
     def make_plots(self):
         """ save plots of current run"""
         print(f'Creating figures.')
-        forecast_plots_path =join(self.unique_results_path,'plots', 'forecast') 
-        rt_plots_path = join(self.unique_results_path,'plots', 'rt')
+        forecast_plots_path = join(self.unique_results_path, 'plots', 'forecast') 
+        rt_plots_path = join(self.unique_results_path, 'plots', 'rt')
         os.makedirs(forecast_plots_path)
         os.makedirs(rt_plots_path)
 
-        interventions_path = join(self.data_dir,'us_data','interventions.csv')
-        if self.plot:
-            if self.mode == 'europe':
-                forecast_plots.make_all_eu_plots(self.start_dates_path, self.geocode_path, self.summary_path, forecast_plots_path)
-            elif self.mode == 'US_county':
-                forecast_plots.make_all_us_county_plots(self.start_dates_path, self.geocode_path, self.summary_path, forecast_plots_path)
-                plot_rt.make_all_us_plots(self.summary_path, self.geocode_path, self.start_dates_path, interventions_path, rt_plots_path, state_level=False)
-            elif self.mode == 'US_state':
-                forecast_plots.make_all_us_states_plots(self.start_dates_path, self.geocode_path, self.summary_path, forecast_plots_path)
-                plot_rt.make_all_us_plots(self.summary_path, self.geocode_path, self.start_dates_path, interventions_path, rt_plots_path, state_level=True)
+        interventions_path = join(self.data_dir, 'us_data', 'interventions.csv')
+        if self.mode == 'europe':
+            forecast_plots.make_all_eu_plots(self.start_dates_path, self.geocode_path, self.summary_path,
+                                             forecast_plots_path)
+        elif self.mode == 'US_county':
+            forecast_plots.make_all_us_county_plots(self.start_dates_path, self.geocode_path,
+                                                    self.summary_path, forecast_plots_path, use_tmp=True)
+            plot_rt.make_all_us_plots(self.summary_path, self.geocode_path, self.start_dates_path,
+                                      interventions_path, rt_plots_path, state_level=False)
+        elif self.mode == 'US_state':
+            forecast_plots.make_all_us_states_plots(self.start_dates_path, self.geocode_path,
+                                                    self.summary_path, forecast_plots_path)
+            plot_rt.make_all_us_plots(self.summary_path, self.geocode_path, self.start_dates_path,
+                                      interventions_path, rt_plots_path, state_level=True)
 
 
 if __name__ == '__main__':
@@ -206,10 +221,11 @@ if __name__ == '__main__':
     parser.add_argument('--plot', action='store_true', help='add for generating plots')
     parser.add_argument('--fips-list', default=None, nargs='+', help='fips codes to run the model on')
     parser.add_argument('--cluster', default=None, type=int, help='cluster label to draw fips-list from')
-    parser.add_argument('-s', '--save-tag', default = '', type=str, help='tag for saving the summary, geocodes and start-dates.')
+    parser.add_argument('-s', '--save-tag', default='', type=str, help='tag for saving the summary, geocodes and start-dates.')
     parser.add_argument('--iter', default=200, type=int, help='iterations for the model')
     parser.add_argument('--warmup-iter', default=100, type=int, help='warmup iterations for the model')
     parser.add_argument('--max-treedepth', default=10, type=int, help='maximum tree depth for the model')
+    parser.add_argument('--supercounties', action='store_true', type=bool, help='merge counties in the same state AND cluster with insufficient cases')
     args = parser.parse_args()
 
     model = MainStanModel(args)

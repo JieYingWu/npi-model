@@ -31,8 +31,8 @@ def get_cluster(data_dir, cluster):
     return fips_list
 
     
-def get_data(M, data_dir, processing=None, state=False, fips_list=None, validation=False):
-
+def get_data(M, data_dir, processing=None, state=False, fips_list=None, validation=False,
+             cluster=None, supercounties=False):
     cases, deaths, interventions, population = preprocessing_us_data(data_dir)
 
     if state:
@@ -43,14 +43,15 @@ def get_data(M, data_dir, processing=None, state=False, fips_list=None, validati
         deaths = deaths[deaths['FIPS'] % 1000 != 0]
 
     # Not filtering interventions data since we're not selecting counties based on that
-
-    final_dict, fips_list, dict_of_start_dates, dict_of_geo = get_regions(data_dir, M, cases, deaths,
-            processing, interventions, population, fips_list, validation)
+    final_dict, fips_list, dict_of_start_dates, dict_of_geo = get_regions(
+        data_dir, M, cases, deaths, processing, interventions, population, fips_list,
+        validation=validation, cluster=cluster, supercounties=supercounties)
 
     return final_dict, fips_list, dict_of_start_dates, dict_of_geo
 
 
-def get_regions(data_dir, M, cases, deaths, processing, interventions, population, fips_list=None, validation=False):
+def get_regions(data_dir, M, cases, deaths, processing, interventions, population,
+                fips_list=None, validation=False, cluster=None, supercounties=False):
     if processing == Processing.INTERPOLATE:
         cases = impute(cases, allow_decrease_towards_end=False)
         deaths = impute(deaths, allow_decrease_towards_end=False)
@@ -61,18 +62,23 @@ def get_regions(data_dir, M, cases, deaths, processing, interventions, populatio
         
     elif processing == Processing.REMOVE_NEGATIVE_REGIONS:
         cases, deaths = remove_negative_regions(cases, deaths, idx=2)
-    
-    
-        
+                
     if fips_list is None:
-        cases, deaths, interventions, population, fips_list = select_top_regions(cases, deaths,
-                interventions, M, population)
+        cases, deaths, interventions, population, fips_list = select_top_regions(
+            cases, deaths, interventions, M, population, supercounties=supercounties)
     else:
-        cases, deaths, interventions, population = select_regions(cases, deaths, interventions, M, fips_list,
-                population)
-        cases, deaths, interventions, population, fips_list = select_top_regions(cases, deaths,
-                interventions, M, population)
+        cases, deaths, interventions, population = select_regions(
+            cases, deaths, interventions, M, fips_list, population,
+            validation=validation, cluster=cluster, supercounties=supercounties)
+        cases, deaths, interventions, population, fips_list = select_top_regions(
+            cases, deaths, interventions, M, population, validation=validation)
 
+    cases.to_csv('data/tmp_cases.csv')
+    deaths.to_csv('data/tmp_deaths.csv')
+    print('CASES', cases, sep='\n')
+    print('DEATHS', deaths, sep='\n')
+    print('INTERVENTIONS', interventions, sep='\n')
+    print('POPULATION', population, sep='\n')
     
     dict_of_geo = {} ## map geocode
     for i in range(len(fips_list)):

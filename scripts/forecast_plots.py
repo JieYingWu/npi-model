@@ -166,17 +166,21 @@ def read_true_cases_europe(plot_choice, num_of_country, dict_of_start_dates, dic
     return confirmed_cases
 
 
-def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of_eu_geog):
+def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of_eu_geog, use_tmp=False):
     # 1 for deaths forecast; 0 for infections forecast
-    if plot_choice == 0:
-        #filepath = "data/us_data/infections_timeseries.csv"
+    if use_tmp and plot_choice == 0:
+        filepath = 'data/tmp_cases.csv'
+    elif use_tmp and plot_choice == 1:
+        filepath = 'data/tmp_deaths.csv'
+    elif plot_choice == 0:
+        # filepath = "data/us_data/infections_timeseries.csv"
         filepath = "data/us_data/infections_timeseries_w_states.csv"
     else:
-        #filepath = "data/us_data/deaths_timeseries.csv"
+        # filepath = "data/us_data/deaths_timeseries.csv"
         filepath = "data/us_data/deaths_timeseries_w_states.csv"
 
     df = pd.read_csv(filepath, delimiter=',')#, index_col=0)
-
+            
     # get rid of cummulative
     col_names = df.columns.values[3:]
     new_df = pd.DataFrame()
@@ -208,7 +212,7 @@ def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of
 
 
 # create a batch of all possible plots for usa
-def make_all_us_county_plots(start_date_dict_path, geocode_dict_path, summary_path, output_path):
+def make_all_us_county_plots(start_date_dict_path, geocode_dict_path, summary_path, output_path, use_tmp=False):
     dict_of_start_dates = pd.read_csv(start_date_dict_path, delimiter=',', index_col=0)
     dict_of_eu_geog = pd.read_csv(geocode_dict_path, delimiter=',', index_col=0)
     path = summary_path 
@@ -216,7 +220,7 @@ def make_all_us_county_plots(start_date_dict_path, geocode_dict_path, summary_pa
     for plot_choice in range(0, 2):
         for num_of_country in dict_of_eu_geog.keys():
             confirmed_cases, county_name = read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates,
-                                                              dict_of_eu_geog)
+                                                              dict_of_eu_geog, use_tmp=use_tmp)
             plot_daily_infections_num(path, confirmed_cases, county_name, plot_choice, num_of_country,
                                       dict_of_start_dates, dict_of_eu_geog, output_path)
     return
