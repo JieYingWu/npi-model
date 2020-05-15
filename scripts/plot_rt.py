@@ -13,6 +13,14 @@ register_matplotlib_converters()
 # otherwise rotation of x-labels by 90 deg crashes from time to time
 ticker.Locator.MAXTICKS = 10000
 
+# colors
+lightgreen = '#B8EBEB'
+darkgreen = '#79CCCC'
+lightgray = '#C7C7C7'
+darkgray = '#666666'
+lightorange = '#FBE7C5'
+darkorange = '#FDBD84'
+
 
 def plot_rt_europe(simulation_file, interventions_file, country_number, country_name, start_date, num_days=75, save_img=False, show_img=True):
     # read data
@@ -40,12 +48,12 @@ def plot_rt_europe(simulation_file, interventions_file, country_number, country_
     # 50% conf interval
     upper = Rt_data['75%'][:num_days]
     lower = Rt_data['25%'][:num_days]
-    plt.fill_between(time_data, lower, upper, step='post', alpha=0.4, color='darkgreen', label='50% conf. interval')
+    plt.fill_between(time_data, lower, upper, step='post', alpha=0.4, color=darkgreen, label='50% conf. interval')
 
     # 95% conf interval
     upper = Rt_data['97.5%'][:num_days]
     lower = Rt_data['2.5%'][:num_days]
-    plt.fill_between(time_data, lower, upper, step='post', alpha=0.4, color='lightgreen', label='95% conf. interval')
+    plt.fill_between(time_data, lower, upper, step='post', alpha=0.4, color=lightgreen, label='95% conf. interval')
 
     init_height = 1.2 * plt.gca().get_ylim()[1]
     plt.ylim([0, init_height])
@@ -63,7 +71,7 @@ def plot_rt_europe(simulation_file, interventions_file, country_number, country_
         adjust_height.append(date)
         if num == 0:
             # plot vertical line
-            plt.axvline(pd.to_datetime(date), drawstyle='steps-pre', color='gray', ls='--')
+            plt.axvline(pd.to_datetime(date), drawstyle='steps-pre', color=darkgray, ls='--')
         # plot marker for this intervention
         plt.plot(pd.to_datetime(date), init_height - (num + 1) * 0.05 * init_height, marker=marker[ind],
                  label=intervention, linestyle='None')
@@ -74,15 +82,15 @@ def plot_rt_europe(simulation_file, interventions_file, country_number, country_
     lgd = plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
     # adjust x axis labels and figure size
-    date_form = DateFormatter("%B %d")
+    date_form = DateFormatter("%Y-%m-%d")
     plt.gca().xaxis.set_major_formatter(date_form)
     plt.gca().xaxis.set_major_locator(mdates.WeekdayLocator())
-    plt.xticks(rotation=90)
+    plt.xticks(rotation=30, horizontalalignment='right')
     plt.subplots_adjust(bottom=0.30)
     plt.xlim([time_data[0], time_data[-1]])
 
-    plt.title(country_name)
-    plt.xlabel('Days')
+    plt.title(country_name.title())
+    plt.xlabel('Date')
     plt.ylabel('Time-dependent Reproduction Number')
 
     if save_img:
@@ -117,12 +125,12 @@ def plot_rt_US(simulation_file, interventions_file, county_number, fips, start_d
     # 50% conf interval
     upper = Rt_data['75%'][:num_days]
     lower = Rt_data['25%'][:num_days]
-    plt.fill_between(time_data, lower, upper, step='post', alpha=0.4, color='darkgreen', label='50% conf. interval')
+    plt.fill_between(time_data, lower, upper, step='post', alpha=0.4, color=darkgreen, label='50% conf. interval')
 
     # 95% conf interval
     upper = Rt_data['97.5%'][:num_days]
     lower = Rt_data['2.5%'][:num_days]
-    plt.fill_between(time_data, lower, upper, step='post', alpha=0.4, color='lightgreen', label='95% conf. interval')
+    plt.fill_between(time_data, lower, upper, step='post', alpha=0.4, color=lightgreen, label='95% conf. interval')
 
     init_height = 1.2 * plt.gca().get_ylim()[1]
     plt.ylim([0, init_height])
@@ -141,7 +149,7 @@ def plot_rt_US(simulation_file, interventions_file, county_number, fips, start_d
             adjust_height.append(date)
             if num == 0:
                 # plot vertical line
-                plt.axvline(pd.to_datetime(date), drawstyle='steps-pre', color='gray', ls='--')
+                plt.axvline(pd.to_datetime(date), drawstyle='steps-pre', color=darkgray, ls='--')
             # plot marker for this intervention
             plt.plot(pd.to_datetime(date), init_height - (num + 1) * 0.05 * init_height, marker=marker[ind],
                      label=intervention, linestyle='None')
@@ -152,15 +160,15 @@ def plot_rt_US(simulation_file, interventions_file, county_number, fips, start_d
     lgd = plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
     # adjust x axis labels and figure size
-    date_form = DateFormatter("%B %d")
+    date_form = DateFormatter("%Y-%m-%d")
     plt.gca().xaxis.set_major_formatter(date_form)
     plt.gca().xaxis.set_major_locator(mdates.WeekdayLocator())
-    plt.xticks(rotation=90)
+    plt.xticks(rotation=30, horizontalalignment='right')
     plt.subplots_adjust(bottom=0.30)
     plt.xlim([time_data[0], time_data[-1]])
 
-    plt.title(interventions_data['AREA_NAME'].values[0])
-    plt.xlabel('Days')
+    plt.title(interventions_data['AREA_NAME'].values[0].title())
+    plt.xlabel('Date')
     plt.ylabel('Time-dependent Reproduction Number')
 
     if save_img:
