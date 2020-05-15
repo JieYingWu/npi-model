@@ -49,9 +49,10 @@ class ValidationResult():
             kappa = [] # length 1 
             alpha = [] # length M 
             predicted_deaths = {} # M key-val pairs with length N
+            rt_adj = {}  # M key-val pairs with length N
             # y = []
             
-            self.parameter_name_list = ['mu', 'kappa', 'alpha', 'predicted_deaths']
+            self.parameter_name_list = ['mu', 'kappa', 'alpha', 'predicted_deaths', 'rt_adj']
             for row in reader:
                 if row[0][:2] == 'mu':
                     mu.append(row[1:])
@@ -69,8 +70,14 @@ class ValidationResult():
                     pos = row[0][row[0].find('[')+1:row[0].find(']')]
                     t, m = pos.split(',')
                     predicted_deaths.setdefault(int(m), []).append(row[1:])
+                
+                if row[0][:6] == 'Rt_adj':
+                    pos = row[0][row[0].find('[')+1:row[0].find(']')]
+                    t, m = pos.split(',')
+                    rt_adj.setdefault(int(m), []).append(row[1:])
+                        
 
-        return mu, kappa, alpha, predicted_deaths 
+        return mu, kappa, alpha, predicted_deaths, rt_adj 
 
 
 
