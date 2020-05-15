@@ -177,12 +177,12 @@ class MainStanModel():
     def make_plots(self):
         """ save plots of current run"""
         print(f'Creating figures.')
-        forecast_plots_path =join(self.unique_results_path,'plots', 'forecast') 
-        rt_plots_path = join(self.unique_results_path,'plots', 'rt')
+        forecast_plots_path = join(self.unique_results_path, 'plots', 'forecast') 
+        rt_plots_path = join(self.unique_results_path, 'plots', 'rt')
         os.makedirs(forecast_plots_path)
         os.makedirs(rt_plots_path)
 
-        interventions_path = join(self.data_dir,'us_data','interventions.csv')
+        interventions_path = join(self.data_dir, 'us_data', 'interventions.csv')
         if self.mode == 'europe':
             forecast_plots.make_all_eu_plots(self.start_dates_path, self.geocode_path, self.summary_path,
                                              forecast_plots_path)
