@@ -90,7 +90,7 @@ def merge_supercounties(cases, deaths, interventions, population, threshold=5):
 
     """
     new_cases = []              # list of dictionaries, serving as rows
-        new_deaths = []
+    new_deaths = []
     new_interventions = []
     new_population = []
     state_fips_to_cases_idx = {}         # map state fips strings to index in the above rows, for that supercounty
