@@ -31,7 +31,7 @@ class MainStanModel():
         stan_data, regions, start_date, geocode, weighted_fatalities = self.preprocess_data(self.M, self.mode, self.data_dir)
         result_df = self.run_model(stan_data, weighted_fatalities, regions, start_date, geocode)
         self.save_results_to_file(self.output_path, result_df, start_date, geocode)
-        
+
         if self.plot:
             self.make_plots()
 
@@ -51,7 +51,7 @@ class MainStanModel():
             weighted_fatalities = np.loadtxt(join(data_dir, 'europe_data', 'weighted_fatality.csv'), skiprows=1, delimiter=',', dtype=str)
             
         elif mode == 'US_county':
-            stan_data, regions, start_date, geocode = data_parser.get_data(M, data_dir, processing=self.processing, state=False, fips_list=self.fips_list, validation=self.validation)
+            stan_data, regions, start_date, geocode = data_parser.get_data(M, data_dir, processing=self.processing, state=False, fips_list=self.fips_list, validation=self.validation, cluster=self.cluster)
             wf_file = join(self.data_dir, 'us_data', 'weighted_fatality_new.csv')
             # wf_file = join(self.data_dir, 'us_data', 'weighted_fatality_new.csv')
             weighted_fatalities = np.loadtxt(wf_file, skiprows=1, delimiter=',', dtype=str)
@@ -107,7 +107,6 @@ class MainStanModel():
         all_f = np.zeros((self.N2, len(regions)))
         
         for r in range(len(regions)):
-            print(regions)
             ifr = float(ifrs[str(regions[r])])
 
     ## assume that IFR is probability of dying given infection
@@ -130,7 +129,6 @@ class MainStanModel():
                 all_f[:,r] = s * h
 
         stan_data['f'] = all_f
-
 
         fit = sm.sampling(data=stan_data, iter=self.iter, chains=4, warmup=self.warmup_iter,
                           thin=4, control={'adapt_delta': 0.9, 'max_treedepth': self.max_treedepth})
@@ -185,15 +183,19 @@ class MainStanModel():
         os.makedirs(rt_plots_path)
 
         interventions_path = join(self.data_dir,'us_data','interventions.csv')
-        if self.plot:
-            if self.mode == 'europe':
-                forecast_plots.make_all_eu_plots(self.start_dates_path, self.geocode_path, self.summary_path, forecast_plots_path)
-            elif self.mode == 'US_county':
-                forecast_plots.make_all_us_county_plots(self.start_dates_path, self.geocode_path, self.summary_path, forecast_plots_path)
-                plot_rt.make_all_us_plots(self.summary_path, self.geocode_path, self.start_dates_path, interventions_path, rt_plots_path, state_level=False)
-            elif self.mode == 'US_state':
-                forecast_plots.make_all_us_states_plots(self.start_dates_path, self.geocode_path, self.summary_path, forecast_plots_path)
-                plot_rt.make_all_us_plots(self.summary_path, self.geocode_path, self.start_dates_path, interventions_path, rt_plots_path, state_level=True)
+        if self.mode == 'europe':
+            forecast_plots.make_all_eu_plots(self.start_dates_path, self.geocode_path, self.summary_path,
+                                             forecast_plots_path)
+        elif self.mode == 'US_county':
+            forecast_plots.make_all_us_county_plots(self.start_dates_path, self.geocode_path,
+                                                    self.summary_path, forecast_plots_path, use_tmp=True)
+            plot_rt.make_all_us_plots(self.summary_path, self.geocode_path, self.start_dates_path,
+                                      interventions_path, rt_plots_path, state_level=False)
+        elif self.mode == 'US_state':
+            forecast_plots.make_all_us_states_plots(self.start_dates_path, self.geocode_path,
+                                                    self.summary_path, forecast_plots_path)
+            plot_rt.make_all_us_plots(self.summary_path, self.geocode_path, self.start_dates_path,
+                                      interventions_path, rt_plots_path, state_level=True)
 
 
 if __name__ == '__main__':

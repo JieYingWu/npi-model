@@ -11,7 +11,7 @@ def remove_negative_regions(df_cases, df_deaths, idx):
         df_cases: Infections time series with no negative values
         df_deaths: Deaths time series with no negative values
     """
-    ## drop if daily count negative
+    # drop if daily count negative
     sanity_check = df_cases.iloc[:, idx:].apply(lambda x: np.sum(x < 0), axis=1)
     drop_counties = sanity_check[sanity_check != 0].index
     df_cases = df_cases.drop(drop_counties)
@@ -20,7 +20,7 @@ def remove_negative_regions(df_cases, df_deaths, idx):
     drop_counties = sanity_check2[sanity_check2 != 0].index
     df_deaths = df_deaths.drop(drop_counties)
 
-    ## filter only the FIPS that are present in both cases and deaths timeseries
+    # filter only the FIPS that are present in both cases and deaths timeseries
     intersect = list(set(df_cases['FIPS']) & set(df_deaths['FIPS']))
     df_cases = df_cases[df_cases['FIPS'].isin(intersect)]
     df_deaths = df_deaths[df_deaths['FIPS'].isin(intersect)]
@@ -82,7 +82,7 @@ def select_top_regions(df_cases, df_deaths, interventions, num_counties, populat
     return df_cases, df_deaths, interventions, population, fips_list
 
 
-def merge_supercounties(cases, deaths, interventions, population, threshold=5):
+def merge_supercounties(cases, deaths, interventions, population, threshold=5, cluster=None):
     """Join counties in the same state if they don't have enough deaths.
 
     Checks that the average daily deaths for the past 10 days is more than `threshold`. If the
@@ -128,16 +128,22 @@ def merge_supercounties(cases, deaths, interventions, population, threshold=5):
 
         state_fips = str(fips).zfill(5)[:2] + '000'
         state_fips_to_counties_included[state_fips] = state_fips_to_counties_included.get(state_fips, []) + [fips]
+        fips = deaths_row['FIPS']
+        state_name = deaths_row['Combined_Key'].split('-')[1].strip()
+        if cluster is None:
+            area_name = f'{state_name} Supercounty'
+        else:
+            area_name = f'{state_name} Supercounty, Cluster {cluster}'
 
         # going to be adding to supercounty, so get rid of identifying info
         cases_row['FIPS'] = int(state_fips)
-        cases_row['Combined_Key'] = ''
+        cases_row['Combined_Key'] = area_name
         deaths_row['FIPS'] = int(state_fips)
-        deaths_row['Combined_Key'] = ''
+        deaths_row['Combined_Key'] = area_name
         interventions_row['FIPS'] = int(state_fips)
         interventions_row['AREA_NAME'] = ''
         population_row['FIPS'] = int(state_fips)
-                    
+        
         if state_fips_to_cases_idx.get(state_fips) is None:
             print(f'added supercounty for {state_fips}')
             # first county encountered in state, just continue
@@ -183,7 +189,7 @@ def merge_supercounties(cases, deaths, interventions, population, threshold=5):
     return cases, deaths, interventions, population        
     
 
-def select_regions(cases, deaths, interventions, M, fips_list, population, validation=0, supercounties=True):
+def select_regions(cases, deaths, interventions, M, fips_list, population, validation=0, supercounties=True, cluster=None):
     """"
     Returns:
         df_cases: Infections timeseries for given fips
@@ -199,7 +205,8 @@ def select_regions(cases, deaths, interventions, M, fips_list, population, valid
     if supercounties:
         # join counties with less than a given threshold of deaths with other counties in the same state.
         # and if their interventions are the same as the other counties
-        cases, deaths, interventions, population = merge_supercounties(cases, deaths, interventions, population)
+        cases, deaths, interventions, population = merge_supercounties(cases, deaths, interventions, population,
+                                                                       cluster=cluster)
 
     if validation > 0:
         cases = cases.iloc[:,:-(validation-1)]
