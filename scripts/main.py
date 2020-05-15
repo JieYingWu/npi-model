@@ -3,6 +3,7 @@ import os
 import sys
 import argparse
 import json
+import shutil
 import pystan
 import datetime as dt
 import pandas as pd
@@ -155,6 +156,10 @@ class MainStanModel():
         self.start_dates_path = join(self.unique_results_path, 'start_dates.csv')
         self.geocode_path = join(self.unique_results_path, 'geocode.csv')
         logfile_path = join(self.unique_results_path, 'logfile.txt')
+        
+        if self.validation_withholding:
+            shutil.copyfile(join(self.data_dir,'us_data','validation_days.csv'), join(self.unique_results_path, 'validation_days.csv'))
+
         df.to_csv(self.summary_path, sep=',')
 
         df_sd = pd.DataFrame(start_date, index=[0])
