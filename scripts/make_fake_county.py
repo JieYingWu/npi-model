@@ -88,10 +88,10 @@ class CountyGenerator():
     
     # Generate the number of deaths given some prediction
     def predict_deaths(self, rt, prediction, fatality):
-        fatality = fatality[::-1]
+        f = fatality[::-1]
         deaths = np.zeros(rt.shape[0])
         for i in range(1,rt.shape[0]):
-            deaths[i] = np.sum(prediction[0:i] * fatality[-i:])
+            deaths[i] = np.sum(prediction[0:i] * f[-i:])
 
         return deaths.astype(np.int)
 
@@ -141,8 +141,8 @@ if __name__ == '__main__':
     for i in range(58):
         all_r0[geocode[i]] = means[i]
 
-    alpha_mu = 0.15
-    alpha_var = 0.05
+    alpha_mu = 0.2
+    alpha_var = 0.1
     num_alphas = 8
 
     regions = [55079, 53033, 42101, 36119, 36103, 36087, 36071, 36061, 36059, 36055, 36029, 34039, 34035, 34031, 34029, 34027, 34025, 34023, 34021, 34017, 34013, 34007, 34005, 34003, 32003, 29189, 27053, 26163, 26125, 26099, 26049, 24510, 24033, 24031, 24005, 24003, 22103, 22071, 22051, 22033, 18097, 18089, 17197, 17097, 17043, 17031, 13121, 12099, 12086, 12011, 11001, 9009, 9007, 9003, 9001, 6073, 6065, 6037]
