@@ -30,28 +30,35 @@ def get_cluster(data_dir, cluster):
     print(f'obtained {len(fips_list)} counties from cluster {cluster}')
     return fips_list
 
+
+def get_clustering(data_dir):
+    dtype = dict(FIPS=str, cluster=int)
+    clustering = pd.read_csv(join(data_dir, 'us_data', 'clustering.csv'), dtype=dtype)
+    clustering = dict(zip(clustering['FIPS'], clustering['cluster']))
+    return clustering
+
     
 def get_data(M, data_dir, processing=None, state=False, fips_list=None, validation=False,
-             cluster=None, supercounties=False, validation_on_county=False):
+             clustering=None, supercounties=False, validation_on_county=False):
     cases, deaths, interventions, population = preprocessing_us_data(data_dir)
 
     if state:
-        cases = cases[cases['FIPS'] % 1000 == 0]
-        deaths = deaths[deaths['FIPS'] % 1000 == 0]
+        cases = cases[cases['FIPS'].astype(int) % 1000 == 0]
+        deaths = deaths[deaths['FIPS'].astype(int) % 1000 == 0]
     else:
-        cases = cases[cases['FIPS'] % 1000 != 0]
-        deaths = deaths[deaths['FIPS'] % 1000 != 0]
+        cases = cases[cases['FIPS'].astype(int) % 1000 != 0]
+        deaths = deaths[deaths['FIPS'].astype(int) % 1000 != 0]
 
     # Not filtering interventions data since we're not selecting counties based on that
     final_dict, fips_list, dict_of_start_dates, dict_of_geo = get_regions(
         data_dir, M, cases, deaths, processing, interventions, population, fips_list,
-        validation=validation, cluster=cluster, supercounties=supercounties)
+        validation=validation, supercounties=supercounties, clustering=clustering)
 
     return final_dict, fips_list, dict_of_start_dates, dict_of_geo
 
 
 def get_regions(data_dir, M, cases, deaths, processing, interventions, population, fips_list=None,
-                validation=False, cluster=None, supercounties=False):
+                validation=False, clustering=None, supercounties=False):
     if processing == Processing.INTERPOLATE:
         cases = impute(cases, allow_decrease_towards_end=False)
         deaths = impute(deaths, allow_decrease_towards_end=False)
@@ -63,16 +70,12 @@ def get_regions(data_dir, M, cases, deaths, processing, interventions, populatio
     elif processing == Processing.REMOVE_NEGATIVE_REGIONS:
         cases, deaths = remove_negative_regions(cases, deaths, idx=2)
                 
-    if fips_list is None:
-        cases, deaths, interventions, population, fips_list = select_top_regions(
-            cases, deaths, interventions, M, population, supercounties=supercounties)
-    else:
-        cases, deaths, interventions, population = select_regions(
-            cases, deaths, interventions, M, fips_list, population,
-            validation=validation, cluster=cluster, supercounties=supercounties)
-        cases, deaths, interventions, population, fips_list = select_top_regions(
-            cases, deaths, interventions, M, population, validation=validation)
-
+    cases, deaths, interventions, population = select_regions(
+        cases, deaths, interventions, M, population, fips_list=fips_list,
+        clustering=clustering, supercounties=supercounties)
+    cases, deaths, interventions, population, fips_list = select_top_regions(
+        cases, deaths, interventions, M, population, validation=validation)
+    
     cases.to_csv('data/tmp_cases.csv')
     deaths.to_csv('data/tmp_deaths.csv')
     interventions.to_csv('data/tmp_interventions.csv')

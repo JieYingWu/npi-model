@@ -25,7 +25,6 @@ def get_alpha_from_summary(df):
 
     """
     alpha = df.loc[[f'alpha[{i}]' for i in range(1, 9)], 'mean'].to_numpy()
-    print('alpha:', alpha.shape, alpha)
     return alpha
 
 
@@ -38,6 +37,7 @@ class MainStanModel():
         if isinstance(self.processing, int):
             self.processing = data_parser.Processing(self.processing)
 
+        self.clustering = data_parser.get_clustering(self.data_dir)
         if self.fips_list is None and self.cluster is not None:
             self.fips_list = data_parser.get_cluster(self.data_dir, self.cluster)
 
@@ -45,7 +45,7 @@ class MainStanModel():
         if self.validation_on_county:
             train, val = self.validation_county_split(stan_data, regions, start_date, geocode, weighted_fatalities)
             stan_data, regions, start_date, geocode, weighted_fatalities = train
-            print(f'Validating on {val[1]}')
+            print(f'Validating on: {val[1]}')
             
         result_df = self.run_model(stan_data, regions, start_date, geocode, weighted_fatalities)
         self.save_results(result_df, start_date, geocode)
@@ -59,11 +59,35 @@ class MainStanModel():
             self.save_results(val_df, start_date, geocode, validation=True)
             self.make_plots(validation=True)
 
-            
-    def validation_county_split(self, stan_data, regions, start_date, geocode, weighted_fatalities):
-        """Separate into training and validation data by taking out the last county/supercounty.
+    def get_cluster(self, region):
+        """
+
+        :param region: Either an FIPS or FIPS_CLUSTER string.
+        :returns: cluster the region belongs to.
+        :rtype: 
 
         """
+        if region in self.clustering:
+            return self.clustering[region]
+        else:
+            return int(region.split('_')[1])
+            
+    def validation_county_split(self, stan_data, regions, start_date, geocode, weighted_fatalities, per_cluster=1):
+        """Separate into training and validation data by taking out the first county/supercounty for each cluster.
+
+        So if cluster was specified, the validation size will be 1. If no cluster specified, there
+        will be `num_clusters` counties in the validation set, one for each cluster.
+
+        :param stan_data: 
+        :param regions: 
+        :param start_date: 
+        :param geocode: 
+        :param weighted_fatalities: 
+        :param per_cluster: validation counties per cluster to withhold
+
+        """
+        counties_per_cluster = {}
+        
         train_stan_data = stan_data.copy()
         val_stan_data = stan_data.copy()
         M = int(stan_data['cases'].shape[1] - 1)
@@ -98,39 +122,59 @@ class MainStanModel():
         return ((train_stan_data, train_regions, train_start_date, train_geocode, train_weighted_fatalities),
                 (val_stan_data, val_regions, val_start_date, val_geocode, val_weighted_fatalities))
     
-    def load_supercounties_fatalities(self):
-        fatalities = np.loadtxt(
+    # def load_supercounties_fatalities(self):
+    #     fatalities = np.loadtxt(
+    #         join(self.data_dir, 'us_data', 'weighted_fatality_supercounties.csv'),
+    #         skiprows=1, delimiter=',', dtype=str)
+    #     indexing = [int(x.split('_')[1]) == self.cluster for x in fatalities[:, 0]]
+    #     fatalities[:, 0] = [str(int(x.split('_')[0])) for x in fatalities[:, 0]]
+    #     fatalities = fatalities[indexing]
+    #     # fatalities = np.concatenate([fatalities[:, 0:1], np.zeros((fatalities.shape[0], 2), dtype=str), fatalities[:, 1:]], axis=1) 
+    #     return fatalities
+
+    def get_weighted_fatalities(self, regions):
+        county_weighted_fatalities = np.loadtxt(
+            join(self.data_dir, 'us_data', 'weighted_fatality_new.csv'),
+            skiprows=1, delimiter=',', dtype=str)
+        supercounty_weighted_fatalities = np.loadtxt(
             join(self.data_dir, 'us_data', 'weighted_fatality_supercounties.csv'),
             skiprows=1, delimiter=',', dtype=str)
-        indexing = [int(x.split('_')[1]) == self.cluster for x in fatalities[:, 0]]
-        fatalities[:, 0] = [str(int(x.split('_')[0])) for x in fatalities[:, 0]]
-        fatalities = fatalities[indexing]
-        # fatalities = np.concatenate([fatalities[:, 0:1], np.zeros((fatalities.shape[0], 2), dtype=str), fatalities[:, 1:]], axis=1) 
-        return fatalities
-
+        region_to_weights = dict(zip(county_weighted_fatalities[:, 0], county_weighted_fatalities))
+        print('saved fatality regions:', supercounty_weighted_fatalities[:, 0])
+        region_to_weights.update(dict(zip(supercounty_weighted_fatalities[:, 0], supercounty_weighted_fatalities)))
+        print('region_to_weights:', region_to_weights)
+        
+        weighted_fatalities = []
+        for region in regions:
+            weighted_fatalities.append(region_to_weights[region])
+        return np.stack(weighted_fatalities)
+            
     def preprocess_data(self, M, mode, data_dir):
         if mode == 'europe':
             stan_data, regions, start_date, geocode = data_parser.get_data_europe(data_dir, show=False)
-            weighted_fatalities = np.loadtxt(join(data_dir, 'europe_data', 'weighted_fatality.csv'), skiprows=1, delimiter=',', dtype=str)
+            weighted_fatalities = np.loadtxt(join(data_dir, 'europe_data', 'weighted_fatality.csv'),
+                                             skiprows=1, delimiter=',', dtype=str)
             
         elif mode == 'US_county':
             stan_data, regions, start_date, geocode = data_parser.get_data(
                 M, data_dir, processing=self.processing, state=False, fips_list=self.fips_list,
-                validation=self.validation_withholding, cluster=self.cluster, supercounties=self.supercounties)
+                validation=self.validation_withholding, supercounties=self.supercounties, clustering=self.clustering)
+            print(f'regions: {regions}')
+            weighted_fatalities = self.get_weighted_fatalities(regions)
             
-            # wf_file = join(self.data_dir, 'us_data', 'weighted_fatality.csv')
-            wf_file = join(self.data_dir, 'us_data', 'weighted_fatality_new.csv')
-
-            weighted_fatalities = np.loadtxt(wf_file, skiprows=1, delimiter=',', dtype=str)
-            if self.supercounties:
-                supercounty_weighted_fatalities = self.load_supercounties_fatalities()
-                weighted_fatalities = np.concatenate([weighted_fatalities, supercounty_weighted_fatalities], axis=0)
-                # grab just the rows that are in regions, in that order
-                weighted_fatalities = weighted_fatalities
-                new_weighted_fatalities = []
-                for fips in regions:
-                    new_weighted_fatalities.append(weighted_fatalities[weighted_fatalities[:, 0] == str(fips).zfill(5)][-1])
-                weighted_fatalities = np.stack(new_weighted_fatalities)
+            # # wf_file = join(self.data_dir, 'us_data', 'weighted_fatality.csv')
+            # wf_file = join(self.data_dir, 'us_data', 'weighted_fatality_new.csv')
+            
+            # weighted_fatalities = np.loadtxt(wf_file, skiprows=1, delimiter=',', dtype=str)
+            # if self.supercounties:
+            #     supercounty_weighted_fatalities = self.load_supercounties_fatalities()
+            #     weighted_fatalities = np.concatenate([weighted_fatalities, supercounty_weighted_fatalities], axis=0)
+            #     # grab just the rows that are in regions, in that order
+            #     weighted_fatalities = weighted_fatalities
+            #     new_weighted_fatalities = []
+            #     for fips in regions:
+            #         new_weighted_fatalities.append(weighted_fatalities[weighted_fatalities[:, 0] == str(fips).zfill(5)][-1])
+            #     weighted_fatalities = np.stack(new_weighted_fatalities)
                 
         elif mode == 'US_state':
             stan_data, regions, start_date, geocode = data_parser.get_data(
