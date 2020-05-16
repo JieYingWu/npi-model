@@ -131,13 +131,12 @@ class ValidationResult():
             - R_hat"""
         # Assume normal distributions for the distributions
         np.random.seed(0)
-        x = np.random.normal(float(distribution1[0]), float(distribution1[2]), 1000)
-        y = np.random.normal(float(distribution2[0]), float(distribution2[2]), 1000)
+        x = np.random.normal(float(distribution1[0]), float(distribution1[2]), 10000)
+        y = np.random.normal(float(distribution2[0]), float(distribution2[2]), 10000)
 
         statistic, pvalue = scipy.stats.ks_2samp(x,y)
 
         return statistic, pvalue
-        pass
 
     def write_results(self, path, final_list):
         with open(join(path,'comparison.csv'), 'w', newline='') as f:
