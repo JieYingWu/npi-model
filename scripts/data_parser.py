@@ -32,7 +32,7 @@ def get_cluster(data_dir, cluster):
 
     
 def get_data(M, data_dir, processing=None, state=False, fips_list=None, validation=False,
-             cluster=None, supercounties=False):
+             cluster=None, supercounties=False, validation_on_county=False):
     cases, deaths, interventions, population = preprocessing_us_data(data_dir)
 
     if state:
@@ -50,8 +50,8 @@ def get_data(M, data_dir, processing=None, state=False, fips_list=None, validati
     return final_dict, fips_list, dict_of_start_dates, dict_of_geo
 
 
-def get_regions(data_dir, M, cases, deaths, processing, interventions, population,
-                fips_list=None, validation=False, cluster=None, supercounties=False):
+def get_regions(data_dir, M, cases, deaths, processing, interventions, population, fips_list=None,
+                validation=False, cluster=None, supercounties=False):
     if processing == Processing.INTERPOLATE:
         cases = impute(cases, allow_decrease_towards_end=False)
         deaths = impute(deaths, allow_decrease_towards_end=False)
@@ -75,19 +75,19 @@ def get_regions(data_dir, M, cases, deaths, processing, interventions, populatio
 
     cases.to_csv('data/tmp_cases.csv')
     deaths.to_csv('data/tmp_deaths.csv')
+    interventions.to_csv('data/tmp_interventions.csv')
     print('CASES', cases, sep='\n')
     print('DEATHS', deaths, sep='\n')
     print('INTERVENTIONS', interventions, sep='\n')
     print('POPULATION', population, sep='\n')
     
-    dict_of_geo = {} ## map geocode
+    dict_of_geo = {}            # map geocode
     for i in range(len(fips_list)):
         dict_of_geo[i] = fips_list[i]
 
-    #### drop non-numeric columns
-
+    # drop non-numeric columns
     cases = cases.drop(['FIPS', 'Combined_Key'], axis=1)
-    cases = cases.T  ### Dates are now row-wise
+    cases = cases.T             # Dates are now row-wise
     cases_dates = np.array(cases.index)
     cases = cases.to_numpy()
 
@@ -102,14 +102,12 @@ def get_regions(data_dir, M, cases, deaths, processing, interventions, populatio
     population = population.drop(['FIPS'], axis=1)
     population = population.to_numpy()
     
-    
     if validation:
-        validation_days_dict = get_validation_dict(data_dir, cases, deaths,fips_list, cases_dates)
+        validation_days_dict = get_validation_dict(data_dir, cases, deaths, fips_list, cases_dates)
         deaths = apply_validation(deaths, fips_list, validation_days_dict)
-
-
-    dict_of_start_dates, final_dict = primary_calculations(cases, deaths, covariates, cases_dates,
-            population, fips_list)
+    
+    dict_of_start_dates, final_dict = primary_calculations(
+        cases, deaths, covariates, cases_dates, population, fips_list)
 
     return final_dict, fips_list, dict_of_start_dates, dict_of_geo
 
@@ -197,7 +195,7 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
     deaths = np.array(deaths).T
     
     X = np.dstack([covariate1, covariate2, covariate3, covariate4, covariate5, covariate6,
-        covariate7, covariate8])
+                   covariate7, covariate8])
     X = np.moveaxis(X, 1, 0)
         
     final_dict = {}
