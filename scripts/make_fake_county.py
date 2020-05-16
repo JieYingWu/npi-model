@@ -77,23 +77,22 @@ class CountyGenerator():
     # Generate the number of cases given some Rt
     def predict_cases(self, rt):
 #        tau = np.random.exponential(0.03, (6)) # Seed the first 6 days
+        si = self.si[::-1]
         prediction = np.zeros(rt.shape[0])
-        prediction[0:6] = 0.25
+        prediction[0:6] = 400
         for i in range(6, rt.shape[0]):
-            prediction[i] = rt[i] * np.sum(prediction[0:i] * self.si[i-1::-1])
+            prediction[i] = rt[i] * np.sum(prediction[0:i] * si[-i:])
 
         return prediction.astype(np.int)
 
     
     # Generate the number of deaths given some prediction
     def predict_deaths(self, rt, prediction, fatality):
+        fatality = fatality[::-1]
         deaths = np.zeros(rt.shape[0])
-        deaths[0] = 1e-9
         for i in range(1,rt.shape[0]):
-            deaths[i] = deaths[i-1] + np.sum(prediction[0:i] * fatality[i-1::-1])
+            deaths[i] = np.sum(prediction[0:i] * fatality[-i:])
 
-        for i in range(1, rt.shape[0]):
-            deaths[i] = deaths[i] + deaths[i-1]
         return deaths.astype(np.int)
 
     
@@ -105,15 +104,14 @@ class CountyGenerator():
         deaths = self.predict_deaths(rt, cases, fatality)
 
         for i in range(1, cases.shape[0]):
-            cases[i] = cases[i]+cases[i-1]
+            cases[i] = cases[i] + cases[i-1]
+            deaths[i] = deaths[i] + deaths[i-1]
         return rt, cases, deaths
 
     
 # Get interventions as binary timeseries
 def parse_interventions(regions, data_dir='data'):
     stan_data, regions, start_date, geocode = get_data(len(regions), data_dir, processing=Processing.REMOVE_NEGATIVE_VALUES, state=False, fips_list=regions)
-    print(stan_data['M'])
-    exit()
     i1 = np.expand_dims(stan_data['covariate1'], axis=2)
     i2 = np.expand_dims(stan_data['covariate2'], axis=2)
     i3 = np.expand_dims(stan_data['covariate3'], axis=2)
@@ -133,13 +131,18 @@ if __name__ == '__main__':
 
     r0_file_path = join('results', 'real_county', 'summary.csv')
     r0_file = pd.read_csv(r0_file_path)
-    means = r0_file['mean'].values
-    print(means)
-    all_r0 = means[0:58]
-    print(all_r0)
+    geocode_path = join('results', 'real_county', 'geocode.csv')
+    geocode_file = pd.read_csv(geocode_path)
+    geocode = geocode_file.values[0][1:]
     
-    alpha_mu = 0.2
-    alpha_var = 0.1
+    means = r0_file['mean'].values
+    means= means[0:58]
+    all_r0 = {}
+    for i in range(58):
+        all_r0[geocode[i]] = means[i]
+
+    alpha_mu = 0.15
+    alpha_var = 0.05
     num_alphas = 8
 
     regions = [55079, 53033, 42101, 36119, 36103, 36087, 36071, 36061, 36059, 36055, 36029, 34039, 34035, 34031, 34029, 34027, 34025, 34023, 34021, 34017, 34013, 34007, 34005, 34003, 32003, 29189, 27053, 26163, 26125, 26099, 26049, 24510, 24033, 24031, 24005, 24003, 22103, 22071, 22051, 22033, 18097, 18089, 17197, 17097, 17043, 17031, 13121, 12099, 12086, 12011, 11001, 9009, 9007, 9003, 9001, 6073, 6065, 6037]
@@ -158,8 +161,8 @@ if __name__ == '__main__':
     all_deaths = {}
     
     for r in range(len(regions)):
-        r0 = all_r0[r]
         region = regions[r]
+        r0 = all_r0[region]
         intervention = interventions[r,:,:]
         rt, cases, deaths = generator.make_county(r0, intervention, region)
         all_rt[region] = rt
@@ -185,7 +188,7 @@ if __name__ == '__main__':
     deaths_df = real_deaths_df.copy()
 
     for r in range(len(regions)):
-        region = regions[r]
+        region = geocode[r]
 
         simulated_cases = all_cases[region][0:len(real_cases_df.loc[region, start_date[r]:])]
         cases_df.loc[region, start_date[r]:] = simulated_cases

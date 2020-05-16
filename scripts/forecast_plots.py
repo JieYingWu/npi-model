@@ -174,10 +174,10 @@ def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of
         filepath = 'data/tmp_deaths.csv'
     elif plot_choice == 0:
         # filepath = "data/us_data/infections_timeseries.csv"
-        filepath = "data/us_data/infections_timeseries_w_states.csv"
+        filepath = "simulated/us_data/infections_timeseries_w_states.csv"
     else:
         # filepath = "data/us_data/deaths_timeseries.csv"
-        filepath = "data/us_data/deaths_timeseries_w_states.csv"
+        filepath = "simulated/us_data/deaths_timeseries_w_states.csv"
 
     df = pd.read_csv(filepath, delimiter=',')#, index_col=0)
             
