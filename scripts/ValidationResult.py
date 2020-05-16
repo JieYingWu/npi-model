@@ -115,7 +115,27 @@ class ValidationResult():
         return final_dict, final_list
     
     def z_test(self, distribution1, distribution2):
-        pass
+        """ distribution is a tuple:
+            - mean
+            - standard error mean
+            - std
+            - 2.5%
+            - 25%
+            - 50 %
+            - 75 %
+            - 97.5%
+            - n_eff
+            - R_hat"""
+        delta = 0
+        mean_1 = distribution1[0]
+        mean_2 = distribution1[0]
+        std_1 = distribution1[2]
+        std_2 = distribution1[2]
+        se_1 = distribution1[1]
+        se_2 = distribution1[1]
+        
+        z = (mean_1-mean_2-delta)/np.sqrt(se_1**2 + se_2**2)
+
 
     def ks_test(self, distribution1, distribution2):
         """ distribution is a tuple:
