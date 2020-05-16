@@ -71,7 +71,7 @@ def get_regions(data_dir, M, cases, deaths, processing, interventions, populatio
             cases, deaths, interventions, M, fips_list, population,
             validation=validation, cluster=cluster, supercounties=supercounties)
         cases, deaths, interventions, population, fips_list = select_top_regions(
-            cases, deaths, interventions, M, population, validation=validation)
+            cases, deaths, interventions, M, population, validation=validation, threshold=None)
 
     cases.to_csv('data/tmp_cases.csv')
     deaths.to_csv('data/tmp_deaths.csv')
