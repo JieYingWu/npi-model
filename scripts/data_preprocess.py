@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import datetime as dt
 from os.path import join, exists
+import json
 
 pd.set_option('mode.chained_assignment', None)
 
@@ -82,7 +83,7 @@ def select_top_regions(df_cases, df_deaths, interventions, num_counties, populat
     return df_cases, df_deaths, interventions, population, fips_list
 
 
-def merge_supercounties(cases, deaths, interventions, population, threshold=5, cluster=None):
+def merge_supercounties(cases, deaths, interventions, population, threshold=5, clustering=None):
     """Join counties in the same state if they don't have enough deaths.
 
     Checks that the average daily deaths for the past 10 days is more than `threshold`. If the
@@ -92,22 +93,29 @@ def merge_supercounties(cases, deaths, interventions, population, threshold=5, c
     :param deaths: 
     :param interventions: 
     :param population: 
+    :param threshold: 
+    :param clustering: dictionary mapping [str] fips to [int] cluster label. 
+      If None, supercounties are not limited to a single cluster.
     :returns: 
-    :rtype:
+    :rtype: 
 
     """
     new_cases = []              # list of dictionaries, serving as rows
     new_deaths = []
     new_interventions = []
     new_population = []
-    state_fips_to_cases_idx = {}         # map state fips strings to index in the above rows, for that supercounty
-    state_fips_to_deaths_idx = {}
 
-    state_fips_to_interventions_idx = {}
-    state_fips_to_population_idx = {}
-    state_fips_to_counties_included = {}  # map state fips to list of FIPS for counties in that supercounty
+    supercounty_to_cases_idx = {}         # map state fips strings to index in the above rows, for that supercounty
+    supercounty_to_deaths_idx = {}
+    supercounty_to_interventions_idx = {}
+    supercounty_to_population_idx = {}
+    supercounties = {}  # map STATEFIPS_CLUSTER to list of FIPS for counties in that supercounty
     for i, deaths_row in deaths.iterrows():
         fips = deaths_row['FIPS']
+        fips_key = str(fips).zfill(5)
+        cluster = clustering.get(fips_key)
+        if cluster is None:
+            continue
         
         cases_row = cases.loc[cases['FIPS'] == fips].copy().iloc[0]
         interventions_row = interventions.loc[interventions['FIPS'] == fips].copy().iloc[0]
@@ -127,9 +135,8 @@ def merge_supercounties(cases, deaths, interventions, population, threshold=5, c
             new_population.append(population_row)
             continue
 
-        state_fips = str(fips).zfill(5)[:2] + '000'
-        state_fips_to_counties_included[state_fips] = state_fips_to_counties_included.get(state_fips, []) + [fips]
-        fips = deaths_row['FIPS']
+        supercounty = f'{fips_key[:2]}000_{cluster}'
+        supercounties[supercounty] = supercounties.get(supercounty, []) + [fips_key]
         state_name = deaths_row['Combined_Key'].split('-')[1].strip()
         if cluster is None:
             area_name = f'{state_name} Supercounty'
@@ -137,45 +144,45 @@ def merge_supercounties(cases, deaths, interventions, population, threshold=5, c
             area_name = f'{state_name} Supercounty, Cluster {cluster}'
 
         # going to be adding to supercounty, so get rid of identifying info
-        cases_row['FIPS'] = int(state_fips)
+        cases_row['FIPS'] = supercounty
         cases_row['Combined_Key'] = area_name
-        deaths_row['FIPS'] = int(state_fips)
+        deaths_row['FIPS'] = supercounty
         deaths_row['Combined_Key'] = area_name
-        interventions_row['FIPS'] = int(state_fips)
-        interventions_row['AREA_NAME'] = ''
-        population_row['FIPS'] = int(state_fips)
+        interventions_row['FIPS'] = supercounty
+        interventions_row['AREA_NAME'] = area_name
+        population_row['FIPS'] = supercounty
         
-        if state_fips_to_cases_idx.get(state_fips) is None:
-            print(f'added supercounty for {state_fips}')
+        if supercounty_to_cases_idx.get(supercounty) is None:
+            print(f'added supercounty for {supercounty}')
             # first county encountered in state, just continue
-            state_fips_to_cases_idx[state_fips] = len(new_cases)
+            supercounty_to_cases_idx[supercounty] = len(new_cases)
             new_cases.append(cases_row)
             
-            state_fips_to_deaths_idx[state_fips] = len(new_deaths)
+            supercounty_to_deaths_idx[supercounty] = len(new_deaths)
             new_deaths.append(deaths_row)
             
-            state_fips_to_population_idx[state_fips] = len(new_population)
+            supercounty_to_population_idx[supercounty] = len(new_population)
             new_population.append(population_row)
 
-            state_fips_to_interventions_idx[state_fips] = len(new_interventions)
+            supercounty_to_interventions_idx[supercounty] = len(new_interventions)
             new_interventions.append(interventions_row)
             continue
 
-        interventions_idx = state_fips_to_interventions_idx.get(state_fips)
+        interventions_idx = supercounty_to_interventions_idx.get(supercounty)
         if np.any(interventions_row[2:] != new_interventions[interventions_idx][2:]):
-            print(f"WARNING: couldn't merge {fips} with {state_fips} due to non-matching interventions")
+            print(f"WARNING: couldn't merge {fips} with {supercounty} due to non-matching interventions")
             continue
 
         # encountered supercounty for which there is existing record and the interventions match, so merge all teh other info
-        cases_idx = state_fips_to_cases_idx.get(state_fips)
+        cases_idx = supercounty_to_cases_idx.get(supercounty)
         new_cases[cases_idx][2:] += cases_row[2:]
         
-        deaths_idx = state_fips_to_deaths_idx.get(state_fips)
+        deaths_idx = supercounty_to_deaths_idx.get(supercounty)
         new_deaths[deaths_idx][2:] += deaths_row[2:]
                 
-        population_idx = state_fips_to_population_idx.get(state_fips)
+        population_idx = supercounty_to_population_idx.get(supercounty)
         new_population[population_idx][1] += population_row[1]
-        print(f'MERGED {fips} with supercounty for {state_fips}')
+        print(f'MERGED {fips} with supercounty for {supercounty}')
 
     cases = pd.DataFrame(new_cases)
     deaths = pd.DataFrame(new_deaths)
@@ -186,12 +193,14 @@ def merge_supercounties(cases, deaths, interventions, population, threshold=5, c
     # print('INTERVENTIONS', interventions, sep='\n')
     # print('POPULATION', population, sep='\n')
 
-    print('supercounties:', state_fips_to_counties_included)
-    return cases, deaths, interventions, population        
+    print('supercounties:', supercounties)
+    with open(join('data', 'us_data', 'supercounties.json'), 'w') as file:
+        json.dump(supercounties, file)
+    return cases, deaths, interventions, population
     
 
-def select_regions(cases, deaths, interventions, M, fips_list, population,
-                   validation=False, supercounties=True, cluster=None):
+def select_regions(cases, deaths, interventions, M, population, fips_list=None,
+                   supercounties=True, clustering=None):
     """"
     Returns:
         df_cases: Infections timeseries for given fips
@@ -199,16 +208,17 @@ def select_regions(cases, deaths, interventions, M, fips_list, population,
         interventions: Intervention starting dates for given fips
     """
 
-    cases = cases.loc[cases['FIPS'].isin(fips_list)]
-    deaths = deaths.loc[deaths['FIPS'].isin(fips_list)]
-    interventions = interventions.loc[interventions['FIPS'].isin(fips_list)]
-    population = population.loc[population['FIPS'].isin(fips_list)]
+    if fips_list is not None:
+        cases = cases.loc[cases['FIPS'].isin(fips_list)]
+        deaths = deaths.loc[deaths['FIPS'].isin(fips_list)]
+        interventions = interventions.loc[interventions['FIPS'].isin(fips_list)]
+        population = population.loc[population['FIPS'].isin(fips_list)]
 
     if supercounties:
         # join counties with less than a given threshold of deaths with other counties in the same state.
         # and if their interventions are the same as the other counties
-        cases, deaths, interventions, population = merge_supercounties(cases, deaths, interventions, population,
-                                                                       cluster=cluster)
+        cases, deaths, interventions, population = merge_supercounties(
+            cases, deaths, interventions, population, clustering=clustering)
 
     #if validation > 0:
      #   cases = cases.iloc[:,:-(validation-1)]
@@ -323,10 +333,11 @@ def preprocessing_us_data(data_dir, mode='county'):
     population_path = join(data_dir, 'us_data/counties.csv') #POP_ESTIMATE_2018     
     interventions_path = join(data_dir, 'us_data/interventions.csv')
 
-    df_cases = pd.read_csv(cases_path)
-    df_deaths = pd.read_csv(deaths_path)
-    interventions = pd.read_csv(interventions_path)
-    counties = pd.read_csv(population_path)
+    dtype = {'FIPS': str}
+    df_cases = pd.read_csv(cases_path, dtype=dtype)
+    df_deaths = pd.read_csv(deaths_path, dtype=dtype)
+    interventions = pd.read_csv(interventions_path, dtype=dtype)
+    counties = pd.read_csv(population_path, dtype=dtype)
 
     id_cols = ['FIPS', 'STATE', 'AREA_NAME']    
     int_cols = [col for col in interventions.columns.tolist() if col not in id_cols]
@@ -446,7 +457,7 @@ def get_validation_dict(data_dir, cases, deaths, fips_list, cases_dates):
 
 
 def apply_validation(deaths, fips_list, validation_days_dict):
-    """ sets the deaths of the days in the validation_days_dict to 0"""
+    """Sets the deaths of the days in the validation_days_dict to 0"""
     for i, fips in enumerate(fips_list):
         if validation_days_dict[fips]:   
             deaths[np.array(validation_days_dict[fips], dtype=np.int) , i] = 0

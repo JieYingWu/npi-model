@@ -59,15 +59,18 @@ def weighted_ifr_per_county():
 
 
 
-def weighted_ifr_per_supercounty(num_supercounties):
+def weighted_ifr_per_supercounty():
     # load supercounty info
-    cluster_info = []
-    for i in range(num_supercounties):
-        with open(join('data', 'us_data', 'supercounties_cluster=' + str(i) + '.json')) as f:
-            data = f.read()
-            data = data.replace('\'', '"')
-            dict = json.loads(data)
-            cluster_info.append(dict)
+    with open(join('data', 'us_data', 'supercounties.json')) as file:
+        supercounties = json.loads(file.read().replace("'", '"'))
+
+    # cluster_info = []
+    # for i in range(num_supercounties):
+    #     with open(join('data', 'us_data', 'supercounties_cluster=' + str(i) + '.json')) as f:
+    #         data = f.read()
+    #         data = data.replace('\'', '"')
+    #         dict = json.loads(data)
+    #         cluster_info.append(dict)
 
     # used census data can be downloaded from
     # https://www2.census.gov/programs-surveys/popest/datasets/2010-2018/counties/asrh/
@@ -90,18 +93,18 @@ def weighted_ifr_per_supercounty(num_supercounties):
     ind = ['SUPERCOUNTY', 'STNAME', 'AGEGRP', 'TOT_POP']
     supercounty_ifr = pd.DataFrame(columns=ind)
     # add rows for supercounties by aggregating the counties per supercounty
-    for state, state_name in zip(states, state_names):
-        state_fips = str(state).zfill(2) + '000'
-        for i, cluster in enumerate(cluster_info):
-            if state_fips in cluster.keys():
-                counties = cluster[state_fips]
-                counties = [int(str(x)[-3:]) for x in counties]
-                data = census_data[census_data['COUNTY'].isin(counties)]
-                data = data[data['STATE'] == state]
-                for age_group in range(19):
-                    total = data[data['AGEGRP'] == age_group]['TOT_POP'].sum()
-                    new_row = pd.Series([state_fips + '_' + str(i), state_name, age_group, total], index=ind)
-                    supercounty_ifr = supercounty_ifr.append(new_row, ignore_index=True)
+    state_to_name = dict(zip(states, state_names))
+    for supercounty, fips_codes in supercounties.items():
+        print(f'{supercounty}: {fips_codes}')
+        state = int(supercounty[:2])
+        state_name = state_to_name[state]
+        counties = [int(str(x).zfill(5)[2:]) for x in fips_codes]
+        data = census_data[census_data['COUNTY'].isin(counties)]
+        data = data[data['STATE'] == state]
+        for age_group in range(19):
+            total = data[data['AGEGRP'] == age_group]['TOT_POP'].sum()
+            new_row = pd.Series([supercounty, state_name, age_group, total], index=ind)
+            supercounty_ifr = supercounty_ifr.append(new_row, ignore_index=True)
 
     supercounty_ifr.sort_values(by=['SUPERCOUNTY', 'AGEGRP'])
 
@@ -134,5 +137,5 @@ def weighted_ifr_per_supercounty(num_supercounties):
 
 if __name__ == '__main__':
     #weighted_ifr_per_county()
-    weighted_ifr_per_supercounty(5)
+    weighted_ifr_per_supercounty()
 
