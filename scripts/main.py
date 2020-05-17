@@ -72,7 +72,7 @@ class MainStanModel():
         else:
             return int(region.split('_')[1])
             
-    def validation_county_split(self, stan_data, regions, start_date, geocode, weighted_fatalities, per_cluster=1):
+    def validation_county_split(self, stan_data, regions, start_date, geocode, weighted_fatalities, counties_per_cluster=1):
         """Separate into training and validation data by taking out the first county/supercounty for each cluster.
 
         So if cluster was specified, the validation size will be 1. If no cluster specified, there
@@ -83,39 +83,50 @@ class MainStanModel():
         :param start_date: 
         :param geocode: 
         :param weighted_fatalities: 
-        :param per_cluster: validation counties per cluster to withhold
+        :param counties_per_cluster: validation counties per cluster to withhold
 
         """
-        counties_per_cluster = {}
+        counts = {}
+        val_regions = []
+        train_regions = []
+        val_indices = []
+        train_indices = []
+
+        train_start_date = {}
+        val_start_date = {}
+        train_geocode = {}
+        val_geocode = {}
+        
+        for i, region in enumerate(regions):
+            c = self.get_cluster(region)
+            count = counts.get(c, 0)
+            if count < counties_per_cluster:
+                counts[c] = count + 1
+                val_regions.append(region)
+                val_indices.append(i)
+                val_start_date[i] = start_date[i]
+                val_geocode[i] = geocode[i]
+            else:
+                train_regions.append(region)
+                train_indices.append(i)
+                train_start_date[i] = start_date[i]
+                train_geocode[i] = geocode[i]
         
         train_stan_data = stan_data.copy()
         val_stan_data = stan_data.copy()
-        M = int(stan_data['cases'].shape[1] - 1)
-
+        val_stan_data['M'] = sum(counts.values())
+        train_stan_data['M'] = int(stan_data['M'] - val_stan_data['M'])
+        
         for k in ['cases', 'deaths']:
-            train_stan_data[k] = stan_data[k][:, :-1]
-            val_stan_data[k] = stan_data[k][:, -1:]
+            train_stan_data[k] = stan_data[k][:, train_indices]
+            val_stan_data[k] = stan_data[k][:, val_indices]
         
         for k in ['N', 'EpidemicStart', 'pop', 'X'] + [f'covariate{i}' for i in range(1, 9)]:
-            train_stan_data[k] = stan_data[k][:-1]
-            val_stan_data[k] = stan_data[k][-1:]
+            train_stan_data[k] = stan_data[k][train_indices]
+            val_stan_data[k] = stan_data[k][val_indices]
 
-        train_stan_data['M'] = stan_data['M'] - 1
-        val_stan_data['M'] = 1
-
-        train_regions = regions[:-1]
-        val_regions = regions[-1:]
-
-        train_start_date = start_date.copy()
-        del train_start_date[M]
-        val_start_date = {M: start_date[M]}
-
-        train_geocode = geocode.copy()
-        del train_geocode[M]
-        val_geocode = {M: geocode[M]}
-
-        train_weighted_fatalities = weighted_fatalities[:-1]
-        val_weighted_fatalities = weighted_fatalities[-1:]
+        train_weighted_fatalities = weighted_fatalities[train_indices]
+        val_weighted_fatalities = weighted_fatalities[val_indices]
         print('train_weighted_fatalities:', val_weighted_fatalities.shape)
         print('val_weighted_fatalities:', val_weighted_fatalities.shape)
         
@@ -140,10 +151,8 @@ class MainStanModel():
             join(self.data_dir, 'us_data', 'weighted_fatality_supercounties.csv'),
             skiprows=1, delimiter=',', dtype=str)
         region_to_weights = dict(zip(county_weighted_fatalities[:, 0], county_weighted_fatalities))
-        print('saved fatality regions:', supercounty_weighted_fatalities[:, 0])
         region_to_weights.update(dict(zip(supercounty_weighted_fatalities[:, 0], supercounty_weighted_fatalities)))
-        print('region_to_weights:', region_to_weights)
-        
+                
         weighted_fatalities = []
         for region in regions:
             weighted_fatalities.append(region_to_weights[region])
@@ -159,7 +168,6 @@ class MainStanModel():
             stan_data, regions, start_date, geocode = data_parser.get_data(
                 M, data_dir, processing=self.processing, state=False, fips_list=self.fips_list,
                 validation=self.validation_withholding, supercounties=self.supercounties, clustering=self.clustering)
-            print(f'regions: {regions}')
             weighted_fatalities = self.get_weighted_fatalities(regions)
             
             # # wf_file = join(self.data_dir, 'us_data', 'weighted_fatality.csv')
@@ -201,11 +209,11 @@ class MainStanModel():
 
         """
 
-        for k, v in stan_data.items():
-            print(f'stan_data[{k}] = {v}')
-        print('regions:', regions)
-        print('start_date:', start_date)
-        print('geocode:', geocode)
+        # for k, v in stan_data.items():
+        #     print(f'stan_data[{k}] = {v}')
+        # print('regions:', regions)
+        # print('start_date:', start_date)
+        # print('geocode:', geocode)
         
     # Build a dictionary of region identifier to weighted fatality rate
         ifrs = {}
@@ -344,7 +352,8 @@ class MainStanModel():
         os.makedirs(forecast_plots_path)
         os.makedirs(rt_plots_path)
 
-        interventions_path = join(self.data_dir, 'us_data', 'interventions.csv')
+        # interventions_path = join(self.data_dir, 'us_data', 'interventions.csv')
+        interventions_path = join(self.data_dir, 'tmp_interventions.csv')
         if self.mode == 'europe':
             forecast_plots.make_all_eu_plots(self.start_dates_path, self.geocode_path, self.summary_path,
                                              forecast_plots_path)

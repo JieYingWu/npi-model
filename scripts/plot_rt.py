@@ -143,7 +143,9 @@ def plot_rt_US(simulation_file, interventions_file, county_number, fips, start_d
     # plot vertical lines and markers for each intervention
     # make sure markers for several interventions on the same day are drawn at different positions
     for ind, intervention in enumerate(interventions):
+        print('intervention:', ind, intervention, interventions_data[intervention])
         date = interventions_data[intervention].values[0]
+        print('date:', date)
         if not pd.isna(date):
             num = adjust_height.count(date)
             adjust_height.append(date)
@@ -251,14 +253,19 @@ def get_interventions_US(interventions_file, state_level=False):
 
     else:
         interventions = pd.read_csv(interventions_file, engine='python')
-        id_cols = ['FIPS', 'STATE', 'AREA_NAME', 'Combined_Key']
+        id_cols = ['SUPERCOUNTY', 'FIPS', 'STATE', 'AREA_NAME', 'Combined_Key', 'Unnamed: 0']
         #id_cols = ['FIPS', 'STATE', 'AREA_NAME']
         int_cols = [col for col in interventions.columns.tolist() if col not in id_cols]
+        print(f'int_cols: {int_cols}')
         #interventions.fillna(1, inplace=True)
         for col in int_cols: ### convert date from given format
-            interventions[col] = interventions[col].apply(lambda x: dt.date.fromordinal(int(x)) if not pd.isna(x) else x)
+            print('col:', col)
+            interventions[col] = interventions[col].apply(
+                lambda x: dt.date.fromordinal(int(x)) if not pd.isna(x) else x)
 
-    interventions_list = list(interventions.columns.values)[3:]
+    print(interventions)
+
+    interventions_list = [x for x in list(interventions.columns.values) if x not in id_cols]
 
     return interventions_list, interventions
 

@@ -194,7 +194,7 @@ def merge_supercounties(cases, deaths, interventions, population, threshold=5, c
     # print('POPULATION', population, sep='\n')
 
     print('supercounties:', supercounties)
-    with open(join('data', 'us_data', 'supercounties.json')) as file:
+    with open(join('data', 'us_data', 'supercounties.json'), 'w') as file:
         json.dump(supercounties, file)
     return cases, deaths, interventions, population
     

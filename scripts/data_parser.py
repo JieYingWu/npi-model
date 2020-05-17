@@ -57,6 +57,21 @@ def get_data(M, data_dir, processing=None, state=False, fips_list=None, validati
     return final_dict, fips_list, dict_of_start_dates, dict_of_geo
 
 
+def save_interventions(interventions, fname):
+    def func(d):
+        x = d.toordinal()
+        print(d, x)
+        if x == 1:
+            return 'NA'
+        else:
+            return str(x)
+
+    interventions = interventions.copy()
+    for col in interventions.columns.tolist()[3:]:
+        interventions[col] = interventions[col].apply(func)
+    interventions.to_csv(fname)
+
+
 def get_regions(data_dir, M, cases, deaths, processing, interventions, population, fips_list=None,
                 validation=False, clustering=None, supercounties=False):
     if processing == Processing.INTERPOLATE:
@@ -78,7 +93,7 @@ def get_regions(data_dir, M, cases, deaths, processing, interventions, populatio
     
     cases.to_csv('data/tmp_cases.csv')
     deaths.to_csv('data/tmp_deaths.csv')
-    interventions.to_csv('data/tmp_interventions.csv')
+    save_interventions(interventions, 'data/tmp_interventions.csv')
     print('CASES', cases, sep='\n')
     print('DEATHS', deaths, sep='\n')
     print('INTERVENTIONS', interventions, sep='\n')
