@@ -109,7 +109,7 @@ class MainStanModel():
         all_f = np.zeros((self.N2, len(regions)))
         
         for r in range(len(regions)):
-            ifr = float(ifrs[str(regions[r])])
+            ifr = float(ifrs[str(regions[r]).zfill(5)])
 
     ## assume that IFR is probability of dying given infection
             x1 = np.random.gamma(alpha1, beta1, 5000000) # infection-to-onset -> do all people who are infected get to onset?
@@ -225,7 +225,7 @@ if __name__ == '__main__':
     parser.add_argument('--iter', default=200, type=int, help='iterations for the model')
     parser.add_argument('--warmup-iter', default=100, type=int, help='warmup iterations for the model')
     parser.add_argument('--max-treedepth', default=10, type=int, help='maximum tree depth for the model')
-    parser.add_argument('--supercounties', action='store_true', type=bool, help='merge counties in the same state AND cluster with insufficient cases')
+    parser.add_argument('--supercounties', action='store_true', help='merge counties in the same state AND cluster with insufficient cases')
     args = parser.parse_args()
 
     model = MainStanModel(args)
