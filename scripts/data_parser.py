@@ -62,7 +62,6 @@ def get_regions(data_dir, M, cases, deaths, processing, interventions, populatio
         
     elif processing == Processing.REMOVE_NEGATIVE_REGIONS:
         cases, deaths = remove_negative_regions(cases, deaths, idx=2)
-                
     if fips_list is None:
         cases, deaths, interventions, population, fips_list = select_top_regions(
             cases, deaths, interventions, M, population, supercounties=supercounties)
@@ -101,8 +100,8 @@ def get_regions(data_dir, M, cases, deaths, processing, interventions, populatio
     
     population = population.drop(['FIPS'], axis=1)
     population = population.to_numpy()
-    
-    
+        
+        
     if validation:
         validation_days_dict = get_validation_dict(data_dir, cases, deaths,fips_list, cases_dates)
         deaths = apply_validation(deaths, fips_list, validation_days_dict)
@@ -110,7 +109,6 @@ def get_regions(data_dir, M, cases, deaths, processing, interventions, populatio
 
     dict_of_start_dates, final_dict = primary_calculations(cases, deaths, covariates, cases_dates,
             population, fips_list)
-
     return final_dict, fips_list, dict_of_start_dates, dict_of_geo
 
 
@@ -159,7 +157,7 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
 
         N = len(case)
         N_arr.append(N)
-        N2 = 100
+        N2 = 150
 
         forecast = N2 - N
 

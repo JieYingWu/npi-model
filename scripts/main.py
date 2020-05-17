@@ -89,12 +89,13 @@ class MainStanModel():
     # Train the model and generate samples - returns a StanFit4Model
             sm = pystan.StanModel(file='stan-models/base_europe.stan')
 
-        serial_interval = np.loadtxt(join(self.data_dir, 'serial_interval.csv'), skiprows=1, delimiter=',')
+        serial_interval = np.loadtxt(join(self.data_dir, 'us_data', 'serial_interval.csv'), skiprows=1, delimiter=',')
     # Time between primary infector showing symptoms and secondary infected showing symptoms - this is a probability distribution from 1 to 100 days
-
+        print(serial_interval)
+        print(stan_data['N2'])
         SI = serial_interval[0:stan_data['N2'],1]
         stan_data['SI'] = SI
-
+        print(SI)
     # infection to onset
         mean1 = 5.1
         cv1 = 0.86
