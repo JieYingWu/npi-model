@@ -23,7 +23,7 @@ class CountyGenerator():
     # Generate all alphas for this object (cluster)
     def generate_alphas(self, num_alphas):
         alphas = np.random.normal(self.alpha_mu, self.alpha_var, num_alphas)
-        self.alphas = -1*alphas
+        self.alphas = -1*alphas 
 
         
     # Generate fataility rates or read from cached 
@@ -76,12 +76,13 @@ class CountyGenerator():
     
     # Generate the number of cases given some Rt
     def predict_cases(self, rt):
-#        tau = np.random.exponential(0.03, (6)) # Seed the first 6 days
+        tau = np.random.exponential(0.03) # Seed the first 6 days
         si = self.si[::-1]
         prediction = np.zeros(rt.shape[0])
-        prediction[0:6] = 400
+        prediction[0:6] = np.random.exponential(1/tau) ### Why 400?
+        #prediction[0:6] = 400
         for i in range(6, rt.shape[0]):
-            prediction[i] = rt[i] * np.sum(prediction[0:i] * si[-i:])
+            prediction[i] = rt[i] * np.sum(prediction[0:i] * si[-i:]) ### should there be a S factor?
 
         return prediction.astype(np.int)
 
@@ -104,7 +105,7 @@ class CountyGenerator():
         deaths = self.predict_deaths(rt, cases, fatality)
 
         for i in range(1, cases.shape[0]):
-            cases[i] = cases[i] + cases[i-1]
+            cases[i] = cases[i] + cases[i-1] ## cumulative
             deaths[i] = deaths[i] + deaths[i-1]
         return rt, cases, deaths
 
@@ -129,14 +130,14 @@ if __name__ == '__main__':
     data_dir = 'simulated'
     N2 = 100
 
-    r0_file_path = join('results', 'real_county', 'summary.csv')
+    r0_file_path = join('results', 'real_county', 'summary.csv') #getting from estimates of sampling
     r0_file = pd.read_csv(r0_file_path)
     geocode_path = join('results', 'real_county', 'geocode.csv')
     geocode_file = pd.read_csv(geocode_path)
     geocode = geocode_file.values[0][1:]
     
     means = r0_file['mean'].values
-    means= means[0:58]
+    means = means[0:58] ## taking value of R0 for each county
     all_r0 = {}
     for i in range(58):
         all_r0[geocode[i]] = means[i]
@@ -153,15 +154,15 @@ if __name__ == '__main__':
 
     generator = CountyGenerator(N2, si, num_alphas, alpha_mu, alpha_var)
 #    generator.alphas = [-0.124371438107218, -0.196069499889346, -0.194197939254073, -0.495431571118872, -0.378146551081655, -0.137932933788039, -0.29558366952368, -0.422007707986038]
-
+    print(generator.alphas)
+    
     interventions, start_date = parse_interventions(regions)
-
     all_rt = {}
     all_cases = {}
     all_deaths = {}
     
     for r in range(len(regions)):
-        region = regions[r]
+        region = regions[r] 
         r0 = all_r0[region]
         intervention = interventions[r,:,:]
         rt, cases, deaths = generator.make_county(r0, intervention, region)
@@ -169,11 +170,13 @@ if __name__ == '__main__':
         all_cases[region] = cases
         all_deaths[region] = deaths
 
+    #### predictions generated from simulated data
     summary_path = join(data_dir, 'us_data', 'summary.csv')
     interventions_path = join(data_dir, 'us_data', 'interventions_timeseries.csv')
     cases_path = join(data_dir, 'us_data', 'infections_timeseries_w_states.csv')
     deaths_path = join(data_dir, 'us_data', 'deaths_timeseries_w_states.csv')
 
+    #### real infections/death data
     real_cases_path = join('data', 'us_data', 'infections_timeseries_w_states.csv')
     real_deaths_path = join('data', 'us_data', 'deaths_timeseries_w_states.csv')
     real_cases_df = pd.read_csv(real_cases_path, index_col='FIPS')
@@ -183,6 +186,7 @@ if __name__ == '__main__':
     summary = {'N2':N2, 'alpha_mu':alpha_mu, 'alpha_var':alpha_var, 'alphas':generator.alphas}
     df = pd.DataFrame.from_dict(summary)
     df.to_csv(summary_path)
+
     
     cases_df = real_cases_df.copy()
     deaths_df = real_deaths_df.copy()
@@ -196,7 +200,21 @@ if __name__ == '__main__':
         simulated_deaths = all_deaths[region][0:len(real_deaths_df.loc[region, start_date[r]:])]
         deaths_df.loc[region, start_date[r]:] = simulated_deaths
 
+    #real_cases_df[real_cases_df['Region']==55079]
+    #check_case_real = real_cases_df[real_cases_df.index==55079]
+    #check_case_sim = cases_df[cases_df.index==55079]
     cases_df.to_csv(cases_path)
     deaths_df.to_csv(deaths_path)
     rt_df = pd.DataFrame.from_dict(all_rt)
     rt_df.to_csv(interventions_path)
+
+    # alpha[1]	0.011840715145067
+    # alpha[2]	0.003095172005368
+    # alpha[3]	0.067949652378132
+    # alpha[4]	0.013808260591159
+    # alpha[5]	0.132461843155698
+    # alpha[6]	0.080254254901156
+    # alpha[7]	0.018782113636008
+    # alpha[8]	0.212338927766393
+
+

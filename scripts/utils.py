@@ -32,18 +32,24 @@ def calculate_deaths(cases, ifr, fatality):
 def get_npis(data_dir):
     interventions_path = join(data_dir, 'us_data/interventions.csv')
     interventions = pd.read_csv(interventions_path)
+    #print(interventions.shape)
     id_cols = ['FIPS', 'STATE', 'AREA_NAME']    
     int_cols = [col for col in interventions.columns.tolist() if col not in id_cols]
     interventions.drop(columns=['STATE', 'AREA_NAME'], inplace=True)
 
-    interventions.drop([0], axis=0, inplace=True)
+    interventions.drop([0], axis=0, inplace=True) #drop first row
     interventions.fillna(1, inplace=True)
+    #print(interventions.shape)
     return interventions
 
 def get_counties_isolated_NPIs(npis, index):
+    colnames = list(npis.columns)
+    #print(colnames)
     cur_npi_dates = np.array(npis[index].values)
+    print(cur_npi_dates[100:190])
     dates_diff =  abs(np.array(npis.iloc[:,1:].values).transpose() - cur_npi_dates).transpose()
     dates_diff.sort(axis=1)
+    #print(dates_diff[:, 1])
     to_keep = npis[dates_diff[:,1] > 2]
     return to_keep['FIPS']
 
@@ -58,4 +64,3 @@ if __name__ == '__main__':
     data_dir = 'data'
     interventions = get_npis(data_dir)
     counties = get_counties_isolated_NPIs(interventions, 'stay at home')
-    print(counties)

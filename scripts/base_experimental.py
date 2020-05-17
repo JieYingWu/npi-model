@@ -26,7 +26,7 @@ regions.sort()
 M = len(regions) 
 print('Running for ' + str(M) + ' FIPS')
 
-data_dir = sys.argv[1]
+data_dir = 'simulated'
 stan_data, regions, start_date, geocode = get_data(M, data_dir, processing=Processing.REMOVE_NEGATIVE_VALUES, state=False, fips_list=regions)
 #print(stan_data['M'])
 #exit()
@@ -89,6 +89,7 @@ for r in range(len(regions)):
 stan_data['f'] = all_f
 
 fit = sm.sampling(data=stan_data, iter=300, chains=4, warmup=150, thin=4, control={'adapt_delta':0.9, 'max_treedepth':15})
+print("Model fitted")
 # fit = sm.sampling(data=stan_data, iter=1000, chains=4, warmup=500, thin=4, control={'adapt_delta':0.9, 'max_treedepth':12})
 # fit = sm.sampling(data=stan_data, iter=2000, chains=4, warmup=10, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
 

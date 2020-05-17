@@ -75,10 +75,10 @@ def get_regions(data_dir, M, cases, deaths, processing, interventions, populatio
 
     cases.to_csv('data/tmp_cases.csv')
     deaths.to_csv('data/tmp_deaths.csv')
-    print('CASES', cases, sep='\n')
-    print('DEATHS', deaths, sep='\n')
-    print('INTERVENTIONS', interventions, sep='\n')
-    print('POPULATION', population, sep='\n')
+    # print('CASES', cases, sep='\n')
+    # print('DEATHS', deaths, sep='\n')
+    # print('INTERVENTIONS', interventions, sep='\n')
+    # print('POPULATION', population, sep='\n')
     
     dict_of_geo = {} ## map geocode
     for i in range(len(fips_list)):
