@@ -108,15 +108,15 @@ class ValidationResult():
                 for j in range(len(summary1[i])):
                     print(self.parameter_name_list[i],j)
                     identifier = '_'.join([self.parameter_name_list[i], str(j)])
-                    final_dict[identifier] = self.test_function(summary1[i][j], summary2[i][j])
-                    final_list.append([identifier]+list(self.test_function(summary1[i][j], summary2[i][j])))
+                    final_dict[identifier] = test_function(summary1[i][j], summary2[i][j])
+                    final_list.append([identifier]+list(test_function(summary1[i][j], summary2[i][j])))
             else:
                 for (key1, val1), (key2, val2) in zip(summary1[i].items(), summary2[i].items()):
                     for k in range(len(val1)):
                         print(self.parameter_name_list[i], key1, k)
                         identifier = '_'.join([self.parameter_name_list[i], str(key1), str(k)])
-                        final_list.append([identifier]+list(self.test_function(val1[k],val2[k])))
-                        final_dict[identifier] = self.test_function(val1[k], val2[k])
+                        final_list.append([identifier]+list(test_function(val1[k],val2[k])))
+                        final_dict[identifier] = test_function(val1[k], val2[k])
 
         return final_dict, final_list
     
@@ -134,19 +134,18 @@ class ValidationResult():
         - R_hat
         """
         delta = 0
-        mean_1 = distribution1[0]
-        mean_2 = distribution1[0]
-        std_1 = distribution1[2]
-        std_2 = distribution1[2]
-        se_1 = distribution1[1]
-        se_2 = distribution1[1]
+        mean_1 = float(distribution1[0])
+        mean_2 = float(distribution2[0])
+        std_1 = float(distribution1[2])
+        std_2 = float(distribution2[2])
+        se_1 = float(distribution1[1])
+        se_2 = float(distribution2[1])
 
 
 
         pooledSE = np.sqrt(se_1**2 + se_2**2)
         z = ((mean_1 - mean_2) - delta)/pooledSE
         pval = 2*(1 - stats.norm.cdf(np.abs(z)))
-
         return np.round(z, 3), np.round(pval, 4)
 
 
