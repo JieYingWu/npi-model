@@ -175,8 +175,7 @@ def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of
         filepath = 'data/tmp_deaths.csv'
     elif plot_choice == 0:
         # filepath = "data/us_data/infections_timeseries.csv"
-
-    if (simulated):
+        if (simulated):
             filepath = "data/us_data/infections_timeseries_w_states.csv"
         else:
             filepath = "simulated/us_data/infections_timeseries_w_states.csv"
