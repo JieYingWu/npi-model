@@ -176,15 +176,15 @@ def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of
     elif plot_choice == 0:
         # filepath = "data/us_data/infections_timeseries.csv"
         if (simulated):
-            filepath = "data/us_data/infections_timeseries_w_states.csv"
-        else:
             filepath = "simulated/us_data/infections_timeseries_w_states.csv"
+        else:
+            filepath = "data/us_data/infections_timeseries_w_states.csv"
     else:
         # filepath = "data/us_data/deaths_timeseries.csv"
         if (simulated):
-            filepath = "data/us_data/deaths_timeseries_w_states.csv"
-        else:
             filepath = "simulated/us_data/deaths_timeseries_w_states.csv"
+        else:
+            filepath = "data/us_data/deaths_timeseries_w_states.csv"
 
 
     df = pd.read_csv(filepath, delimiter=',', dtype={'FIPS': str})
@@ -204,7 +204,7 @@ def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of
     df = df.set_index('FIPS')
 
     fips = dict_of_eu_geog[num_of_country].values[0]
-    
+    fips = str(fips).zfill(5)
     confirmed_start_date = datetime.datetime.strptime(start_day_of_confirmed, '%m/%d/%y')
     # print(dict_of_start_dates)
     # print(str(dict_of_start_dates[num_of_country].values[0]))
