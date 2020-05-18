@@ -48,7 +48,7 @@ def get_data(M, data_dir, processing=None, state=False, fips_list=None, validati
     else:
         cases = cases[cases['FIPS'].astype(int) % 1000 != 0]
         deaths = deaths[deaths['FIPS'].astype(int) % 1000 != 0]
-
+    #print("In get data", fips_list)
     # Not filtering interventions data since we're not selecting counties based on that
     final_dict, fips_list, dict_of_start_dates, dict_of_geo = get_regions(
         data_dir, M, cases, deaths, processing, interventions, population, fips_list,
@@ -84,7 +84,7 @@ def get_regions(data_dir, M, cases, deaths, processing, interventions, populatio
         
     elif processing == Processing.REMOVE_NEGATIVE_REGIONS:
         cases, deaths = remove_negative_regions(cases, deaths, idx=2)
-    
+    #print("In get regions", fips_list)
     cases, deaths, interventions, population = select_regions(
         cases, deaths, interventions, M, population, fips_list=fips_list,
         clustering=clustering, supercounties=supercounties)
@@ -125,7 +125,7 @@ def get_regions(data_dir, M, cases, deaths, processing, interventions, populatio
     if validation:
         validation_days_dict = get_validation_dict(data_dir, cases, deaths, fips_list, cases_dates)
         deaths = apply_validation(deaths, fips_list, validation_days_dict)
-    
+    #print("Before primary calculations", fips_list)
     dict_of_start_dates, final_dict = primary_calculations(
         cases, deaths, covariates, cases_dates, population, fips_list)
 
@@ -138,7 +138,6 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
         final_dict: Stan_data used to feed main sampler
         dict_of_start_dates: Starting dates considered for calculations for the top N places
     """
-    
     index = np.argmax(df_cases > 0)
     cum_sum = np.cumsum(df_deaths, axis=0) >= 10
     index1 = np.where(np.argmax(cum_sum, axis=0) != 0, np.argmax(cum_sum, axis=0), cum_sum.shape[0])
@@ -220,6 +219,7 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
         
     final_dict = {}
     final_dict['M'] = len(fips_list)
+    #print("In data parser", final_dict['M'])
     final_dict['N0'] = 6
     final_dict['P'] = 8 # num of covariates
     final_dict['N'] = np.asarray(N_arr, dtype=np.int)

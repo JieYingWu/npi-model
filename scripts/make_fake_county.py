@@ -26,15 +26,14 @@ class CountyGenerator():
             alphas = np.random.normal(self.alpha_mu, self.alpha_var, num_alphas)
             self.alphas = -1*alphas
         elif type_of_alpha=='same':
-            self.alphas = [0.852450511,
-                            0.173904206,
-                            0.100636835,
-                            0.090076732,
-                            0.060130794,
-                            0.050961405,
-                            0.058717003,
-                            0.030499885
-                            ]
+            self.alphas = [0.518984242,
+                            0.153196975,
+                            0.229991992,
+                            0.121329594,
+                            0.048057066,
+                            0.059884373,
+                            0.077400202,
+                            0.03996699]
 
         
     # Generate fataility rates or read from cached 
