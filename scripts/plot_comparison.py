@@ -10,12 +10,13 @@ from os.path import join, exists
 
 
 def parse_csv(path):    
-    with open(join(path,'comparison.csv'), 'r') as f:
+    with open(join(path,'comparison_z.csv'), 'r') as f:
         reader = csv.reader(f, delimiter=',')
         next(reader)
         next(reader)
         header = next(reader)
         
+        test = header[1]
         mu = []
         alpha = []
         deaths = []
@@ -29,7 +30,7 @@ def parse_csv(path):
             if 'deaths' in row[0]:
                 deaths.append(row[1:])
 
-    return mu, alpha, deaths    
+    return mu, alpha, deaths, test    
 
 
 def get_num_counties(path):
@@ -54,7 +55,7 @@ def get_geocode(path):
     return geocode
 
 
-def plot_pval_deaths_county(path, deaths, county):
+def plot_pval_deaths_county(path, deaths, county, test):
     """ which county to plot
     param deaths: list of tuples( statistic, pvalue)
     param county: number of county to plot (0- num counties)
@@ -71,6 +72,7 @@ def plot_pval_deaths_county(path, deaths, county):
     # select only the p value to plot 
     deaths_to_plot = [j for (i,j) in deaths_to_plot]
     deaths_arr = np.array(deaths_to_plot, dtype=np.float)
+    
 
     # get the number of days to plot 
     first_date = dt.datetime.strptime(start_dates[county], '%m/%d/%y').toordinal()
@@ -90,7 +92,10 @@ def plot_pval_deaths_county(path, deaths, county):
     ax.set(title=f'Pvalue for County {geocode[county]}',
             ylabel='p-value',
             xlabel='Days')
-    plt.savefig(join(path, 'plots', 'pvalue_plot.png'))
+    if not exists(join(path, 'plots',f'comparison_{test}-test' )):
+        os.mkdir(join(path, 'plots',f'comparison_{test}-test'))
+    save_path = join(path, 'plots',f'comparison_{test}-test', f'{geocode[county]}_pvalue_plot.png')
+    plt.savefig(save_path)
     plt.show()
 
 
@@ -106,6 +111,10 @@ if __name__ == '__main__':
     parser.add_argument('--county', type=int, help='Integer in range (0, length(number_counties)))')
     args = parser.parse_args()
 
-    mu, alpha ,deaths = parse_csv(args.path)
-    plot_pval_deaths_county(args.path, deaths, args.county)
-    print(deaths)
+    mu, alpha ,deaths, test = parse_csv(args.path)
+    M = get_num_counties(args.path)
+    if not args.county:
+        for i in range(M):
+            plot_pval_deaths_county(args.path, deaths, i, test)
+    else:
+        plot_pval_deaths_county(args.path, deaths, args.county, test)
