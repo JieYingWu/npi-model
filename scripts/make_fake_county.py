@@ -91,8 +91,8 @@ class CountyGenerator():
         si = self.si[::-1]
         prediction = np.zeros(rt.shape[0])
         prediction[0:6] = np.random.exponential(1/tau)
-#        print(prediction)
-#        exit()
+
+
         for i in range(6, rt.shape[0]):
             prediction[i] = rt[i] * np.sum(prediction[0:i] * si[-i:])
 
@@ -111,7 +111,9 @@ class CountyGenerator():
     
     # Create the rt, cases, and deaths timeseries given a region characteristics
     def make_county(self, r0, interventions, region):
+        #print(interventions.shape)
         rt = self.calculate_rt(r0, interventions)
+        #print(rt.shape)
         cases = self.predict_cases(rt)
         fatality = self.calculate_fatality_rate(region)
         deaths = self.predict_deaths(rt, cases, fatality)
@@ -140,7 +142,7 @@ def parse_interventions(regions, data_dir='data'):
     
 if __name__ == '__main__':
     data_dir = 'simulated'
-    N2 = 100
+    N2 = 150
 
     r0_file_path = join('results', 'real_county', 'summary.csv')
     r0_file = pd.read_csv(r0_file_path)
@@ -172,19 +174,20 @@ if __name__ == '__main__':
     
     serial_interval = np.loadtxt(join(data_dir, 'serial_interval.csv'), skiprows=1, delimiter=',')
     si = serial_interval[:,1]
+    n_si = si.shape[0]
+    si[n_si:N2] = 0
 
     generator = CountyGenerator(N2, si, num_alphas, alpha_mu, alpha_var, type_of_alpha)
 #    generator.alphas = [-0.124371438107218, -0.196069499889346, -0.194197939254073, -0.495431571118872, -0.378146551081655, -0.137932933788039, -0.29558366952368, -0.422007707986038]
 
     interventions, start_date, geocode_intervention = parse_interventions(regions)
+    print(interventions[0].shape)
     all_rt = {}
     all_cases = {}
     all_deaths = {}
     
     for r in range(len(regions)):
         region = geocode[r]
-        print(region)
-        break
         r0 = all_r0[region]
         intervention = interventions[r,:,:]
         rt, cases, deaths = generator.make_county(r0, intervention, region)

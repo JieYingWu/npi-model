@@ -54,7 +54,8 @@ def select_top_regions(df_cases, df_deaths, interventions, num_counties, populat
     fips_list = df_deaths['FIPS'].tolist()
 
     merge_df = pd.DataFrame({'merge': fips_list})
-    df_cases = df_cases.loc[df_cases['FIPS'].isin(fips_list)]
+    df_cases = df_cases.loc[df_cases['FIPS'].isin(fips_list)]  
+
     # Select the 20 counties in the same order from the deaths dataframe by merging
     df_cases = pd.merge(merge_df, df_cases, left_on='merge', right_on='FIPS', how='outer')
     df_cases = df_cases.reset_index(drop=True)
@@ -209,9 +210,13 @@ def select_regions(cases, deaths, interventions, M, population, fips_list=None,
     """
 
     if fips_list is not None:
+        cases['FIPS'] = cases['FIPS'].astype(int)
         cases = cases.loc[cases['FIPS'].isin(fips_list)]
+        deaths['FIPS'] = deaths['FIPS'].astype(int)
         deaths = deaths.loc[deaths['FIPS'].isin(fips_list)]
+        interventions['FIPS'] = interventions['FIPS'].astype(int)
         interventions = interventions.loc[interventions['FIPS'].isin(fips_list)]
+        population['FIPS'] = population['FIPS'].astype(int)
         population = population.loc[population['FIPS'].isin(fips_list)]
 
     if supercounties:
