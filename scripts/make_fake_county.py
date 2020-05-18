@@ -24,17 +24,18 @@ class CountyGenerator():
     def generate_alphas(self, num_alphas, type_of_alpha):
         if type_of_alpha == 'random':
             alphas = np.random.normal(self.alpha_mu, self.alpha_var, num_alphas)
-            self.alphas = -1*alphas
+            
         elif type_of_alpha=='same':
-            self.alphas = [0.518984242,
-                            0.153196975,
-                            0.229991992,
-                            0.121329594,
-                            0.048057066,
-                            0.059884373,
-                            0.077400202,
-                            0.03996699]
-
+            alphas = np.array([0.501395039,
+                        0.217169224,
+                        0.248010572,
+                        0.117646923,
+                        0.05062532,
+                        0.06010422,
+                        0.051055706,
+                        0.043066149])
+            
+        self.alphas = -1*alphas
         
     # Generate fataility rates or read from cached 
     def calculate_fatality_rate(self, region):
@@ -90,11 +91,12 @@ class CountyGenerator():
         si = self.si[::-1]
         prediction = np.zeros(rt.shape[0])
         prediction[0:6] = np.random.exponential(1/tau)
-
+        #print(prediction[0])
+        assert prediction[0]>0
 
         for i in range(6, rt.shape[0]):
             prediction[i] = rt[i] * np.sum(prediction[0:i] * si[-i:])
-
+        assert np.all(prediction >= 0 )
         return prediction.astype(np.int)
 
     
@@ -104,7 +106,7 @@ class CountyGenerator():
         deaths = np.zeros(rt.shape[0])
         for i in range(1,rt.shape[0]):
             deaths[i] = np.sum(prediction[0:i] * f[-i:])
-
+        assert np.all(deaths >= 0)
         return deaths.astype(np.int)
 
     
@@ -166,15 +168,18 @@ if __name__ == '__main__':
     
     n = len(regions)
     means = r0_file['mean'].values
-    means= means[0:n]
+    means = means[0:n]
     all_r0 = {}
     for i in range(n):
         all_r0[geocode[i]] = means[i]
     
     serial_interval = np.loadtxt(join(data_dir, 'serial_interval.csv'), skiprows=1, delimiter=',')
-    si = serial_interval[:,1]
-    n_si = si.shape[0]
-    si[n_si:N2] = 0
+    si = np.zeros(N2)
+    n_si = serial_interval.shape[0]
+    #print(n_si, N2, serial_interval.shape)
+    si[0:n_si] = serial_interval[:,1]
+    if n_si < N2:
+        si[n_si:N2] = 0
 
     generator = CountyGenerator(N2, si, num_alphas, alpha_mu, alpha_var, type_of_alpha)
 #    generator.alphas = [-0.124371438107218, -0.196069499889346, -0.194197939254073, -0.495431571118872, -0.378146551081655, -0.137932933788039, -0.29558366952368, -0.422007707986038]
@@ -193,14 +198,14 @@ if __name__ == '__main__':
         all_cases[region] = cases
         all_deaths[region] = deaths
 
-    name_summary = 'summary_' + type_of_alpha + '.csv'
-    summary_path = join(data_dir, 'us_data', name_summary)
-    name_interventions = 'interventions_timeseries_' + type_of_alpha + '.csv'
-    interventions_path = join(data_dir, 'us_data', name_interventions)
-    name_cases = 'infections_timeseries_w_states_' + type_of_alpha + '.csv'
-    cases_path = join(data_dir, 'us_data', name_cases)
-    name_deaths = 'deaths_timeseries_w_states_' + type_of_alpha + '.csv'
-    deaths_path = join(data_dir, 'us_data', name_deaths)
+    #name_summary = 'summary_' + type_of_alpha + '.csv'
+    summary_path = join(data_dir, 'us_data', 'summary.csv')
+    #name_interventions = 'interventions_timeseries_' + type_of_alpha + '.csv'
+    interventions_path = join(data_dir, 'us_data', 'interventions_timeseries.csv')
+    #name_cases = 'infections_timeseries_w_states_' + type_of_alpha + '.csv'
+    cases_path = join(data_dir, 'us_data', 'infections_timeseries_w_states.csv')
+    #name_deaths = 'deaths_timeseries_w_states_' + type_of_alpha + '.csv'
+    deaths_path = join(data_dir, 'us_data', 'deaths_timeseries_w_states.csv')
 
     real_cases_path = join('data', 'us_data', 'infections_timeseries_w_states.csv')
     real_deaths_path = join('data', 'us_data', 'deaths_timeseries_w_states.csv')
