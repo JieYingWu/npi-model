@@ -181,7 +181,6 @@ if __name__ == '__main__':
 #    generator.alphas = [-0.124371438107218, -0.196069499889346, -0.194197939254073, -0.495431571118872, -0.378146551081655, -0.137932933788039, -0.29558366952368, -0.422007707986038]
 
     interventions, start_date, geocode_intervention = parse_interventions(regions)
-    print(interventions[0].shape)
     all_rt = {}
     all_cases = {}
     all_deaths = {}

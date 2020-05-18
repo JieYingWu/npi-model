@@ -53,8 +53,12 @@ def main():
     
     serial_interval = np.loadtxt(join(data_dir, 'serial_interval.csv'), skiprows=1, delimiter=',')
     # Time between primary infector showing symptoms and secondary infected showing symptoms - this is a probability distribution from 1 to 100 days
-    
-    SI = serial_interval[0:stan_data['N2'],1]
+
+    n_si = len(serial_interval)
+    SI = np.zeros(stan_data['N2'])
+    SI[0:n_si] = serial_interval[0:n_si,1]
+    if n_si < stan_data['N2']:
+        SI[n_si : stan_data['N2']] = 0.0
     stan_data['SI'] = SI
     
     # infection to onset
