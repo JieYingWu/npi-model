@@ -53,12 +53,40 @@ class MainStanModel():
         self.make_plots()
             
         if self.validation_on_county:
-            stan_data, regions, start_date, geocode, weighted_fatalities = val
-            stan_data['alpha'] = get_alpha_from_summary(result_df)
-            val_df = self.run_model(stan_data, regions, start_date, geocode, weighted_fatalities, validation=True)
-            self.save_results(val_df, start_date, geocode, validation=True)
-            self.make_plots(validation=True)
+            vals = self.divide_validation_counties(val)
+            for val in vals:
+                stan_data, regions, start_date, geocode, weighted_fatalities = val
+                stan_data['alpha'] = get_alpha_from_summary(result_df)
+                val_df = self.run_model(stan_data, regions, start_date, geocode, weighted_fatalities, validation=True)
+                self.save_results(val_df, start_date, geocode, validation=True)
+                self.make_plots(validation=True)
 
+    def divide_validation_counties(self, val):
+        """Divide the counties in 5-tuple validation arguments `val` into a list of such tuples with one county each.
+
+        :param val: tuple containing (stan_data, regions, start_date, geocode, weighted_fatalities) as returned by self.preprocess_data
+        :returns: 
+        :rtype: 
+
+        """
+        stan_data, regions, start_date, geocode, weighted_fatalities = val
+        vals = []
+        for i, idx in enumerate(sorted(geocode.keys())):
+            stan_data_ = stan_data.copy()
+            stan_data_['M'] = 1
+            for k in ['cases', 'deaths'] + [f'covariate{cov}' for cov in range(1, 9)]:
+                stan_data_[k] = stan_data[k][:, i:i + 1]
+            for k in ['N', 'EpidemicStart', 'pop', 'X']:
+                stan_data_[k] = stan_data[k][i:i + 1]
+            
+            weighted_fatalities_ = weighted_fatalities[i:i + 1]
+            start_date_ = {idx: start_date[idx]}
+            geocode_ = {idx: geocode[idx]}
+            regions_ = [regions[i]]
+            vals.append((stan_data_, regions_, start_date_, geocode_, weighted_fatalities_))
+        return vals
+            
+        
     def get_cluster(self, region):
         """
 
@@ -71,12 +99,14 @@ class MainStanModel():
             return self.clustering[region]
         else:
             return int(region.split('_')[1])
-            
+
     def validation_county_split(self, stan_data, regions, start_date, geocode, weighted_fatalities, counties_per_cluster=1):
         """Separate into training and validation data by taking out the first county/supercounty for each cluster.
 
         So if cluster was specified, the validation size will be 1. If no cluster specified, there
         will be `num_clusters` counties in the validation set, one for each cluster.
+
+        Moreover, each validation county should be it's own set, basically, to constrain the fit.
 
         :param stan_data: 
         :param regions: 
@@ -116,20 +146,17 @@ class MainStanModel():
         val_stan_data = stan_data.copy()
         val_stan_data['M'] = sum(counts.values())
         train_stan_data['M'] = int(stan_data['M'] - val_stan_data['M'])
-        
-        for k in ['cases', 'deaths']:
+
+        for k in ['cases', 'deaths'] + [f'covariate{i}' for i in range(1, 9)]:
             train_stan_data[k] = stan_data[k][:, train_indices]
             val_stan_data[k] = stan_data[k][:, val_indices]
-        
-        for k in ['N', 'EpidemicStart', 'pop', 'X'] + [f'covariate{i}' for i in range(1, 9)]:
+        for k in ['N', 'EpidemicStart', 'pop', 'X']:
             train_stan_data[k] = stan_data[k][train_indices]
             val_stan_data[k] = stan_data[k][val_indices]
 
         train_weighted_fatalities = weighted_fatalities[train_indices]
         val_weighted_fatalities = weighted_fatalities[val_indices]
-        print('train_weighted_fatalities:', val_weighted_fatalities.shape)
-        print('val_weighted_fatalities:', val_weighted_fatalities.shape)
-        
+
         return ((train_stan_data, train_regions, train_start_date, train_geocode, train_weighted_fatalities),
                 (val_stan_data, val_regions, val_start_date, val_geocode, val_weighted_fatalities))
     
@@ -300,13 +327,14 @@ class MainStanModel():
                                        str(data_parser.Processing(self.processing))]
             if self.validation_withholding:
                 unique_folder_name_list.insert(2, 'validation_withholding')
-            if self.cluster:
+            if self.cluster is not None:
                 unique_folder_name_list.insert(3, 'cluster')
                 unique_folder_name_list.insert(4, str(self.cluster))
 
             #make unique results folder
             self._unique_results_path = join(self.output_path, '_'.join(unique_folder_name_list))
-            os.mkdir(self.unique_results_path)
+            if not exists(self._unique_results_path):
+                os.mkdir(self._unique_results_path)
         return self._unique_results_path
     
     def save_results(self, df, start_date, geocode, validation=False):

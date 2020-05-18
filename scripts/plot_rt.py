@@ -101,8 +101,10 @@ def plot_rt_europe(simulation_file, interventions_file, country_number, country_
         plt.show()
 
 
-def plot_rt_US(simulation_file, interventions_file, county_number, fips, start_date, state_level, output_path, save_img=False, show_img=True):
+def plot_rt_US(simulation_file, interventions_file, county_number, fips, start_date, state_level,
+               output_path, save_img=False, show_img=True):
     # read data
+    fips = str(fips).zfill(5)
     simulation_data = pd.read_csv(simulation_file, delimiter=',', index_col=0)
     interventions, interventions_data = get_interventions_US(interventions_file, state_level=state_level)
     interventions_data = interventions_data[interventions_data['FIPS'] == fips]
@@ -110,7 +112,7 @@ def plot_rt_US(simulation_file, interventions_file, county_number, fips, start_d
     time_data = list(pd.date_range(start=start_date, end='05/01/20'))
     num_days = len(time_data)
     # remove those interventions, that are not considered in the report
-#    interventions.remove('foreign travel ban')
+    # interventions.remove('foreign travel ban')
 
     start = 'Rt[1,' + str(county_number) + ']'
     end = 'Rt[' + str(num_days) + ',' + str(county_number) + ']'
@@ -139,13 +141,15 @@ def plot_rt_US(simulation_file, interventions_file, county_number, fips, start_d
     marker = ['o', 'v', '^', '<', '>', 's', '*', 'D']
     # neede to make sure marker for several interventions on the same day don't overlap
     adjust_height = []
-
+    
     # plot vertical lines and markers for each intervention
     # make sure markers for several interventions on the same day are drawn at different positions
     for ind, intervention in enumerate(interventions):
-        print('intervention:', ind, intervention, interventions_data[intervention])
+        if len(interventions_data[intervention].values) == 0:
+            continue
+        # print('intervention:', ind, intervention, interventions_data[intervention])
         date = interventions_data[intervention].values[0]
-        print('date:', date)
+        # print('date:', date)
         if not pd.isna(date):
             num = adjust_height.count(date)
             adjust_height.append(date)
@@ -160,7 +164,7 @@ def plot_rt_US(simulation_file, interventions_file, county_number, fips, start_d
     box = plt.gca().get_position()
     plt.gca().set_position([box.x0, box.y0, box.width * 0.8, box.height])
     lgd = plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-
+    
     # adjust x axis labels and figure size
     date_form = DateFormatter("%Y-%m-%d")
     plt.gca().xaxis.set_major_formatter(date_form)
@@ -172,7 +176,7 @@ def plot_rt_US(simulation_file, interventions_file, county_number, fips, start_d
     plt.title(interventions_data['AREA_NAME'].values[0].title())
     plt.xlabel('Date')
     plt.ylabel('Time-dependent Reproduction Number')
-
+    
     if save_img:
         if state_level:
             path = join(output_path,r'Rt_state_{}.png'.format(fips))
@@ -252,21 +256,19 @@ def get_interventions_US(interventions_file, state_level=False):
         interventions = state_interventions
 
     else:
-        interventions = pd.read_csv(interventions_file, engine='python')
+        interventions = pd.read_csv(interventions_file, engine='python', dtype={'FIPS': str})
         id_cols = ['SUPERCOUNTY', 'FIPS', 'STATE', 'AREA_NAME', 'Combined_Key', 'Unnamed: 0']
         #id_cols = ['FIPS', 'STATE', 'AREA_NAME']
         int_cols = [col for col in interventions.columns.tolist() if col not in id_cols]
-        print(f'int_cols: {int_cols}')
+        # print(f'int_cols: {int_cols}')
         #interventions.fillna(1, inplace=True)
         for col in int_cols: ### convert date from given format
-            print('col:', col)
+            # print('col:', col)
             interventions[col] = interventions[col].apply(
                 lambda x: dt.date.fromordinal(int(x)) if not pd.isna(x) else x)
 
-    print(interventions)
-
+    # print(interventions)
     interventions_list = [x for x in list(interventions.columns.values) if x not in id_cols]
-
     return interventions_list, interventions
 
 
@@ -289,6 +291,7 @@ def make_all_us_plots(summary_path, geocode_path, start_dates_path, intervention
     county_numbers = np.arange(1, len(fips_list) + 1)
     
     for county, fips, date in zip(county_numbers, fips_list, start_dates):
+        print('county, fips, date:', county, fips, date)
         plot_rt_US(summary_path, interventions_path , county, fips, date, state_level, output_path, save_img=True, show_img=False)
 
 
