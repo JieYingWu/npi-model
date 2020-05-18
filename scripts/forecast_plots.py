@@ -182,19 +182,20 @@ def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of
 
     df = pd.read_csv(filepath, delimiter=',', dtype={'FIPS': str})
             
-    # get rid of cummulative
-    col_names = df.columns.values[3:]
-    new_df = pd.DataFrame()
-    new_df['FIPS'] = df['FIPS']
-    new_df['Combined_Key'] = df['Combined_Key']
-    new_df[df.columns.values[2]] = df[df.columns.values[2]]
+    # get rid of cummulative if not using the tmp_timeseries.csv hack
+    if not use_tmp:
+        col_names = df.columns.values[3:]
+        new_df = pd.DataFrame()
+        new_df['FIPS'] = df['FIPS']
+        new_df['Combined_Key'] = df['Combined_Key']
+        new_df[df.columns.values[2]] = df[df.columns.values[2]]
+        
+        # get the daily values from cumulative
+        for i, col_name in enumerate(col_names):
+            new_df[col_name] = df[col_name] - df[col_names[i - 1]]
 
-    # get the daily values from cumulative
-    for i, col_name in enumerate(col_names):
-        new_df[col_name] = df[col_name] - df[col_names[i - 1]]
-
-    df = remove_negative_values(new_df)
-    df = df.set_index('FIPS')
+        df = remove_negative_values(new_df)
+        df = df.set_index('FIPS')
 
     fips = str(dict_of_eu_geog[num_of_country].values[0]).zfill(5)
     
