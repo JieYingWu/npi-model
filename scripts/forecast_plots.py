@@ -167,7 +167,7 @@ def read_true_cases_europe(plot_choice, num_of_country, dict_of_start_dates, dic
     return confirmed_cases
 
 
-def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of_eu_geog, use_tmp=False):
+def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of_eu_geog, use_tmp=False, simulated=False):
     # 1 for deaths forecast; 0 for infections forecast
     if use_tmp and plot_choice == 0:
         filepath = 'data/tmp_cases.csv'
@@ -175,10 +175,17 @@ def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of
         filepath = 'data/tmp_deaths.csv'
     elif plot_choice == 0:
         # filepath = "data/us_data/infections_timeseries.csv"
-        filepath = "data/us_data/infections_timeseries_w_states.csv"
+        if (simulated):
+            filepath = "data/us_data/infections_timeseries_w_states.csv"
+        else:
+            filepath = "simulated/us_data/infections_timeseries_w_states.csv"
     else:
         # filepath = "data/us_data/deaths_timeseries.csv"
-        filepath = "data/us_data/deaths_timeseries_w_states.csv"
+        if (simulated):
+            filepath = "data/us_data/deaths_timeseries_w_states.csv"
+        else:
+            filepath = "simulated/us_data/deaths_timeseries_w_states.csv"
+
 
     df = pd.read_csv(filepath, delimiter=',', dtype={'FIPS': str})
             
