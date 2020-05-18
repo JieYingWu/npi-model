@@ -66,7 +66,7 @@ def plot_forecasts_wo_dates_quantiles(quantiles_dict, confirmed_cases, county_na
         barplot_missing_values = np.zeros(days_to_predict - np.shape(confirmed_cases)[0])
         barplot_values = list(confirmed_cases) + list(barplot_missing_values)
 
-    print(np.shape(days_to_predict), np.shape(confirmed_cases)[0])
+    # print(np.shape(days_to_predict), np.shape(confirmed_cases)[0])
     # plot creation
     fig = plt.figure('Forecast ')
     ax = fig.add_subplot(111)
@@ -196,7 +196,7 @@ def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of
     df = remove_negative_values(new_df)
     df = df.set_index('FIPS')
 
-    fips = dict_of_eu_geog[num_of_country].values[0]
+    fips = str(dict_of_eu_geog[num_of_country].values[0]).zfill(5)
     
     confirmed_start_date = datetime.datetime.strptime(start_day_of_confirmed, '%m/%d/%y')
     # print(dict_of_start_dates)
@@ -204,7 +204,8 @@ def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of
     forecast_start_date = datetime.datetime.strptime(str(dict_of_start_dates[num_of_country].values[0]), '%m/%d/%y')
     # print(forecast_start_date)
     diff = (forecast_start_date - confirmed_start_date).days + 1  # since it also has a name skip it
-    
+
+    print(df)
     confirmed_cases = list(df.loc[fips][diff:])
     #sustracted_confirmed_cases = [confirmed_cases[0]]
     # since us data is cummulative
