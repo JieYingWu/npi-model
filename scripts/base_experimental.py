@@ -29,7 +29,6 @@ def main():
     #    tag = 'real_county' 
     regions.sort()
     M = len(regions)
-    print(M)
     print('Running for ' + str(M) + ' FIPS')
     
     data_dir = sys.argv[1]
@@ -50,7 +49,7 @@ def main():
     stan_data['cases'] = stan_data['cases'].astype(np.int)
     stan_data['deaths'] = stan_data['deaths'].astype(np.int)
     
-    #sm = pystan.StanModel(file='stan-models/us_new.stan')
+    sm = pystan.StanModel(file='stan-models/us_new.stan')
     
     serial_interval = np.loadtxt(join(data_dir, 'serial_interval.csv'), skiprows=1, delimiter=',')
     # Time between primary infector showing symptoms and secondary infected showing symptoms - this is a probability distribution from 1 to 100 days
@@ -110,21 +109,21 @@ def main():
     
     print ("Start sampling -------------------")
     
-##    fit = sm.sampling(data=stan_data, iter=500, chains=4, warmup=250, thin=4, n_jobs=8, control={'adapt_delta':0.95, 'max_treedepth':15})
-##    # fit = sm.sampling(data=stan_data, iter=1000, chains=4, warmup=500, thin=4, control={'adapt_delta':0.9, 'max_treedepth':12})
-##    # fit = sm.sampling(data=stan_data, iter=2000, chains=4, warmup=10, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
-##    print ("Fitted model --------------------")
-##    summary_dict = fit.summary()
-##    df = pd.DataFrame(summary_dict['summary'],
-##                     columns=summary_dict['summary_colnames'],
-##                     index=summary_dict['summary_rownames'])
-##    
-##    df.to_csv(join(path, 'summary.csv'), sep=',')
-##    
-##    df_sd = pd.DataFrame(start_date, index=[0])
-##    df_geo = pd.DataFrame(geocode, index=[0])
-##    df_sd.to_csv(join(path, 'start_dates.csv'), sep=',')
-##    df_geo.to_csv(join(path, 'geocode.csv'), sep=',')
+    fit = sm.sampling(data=stan_data, iter=500, chains=4, warmup=250, thin=4, n_jobs=8, control={'adapt_delta':0.95, 'max_treedepth':15})
+    # fit = sm.sampling(data=stan_data, iter=1000, chains=4, warmup=500, thin=4, control={'adapt_delta':0.9, 'max_treedepth':12})
+    # fit = sm.sampling(data=stan_data, iter=2000, chains=4, warmup=10, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
+    print ("Fitted model --------------------")
+    summary_dict = fit.summary()
+    df = pd.DataFrame(summary_dict['summary'],
+                     columns=summary_dict['summary_colnames'],
+                     index=summary_dict['summary_rownames'])
+    
+    df.to_csv(join(path, 'summary.csv'), sep=',')
+    
+    df_sd = pd.DataFrame(start_date, index=[0])
+    df_geo = pd.DataFrame(geocode, index=[0])
+    df_sd.to_csv(join(path, 'start_dates.csv'), sep=',')
+    df_geo.to_csv(join(path, 'geocode.csv'), sep=',')
 
 if __name__ == '__main__':
     main()
