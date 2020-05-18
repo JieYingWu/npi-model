@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from os.path import join
+import datetime
 
 def get_cluster(filename, cluster_num):
     df = pd.read_csv(filename)
@@ -41,11 +42,31 @@ def get_npis(data_dir):
     return interventions
 
 def get_counties_isolated_NPIs(npis, index):
+    #print(npis.head())
+#    to_keep = []
+    num_of_cols = npis.shape[1] - 1
+#    for i in range(npis.shape[0]):
+#        #print(npis.iloc[i, 1:])
+#        iso = [x for x in np.unique(npis.iloc[i, 1:]) if x!=1.0]        
+#        if len(iso) >= num_of_cols  - 1:
+#            #print(npis.iloc[i, :]['FIPS'])
+#            to_keep.append(npis.iloc[i, :]['FIPS'])
+    #print(to_keep_)
+    npis = npis[npis[index]!=1]
+#    print(npis_drop.shape)
     cur_npi_dates = np.array(npis[index].values)
-    dates_diff =  abs(np.array(npis.iloc[:,1:].values).transpose() - cur_npi_dates).transpose()
+#    print(cur_npi_dates)
+    ## assumption: stay at home was implemented last
+    dates_diff =  abs(cur_npi_dates - np.array(npis.iloc[:,1:].values).transpose()).transpose()
+    ## subtract the stay at home starting dates from all other interventions
+#    print(dates_diff.shape)
+
     dates_diff.sort(axis=1)
-    to_keep = npis[dates_diff[:,1] > 2]
-    return to_keep['FIPS']
+    diff_int = (dates_diff[:,1:] != dates_diff[:,:-1]).sum(axis=1)+1 #finds unique values
+    all_selected = npis[diff_int>=6]
+    return list(all_selected['FIPS'])
+#    to_keep = npis[dates_diff[:,1] > 2]
+#    return list(to_keep['FIPS'])
 
     
 if __name__ == '__main__':
@@ -58,4 +79,5 @@ if __name__ == '__main__':
     data_dir = 'data'
     interventions = get_npis(data_dir)
     counties = get_counties_isolated_NPIs(interventions, 'stay at home')
+    print(len(counties))
     print(counties)
