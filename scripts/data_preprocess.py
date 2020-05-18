@@ -29,7 +29,7 @@ def remove_negative_regions(df_cases, df_deaths, idx):
 
     return df_cases, df_deaths
 
-def select_top_regions(df_cases, df_deaths, interventions, num_counties, population, validation=False, threshold=50):
+def select_top_regions(df_cases, df_deaths, interventions, num_counties, population, validation=False, supercounties=False, threshold=50):
     """"
     Returns:
         df_cases: Infections timeseries for top N places
@@ -393,8 +393,8 @@ def get_validation_dict(data_dir, cases, deaths, fips_list, cases_dates):
             reader = csv.reader(f, delimiter=',')
             dates = next(reader)
             first_date, last_date = dates
-            ordinal_last_date = dt.datetime.strptime(first_date, '%m/%d/%y').toordinal()
-            ordinal_first_date = dt.datetime.strptime(last_date, '%m/%d/%y').toordinal()
+            ordinal_last_day = dt.datetime.strptime(first_date, '%m/%d/%y').toordinal()
+            ordinal_first_day = dt.datetime.strptime(last_date, '%m/%d/%y').toordinal()
             if ordinal_last_day_cases > ordinal_last_day:
                 FLAG_NEW_DATA_AVAILABLE = True
             next(reader)
@@ -459,6 +459,6 @@ def get_validation_dict(data_dir, cases, deaths, fips_list, cases_dates):
 def apply_validation(deaths, fips_list, validation_days_dict):
     """Sets the deaths of the days in the validation_days_dict to 0"""
     for i, fips in enumerate(fips_list):
-        if validation_days_dict[fips]:   
-            deaths[np.array(validation_days_dict[fips], dtype=np.int) , i] = 0
+      #j if len(validation_days_dict[fips]:   
+        deaths[np.array(validation_days_dict[fips], dtype=np.int) , i] = 0
     return deaths

@@ -7,7 +7,7 @@ import numpy as np
 import scipy
 from os.path import join, exists
 from statsmodels.stats import weightstats as stests
-
+from scipy import stats
 
 class ValidationResult():
     """
@@ -97,25 +97,58 @@ class ValidationResult():
     def compare_2(self, summary1, summary2):
         final_dict = {}
         final_list = []
+        
+        if self.test == 'z':
+            test_function = self.z_test
+        elif self.test == 'ks':
+            test_function = self.ks_test
+
         for i in range(len(summary1)):
             if  isinstance(summary1[i], list):
                 for j in range(len(summary1[i])):
                     print(self.parameter_name_list[i],j)
                     identifier = '_'.join([self.parameter_name_list[i], str(j)])
-                    final_dict[identifier] = self.ks_test(summary1[i][j], summary2[i][j])
-                    final_list.append([identifier]+list(self.ks_test(summary1[i][j], summary2[i][j])))
+                    final_dict[identifier] = test_function(summary1[i][j], summary2[i][j])
+                    final_list.append([identifier]+list(test_function(summary1[i][j], summary2[i][j])))
             else:
                 for (key1, val1), (key2, val2) in zip(summary1[i].items(), summary2[i].items()):
                     for k in range(len(val1)):
                         print(self.parameter_name_list[i], key1, k)
                         identifier = '_'.join([self.parameter_name_list[i], str(key1), str(k)])
-                        final_list.append([identifier]+list(self.ks_test(val1[k],val2[k])))
-                        final_dict[identifier] = self.ks_test(val1[k], val2[k])
+                        final_list.append([identifier]+list(test_function(val1[k],val2[k])))
+                        final_dict[identifier] = test_function(val1[k], val2[k])
 
         return final_dict, final_list
     
     def z_test(self, distribution1, distribution2):
-        pass
+        """ distribution is a tuple:
+        - mean
+        - standard error mean
+        - std
+        - 2.5%
+        - 25%
+        - 50 %
+        - 75 %
+        - 97.5%
+        - n_eff
+        - R_hat
+        """
+        delta = 0
+        mean_1 = float(distribution1[0])
+        mean_2 = float(distribution2[0])
+        std_1 = float(distribution1[2])
+        std_2 = float(distribution2[2])
+        se_1 = float(distribution1[1])
+        se_2 = float(distribution2[1])
+
+
+
+        pooledSE = np.sqrt(se_1**2 + se_2**2)
+        z = ((mean_1 - mean_2) - delta)/pooledSE
+        pval = 2*(1 - stats.norm.cdf(np.abs(z)))
+        return np.round(z, 3), np.round(pval, 4)
+
+
 
     def ks_test(self, distribution1, distribution2):
         """ distribution is a tuple:
@@ -139,11 +172,11 @@ class ValidationResult():
         return statistic, pvalue
 
     def write_results(self, path, final_list):
-        with open(join(path,'comparison.csv'), 'w', newline='') as f:
+        with open(join(path,f'comparison_{self.test}.csv'), 'w', newline='') as f:
             writer = csv.writer(f, delimiter=',')
             writer.writerow([f'Comparing {self.results_path[0]} and {self.results_path[1]}'])
             writer.writerow(['-----------------------------'])
-            writer.writerow(['identifier', 'ks-score','p-val'])
+            writer.writerow(['identifier', f'{self.test}','p-val'])
             writer.writerows(final_list)
 
 
@@ -154,7 +187,7 @@ if __name__ == '__main__':
     parser.add_argument('--data-dir', default='./data/', help='directory for the data')
     parser.add_argument('--results', default='./results', help='directory to save the results and plots in')
     parser.add_argument('--results-path', default=None, nargs='+', help='paths to the result folder to compare')
-    #parser.add_argument('--test', default='ks', choices=['ks'], help='test to compare distributions')
+    parser.add_argument('--test', default='ks', choices=['ks', 'z'], help='test to compare distributions')
     #parser.add_argument('-val', choices=[1, 2, 3], help='Types of validation to compare')
     args = parser.parse_args()
 
