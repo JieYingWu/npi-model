@@ -1,0 +1,119 @@
+import json
+import pandas as pd
+from os.path import join, exists
+from urllib.request import urlopen
+import seaborn as sns
+
+import plotly.express as px
+
+
+with urlopen('https://raw.githubusercontent.com/plotly/datasets/master/geojson-counties-fips.json') as response:
+  counties_geojson = json.load(response)
+  
+
+def load_supercounties():
+  with open(join('data', 'us_data', 'supercounties.json'), 'r') as file:
+    supercounties = json.load(file)
+  return supercounties
+
+
+def load_clustering():
+  dtype = {'FIPS': str, 'cluster': str}
+  return pd.read_csv(join('data', 'us_data', 'clustering.csv'), dtype=dtype)
+
+
+def load_timeseries(timeseries_type):
+  dtype = {'FIPS': str}
+  return pd.read_csv(join('data', 'us_data', f'{timeseries_type}_timeseries.csv'), dtype=dtype)
+
+
+def in_state(county, state):
+  return county[:2] == state[:2]
+
+def filter_by_state(df, state):
+  return df[[in_state(fips, state) for fips in df['FIPS']]]
+
+
+num_clusters = 5
+color_palette = sns.color_palette('Set1', n_colors=num_clusters)
+color_palette = [f'#{int(255*t[0]):02x}{int(255*t[1]):02x}{int(255*t[2]):02x}' for t in color_palette]
+color_discrete_map = dict((str(cluster), color_palette[cluster]) for cluster in range(num_clusters))
+color_discrete_map['-1'] = '#ffffff'
+height = 400
+
+
+def plot_clustering(state):
+  clustering = filter_by_state(load_clustering(), state)
+  fig = px.choropleth(
+    clustering,
+    geojson=counties_geojson,
+    locations='FIPS',
+    color='cluster',
+    color_discrete_map=color_discrete_map
+  )
+  fig.update_layout(legend_title_text='Cluster Label')
+  fig.update_geos(fitbounds="locations", visible=False)
+  fig.write_image(join('visualizations', f'{state}_clustering.png'), scale=3)
+
+
+def plot_deaths(state):
+  deaths = filter_by_state(load_timeseries('deaths'), state)
+  col = deaths.columns.tolist()[-1]
+  fig = px.choropleth(
+    deaths,
+    geojson=counties_geojson,
+    locations='FIPS',
+    color=col,
+    color_continuous_scale='Reds',
+    range_color=(0, 50)
+  )
+  fig.update_geos(fitbounds="locations", visible=False)
+  fig.update_layout(coloraxis_showscale=True, coloraxis_colorbar=dict(
+    title='',
+    thicknessmode="pixels",
+    thickness=10,
+    lenmode='pixels',
+    len=300,
+    ticks='outside',
+    tickvals=[0, 10, 20, 30, 40, 50],
+    ticktext=['0', '10', '20', '30', '40', '50+'],
+    dtick=5,
+    yanchor='middle'))
+  fig.write_image(join('visualizations', f'{state}_deaths.png'), scale=3)
+  
+  
+def plot_supercounties(state, num_clusters=5):
+  """Plot the supercounties for the given state.
+
+  Plot each supercounty on its own, plus all the counties that are included but not a part of a supercounty.
+
+  :param state: 
+  :param num_clusters: 
+  :returns: 
+  :rtype: 
+
+  """
+  
+  supercounties = load_supercounties()
+  clustering = filter_by_state(load_clustering(), state)
+  deaths = load_timeseries('deaths')
+  for cluster in range(num_clusters):
+    supercounty = f'{state}_{cluster}'
+    counties = set(supercounties.get(supercounty, []))
+    y = [c if fips in counties else '-1' for fips, c in zip(clustering['FIPS'], clustering['cluster'])]
+    fig = px.choropleth(
+      geojson=counties_geojson,
+      locations=clustering['FIPS'],
+      color=y,
+      color_discrete_map=color_discrete_map,
+    )
+    fig.update_layout(showlegend=False)
+    fig.update_geos(fitbounds="locations", visible=False)
+    fig.write_image(join('visualizations', f'{supercounty}_supercounty.png'), scale=3)
+
+
+if __name__ == '__main__':
+  # plot_supercounties('36000')   # new york
+  plot_deaths('48000')   # texas
+  plot_clustering('48000')   # texas
+  plot_supercounties('48000')
