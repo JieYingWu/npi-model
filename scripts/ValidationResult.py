@@ -115,6 +115,7 @@ class ValidationResult():
             reader = csv.reader(f, delimiter=',')
             next(reader)
             geocode = next(reader)
+        geocode = [i.zfill(5) for i in geocode]
         return geocode
 
                     
