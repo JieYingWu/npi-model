@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
-from os.path import join
+from os.path import join, exists
+import wget
 import json
 
 
@@ -73,8 +74,12 @@ def weighted_ifr_per_supercounty():
     #         cluster_info.append(dict)
 
     # used census data can be downloaded from
-    # https://www2.census.gov/programs-surveys/popest/datasets/2010-2018/counties/asrh/
-    census_data = pd.read_csv(join('data', 'us_data', 'cc-est2018-alldata.csv'), encoding="ISO-8859-1")
+    # https://www2.census.gov/programs-surveys/popest/datasets/2010-2018/counties/asrh/cc-est2018-alldata.csv
+    fname = join('data', 'us_data', 'cc-est2018-alldata.csv')
+    if not exists(fname):
+        url = 'https://www2.census.gov/programs-surveys/popest/datasets/2010-2018/counties/asrh/cc-est2018-alldata.csv'
+        wget.download(url, out=fname)
+    census_data = pd.read_csv(fname, encoding="ISO-8859-1")
     census_data = census_data[census_data['YEAR'] == 11]
     ind = ['STATE', 'COUNTY', 'STNAME', 'CTYNAME', 'AGEGRP', 'TOT_POP']
     census_data = census_data[ind]
