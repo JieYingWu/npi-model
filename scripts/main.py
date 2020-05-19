@@ -182,7 +182,11 @@ class MainStanModel():
                 
         weighted_fatalities = []
         for region in regions:
-            weighted_fatalities.append(region_to_weights[region])
+            try:
+                weighted_fatalities.append(region_to_weights[region])
+            except KeyError:
+                raise RuntimeError(f'No weighted fatality for {region}. Maybe update weighted fatalities?')
+                
         return np.stack(weighted_fatalities)
             
     def preprocess_data(self, M, mode, data_dir):
