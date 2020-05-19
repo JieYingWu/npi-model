@@ -34,6 +34,7 @@ class CountyGenerator():
                             0.059884373,
                             0.077400202,
                             0.03996699])
+            
         self.alphas = -1*alphas
         
     # Generate fataility rates or read from cached 
@@ -89,13 +90,13 @@ class CountyGenerator():
         #tau = np.random.exponential(0.03) # Seed the first 6 days
         si = self.si[::-1]
         prediction = np.zeros(rt.shape[0])
+
         #prediction[0:6] = np.random.exponential(1/tau)
         prediction[0:6] = initial_prediction
 
-
         for i in range(6, rt.shape[0]):
             prediction[i] = rt[i] * np.sum(prediction[0:i] * si[-i:])
-
+        assert np.all(prediction >= 0 )
         return prediction.astype(np.int)
 
     
@@ -105,7 +106,7 @@ class CountyGenerator():
         deaths = np.zeros(rt.shape[0])
         for i in range(1,rt.shape[0]):
             deaths[i] = np.sum(prediction[0:i] * f[-i:])
-
+        assert np.all(deaths >= 0)
         return deaths.astype(np.int)
 
     
@@ -175,7 +176,7 @@ if __name__ == '__main__':
     initial_predictions = r0_file[params.isin(p)]['mean'].to_numpy()
     
     means = r0_file['mean'].values
-    means= means[0:n]
+    means = means[0:n]
     all_r0 = {}
     for i in range(n):
         all_r0[geocode[i]] = means[i]
@@ -205,7 +206,6 @@ if __name__ == '__main__':
         all_rt[region] = rt
         all_cases[region] = cases
         all_deaths[region] = deaths
-
 
     summary_path = join(data_dir, 'us_data', 'summary.csv')
     interventions_path = join(data_dir, 'us_data', 'interventions_timeseries.csv')
