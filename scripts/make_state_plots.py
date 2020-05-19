@@ -18,7 +18,8 @@ def plot_states(df, date):
 
     fig.update_layout(
         title_text='Per State Reproduction Number R_t over time ' + str(date),
-        geo_scope='usa',  # limite map scope to USA
+        geo_scope='usa',
+        width=1200, height=512 # limite map scope to USA
     )
     return fig
 
