@@ -108,7 +108,7 @@ def plot_rt_europe(simulation_file, interventions_file, country_number, country_
 
     if save_img:
         path = join('results','plots','europe_interventions',r'Rt_{}.png'.format(country_name))
-        plt.savefig(r'results\plots\europe_interventions\Rt_{}.png'.format(country_name), bbox_extra_artists=(lgd,), bbox_inches='tight')
+        plt.savefig(r'results\plots\europe_interventions\Rt_{}.pdf'.format(country_name), bbox_extra_artists=(lgd,), bbox_inches='tight')
 
     if show_img:
         plt.show()
@@ -193,12 +193,11 @@ def plot_rt_US(simulation_file, interventions_file, county_number, fips, start_d
     
     if save_img:
         if state_level:
-            path = join(output_path,r'Rt_state_{}.png'.format(fips))
+            path = join(output_path, r'Rt_state_{}.pdf'.format(fips))
             plt.savefig(path, bbox_extra_artists=(lgd,), bbox_inches='tight')
         else:
-            path = join(output_path,r'Rt_county_{}.png'.format(fips))
-            plt.savefig(path, bbox_extra_artists=(lgd,),
-                            bbox_inches='tight')
+            path = join(output_path, r'Rt_county_{}.pdf'.format(fips))
+            plt.savefig(path, bbox_extra_artists=(lgd,), bbox_inches='tight')
 
     if show_img:
         plt.show()
