@@ -182,7 +182,11 @@ class MainStanModel():
                 
         weighted_fatalities = []
         for region in regions:
-            weighted_fatalities.append(region_to_weights[region])
+            try:
+                weighted_fatalities.append(region_to_weights[region])
+            except KeyError:
+                raise RuntimeError(f'No weighted fatality for {region}. Maybe update weighted fatalities?')
+                
         return np.stack(weighted_fatalities)
             
     def preprocess_data(self, M, mode, data_dir):
@@ -242,7 +246,8 @@ class MainStanModel():
         # print('start_date:', start_date)
         # print('geocode:', geocode)
         
-    # Build a dictionary of region identifier to weighted fatality rate
+        # Build a dictionary of region identifier to weighted fatality rate
+        print('running model on {} counties...'.format(stan_data['M']))
         ifrs = {}
         for i in range(weighted_fatalities.shape[0]):
             ifrs[weighted_fatalities[i, 0]] = weighted_fatalities[i, -1]
