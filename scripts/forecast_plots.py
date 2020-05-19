@@ -69,28 +69,25 @@ def plot_forecasts_wo_dates_quantiles(quantiles_dict, confirmed_cases, county_na
     # print(np.shape(days_to_predict), np.shape(confirmed_cases)[0])
     # plot creation
     #print([(param, value) for param, value in plt.rcParams.items() if 'color' in param])
-    with plt.rc_context(
-            {'axes.edgecolor': '#445858', 'xtick.color': '#445858', 'ytick.color': '#445858',
-             'axes.titlecolor': '#445858', 'axes.labelcolor': '#445858', 'text.color': '#445858'}):
 
-        fig = plt.figure('Forecast ')
-        ax = fig.add_subplot(111)
-        ax.fill_between(date_list, quantiles_dict['2.5%'], quantiles_dict['97.5%'], alpha=0.5, color='#B8EBEB')
-        ax.fill_between(date_list, quantiles_dict['25%'], quantiles_dict['75%'], alpha=0.45, color='#79CCCC')
-        ax.bar(date_list, barplot_values, color='#666666', width=0.5, alpha=0.2)
-        ax.set_ylabel("Daily number of {}".format(metric))
-        ax.set_xlabel("Date")
+    fig = plt.figure('Forecast ')
+    ax = fig.add_subplot(111)
+    ax.fill_between(date_list, quantiles_dict['2.5%'], quantiles_dict['97.5%'], alpha=0.2, color='#377EB8')
+    ax.fill_between(date_list, quantiles_dict['25%'], quantiles_dict['75%'], alpha=0.5, color='#377EB8')
+    ax.bar(date_list, barplot_values, color='#666666', width=0.5, alpha=0.2)
+    ax.set_ylabel("Daily number of {}".format(metric))
+    ax.set_xlabel("Date")
 
-        if county_name == "":
-            name = dict_of_eu_geog[num_of_country].values[0]
-            geography_name = str(name)[0].upper() + str(name)[1:]
-        else:
-            geography_name = str(county_name)[0].upper() + str(county_name)[1:]
-        ax.title.set_text(geography_name)
-        ax.xaxis_date()
-        fig.autofmt_xdate()
+    if county_name == "":
+        name = dict_of_eu_geog[num_of_country].values[0]
+        geography_name = str(name)[0].upper() + str(name)[1:]
+    else:
+        geography_name = str(county_name)[0].upper() + str(county_name)[1:]
+    ax.title.set_text(geography_name)
+    ax.xaxis_date()
+    fig.autofmt_xdate()
 
-        plt.setp(ax.get_xticklabels(), rotation=30, horizontalalignment='right')
+    plt.setp(ax.get_xticklabels(), rotation=30, horizontalalignment='right')
 
     if save_image:
         name = str(metric) + str(dict_of_eu_geog[num_of_country].values[0])
@@ -297,5 +294,5 @@ def main(path):
 
 if __name__ == '__main__':
     # run from base directory 
-    unique_results_path = sys.argv[1]    
+    unique_results_path = sys.argv[1]
     main(unique_results_path)
