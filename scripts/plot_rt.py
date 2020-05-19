@@ -14,12 +14,24 @@ register_matplotlib_converters()
 ticker.Locator.MAXTICKS = 10000
 
 # colors
-lightgreen = '#B8EBEB'
-darkgreen = '#79CCCC'
-lightgray = '#C7C7C7'
-darkgray = '#666666'
-lightorange = '#FBE7C5'
-darkorange = '#FDBD84'
+# lightgreen = '#B8EBEB'
+# darkgreen = '#79CCCC'
+# lightgray = '#C7C7C7'
+# darkgray = '#666666'
+# lightorange = '#FBE7C5'
+# darkorange = '#FDBD84'
+
+darkgray = '#9A9A9A'
+darkblue = '#377EB8'
+lightblue = '#8DC4F0'
+h1 = '#E41A1C'
+h2 = '#984EA3'
+h3 = '#4DAF4A'
+h4 = '#FF7F00'
+h5 = '#67000D'
+h6 = '#C8C8C8'
+h7 = '#F5F542'
+h8 = '#36EEF5'
 
 
 def plot_rt_europe(simulation_file, interventions_file, country_number, country_name, start_date, num_days=75, save_img=False, show_img=True):
@@ -48,18 +60,19 @@ def plot_rt_europe(simulation_file, interventions_file, country_number, country_
     # 50% conf interval
     upper = Rt_data['75%'][:num_days]
     lower = Rt_data['25%'][:num_days]
-    plt.fill_between(time_data, lower, upper, step='post', alpha=0.4, color=darkgreen, label='50% conf. interval')
+    plt.fill_between(time_data, lower, upper, step='post', alpha=0.5, color=darkblue, label='50% conf. interval')
 
     # 95% conf interval
     upper = Rt_data['97.5%'][:num_days]
     lower = Rt_data['2.5%'][:num_days]
-    plt.fill_between(time_data, lower, upper, step='post', alpha=0.4, color=lightgreen, label='95% conf. interval')
+    plt.fill_between(time_data, lower, upper, step='post', alpha=0.2, color=darkblue, label='95% conf. interval')
 
     init_height = 1.2 * plt.gca().get_ylim()[1]
     plt.ylim([0, init_height])
 
     # markers used for different kinds of interventions
     marker = ['o', 'v', '^', '<', '>', 's', '*', 'D']
+    color = [h1, h2, h3, h4, h5, h6, h7, h8]
     # need to make sure marker for several interventions on the same day don't overlap
     adjust_height = []
 
@@ -74,7 +87,7 @@ def plot_rt_europe(simulation_file, interventions_file, country_number, country_
             plt.axvline(pd.to_datetime(date), drawstyle='steps-pre', color=darkgray, ls='--')
         # plot marker for this intervention
         plt.plot(pd.to_datetime(date), init_height - (num + 1) * 0.05 * init_height, marker=marker[ind],
-                 label=intervention, linestyle='None')
+                 label=intervention, linestyle='None', color=color[ind])
 
     # legend for interventions
     box = plt.gca().get_position()
@@ -91,7 +104,7 @@ def plot_rt_europe(simulation_file, interventions_file, country_number, country_
 
     plt.title(country_name.title())
     plt.xlabel('Date')
-    plt.ylabel('Time-dependent Reproduction Number')
+    plt.ylabel('Time-dependent reproduction number')
 
     if save_img:
         path = join('results','plots','europe_interventions',r'Rt_{}.png'.format(country_name))
@@ -127,18 +140,19 @@ def plot_rt_US(simulation_file, interventions_file, county_number, fips, start_d
     # 50% conf interval
     upper = Rt_data['75%'][:num_days]
     lower = Rt_data['25%'][:num_days]
-    plt.fill_between(time_data, lower, upper, step='post', alpha=0.4, color=darkgreen, label='50% conf. interval')
+    plt.fill_between(time_data, lower, upper, step='post', alpha=0.5, color=darkblue, label='50% conf. interval')
 
     # 95% conf interval
     upper = Rt_data['97.5%'][:num_days]
     lower = Rt_data['2.5%'][:num_days]
-    plt.fill_between(time_data, lower, upper, step='post', alpha=0.4, color=lightgreen, label='95% conf. interval')
+    plt.fill_between(time_data, lower, upper, step='post', alpha=0.2, color=darkblue, label='95% conf. interval')
 
     init_height = 1.2 * plt.gca().get_ylim()[1]
     plt.ylim([0, init_height])
 
     # markers used for different kinds of interventions
     marker = ['o', 'v', '^', '<', '>', 's', '*', 'D']
+    color = [h1, h2, h3, h4, h5, h6, h7, h8]
     # neede to make sure marker for several interventions on the same day don't overlap
     adjust_height = []
     
@@ -158,7 +172,7 @@ def plot_rt_US(simulation_file, interventions_file, county_number, fips, start_d
                 plt.axvline(pd.to_datetime(date), drawstyle='steps-pre', color=darkgray, ls='--')
             # plot marker for this intervention
             plt.plot(pd.to_datetime(date), init_height - (num + 1) * 0.05 * init_height, marker=marker[ind],
-                     label=intervention, linestyle='None')
+                     label=intervention, linestyle='None', color=color[ind])
 
     # legend for interventions
     box = plt.gca().get_position()
@@ -175,7 +189,7 @@ def plot_rt_US(simulation_file, interventions_file, county_number, fips, start_d
 
     plt.title(interventions_data['AREA_NAME'].values[0].title())
     plt.xlabel('Date')
-    plt.ylabel('Time-dependent Reproduction Number')
+    plt.ylabel('Time-dependent reproduction number')
     
     if save_img:
         if state_level:
