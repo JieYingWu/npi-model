@@ -1,15 +1,17 @@
+import os
 from os.path import join, exists
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import datetime
+from data_parser import impute, remove_negative_values
 
 # change here variables for different plotting options
 plot_settings = 'usa'  # choose 'eu' for europe and 'usa' for usa plots
 base_model = True  # True for prediction/E_deaths, False for prediction0/E_deaths0
 # to match with IC paper select base_model==True
-last_day_to_plot = '4/10/20'  # predict to this date
+last_day_to_plot = '4/27/20'  # predict to this date
 
 
 # saving some params for plot settings
@@ -28,7 +30,8 @@ elif plot_settings == 'usa':
 
 
 def plot_forecasts_wo_dates_quantiles(quantiles_dict, confirmed_cases, county_name, plot_choice,
-                                      num_of_country, dict_of_start_dates, dict_of_eu_geog, save_image=True):
+                                      num_of_country, dict_of_start_dates,
+                                      dict_of_eu_geog, output_path, save_image=True):
     '''
     :param quantiles_dict: stores values of quantiles
     :param confirmed_cases: real confirmed cases
@@ -63,7 +66,7 @@ def plot_forecasts_wo_dates_quantiles(quantiles_dict, confirmed_cases, county_na
         barplot_missing_values = np.zeros(days_to_predict - np.shape(confirmed_cases)[0])
         barplot_values = list(confirmed_cases) + list(barplot_missing_values)
 
-    print(np.shape(days_to_predict), np.shape(confirmed_cases)[0])
+    # print(np.shape(days_to_predict), np.shape(confirmed_cases)[0])
     # plot creation
     #print([(param, value) for param, value in plt.rcParams.items() if 'color' in param])
     with plt.rc_context(
@@ -92,15 +95,14 @@ def plot_forecasts_wo_dates_quantiles(quantiles_dict, confirmed_cases, county_na
     if save_image:
         name = str(metric) + str(dict_of_eu_geog[num_of_country].values[0])
         plt.tight_layout()
-        fig.savefig('../results/plots/{}/{}.jpg'.format(results_folder, name))
+        fig.savefig(join(output_path, name+'.png'))
         fig.clf()
     else:
         plt.show()
 
 
 def plot_daily_infections_num(path, confirmed_cases, county_name, plot_choice, num_of_country, dict_of_start_dates,
-                              dict_of_eu_geog):
-    print(county_name)
+                              dict_of_eu_geog, output_path):
     # 1 for deaths; 0 for infections
     plot_name = ""
     if plot_choice == 0:
@@ -127,24 +129,27 @@ def plot_daily_infections_num(path, confirmed_cases, county_name, plot_choice, n
     row_names = list(df.index.tolist())
     list2_5, list25, list50, list75, list97_5 = [], [], [], [], []
     county_number = str(int(num_of_country) + 1) + ']'
+    do_plot = False             # the validation counties won't have any data, so don't plot
     for name in row_names:
-        if plot_name in name:
-            if name.split(",")[1] == county_number:
-                rowData = df.loc[name, :]
 
-                list2_5.append(rowData['2.5%'])
-                list25.append(rowData['25%'])
-                list50.append(rowData['50%'])
-                list75.append(rowData['75%'])
-                list97_5.append(rowData['97.5%'])
+        if plot_name in name and name.split(",")[1] == county_number:
+            do_plot = True
+            rowData = df.loc[name, :]
+            
+            list2_5.append(rowData['2.5%'])
+            list25.append(rowData['25%'])
+            list50.append(rowData['50%'])
+            list75.append(rowData['75%'])
+            list97_5.append(rowData['97.5%'])
+            
+            # if last day of prediction was saved, exit
+            if name.split(",")[0] == (plot_name + str(days_to_predict)):
+                break
 
-                # if last day of prediction was saved, exit
-                if name.split(",")[0] == (plot_name + str(days_to_predict)):
-                    break
-
-    quantiles_dict = {'2.5%': list2_5,'25%': list25, '50%': list50, '75%': list75, '97.5%': list97_5}
-    plot_forecasts_wo_dates_quantiles(quantiles_dict, confirmed_cases, county_name,
-                                      plot_choice, num_of_country, dict_of_start_dates, dict_of_eu_geog)
+    if do_plot:
+        quantiles_dict = {'2.5%': list2_5, '25%': list25, '50%': list50, '75%': list75, '97.5%': list97_5}
+        plot_forecasts_wo_dates_quantiles(quantiles_dict, confirmed_cases, county_name,
+                                          plot_choice, num_of_country, dict_of_start_dates, dict_of_eu_geog, output_path)
 
 
 def read_true_cases_europe(plot_choice, num_of_country, dict_of_start_dates, dict_of_eu_geog):
@@ -153,9 +158,9 @@ def read_true_cases_europe(plot_choice, num_of_country, dict_of_start_dates, dic
     0 for infections forecast
     '''
     if plot_choice == 0:
-        filepath = "../data/europe_data/COVID-19-up-to-date-cases-clean.csv"
+        filepath = "data/europe_data/COVID-19-up-to-date-cases-clean.csv"
     else:
-        filepath = "../data/europe_data/COVID-19-up-to-date-deaths-clean.csv"
+        filepath = "data/europe_data/COVID-19-up-to-date-deaths-clean.csv"
 
     df = pd.read_csv(filepath, delimiter=',', header=None)
 
@@ -163,92 +168,134 @@ def read_true_cases_europe(plot_choice, num_of_country, dict_of_start_dates, dic
     forecast_start_date = datetime.datetime.strptime(str(dict_of_start_dates[num_of_country].values[0]), '%m-%d-%Y')
 
     diff = (forecast_start_date - confirmed_start_date).days + 1
-    print(num_of_country, diff)
     confirmed_cases = list(df.iloc[int(num_of_country), diff:])
 
     return confirmed_cases
 
 
-def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of_eu_geog):
+def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of_eu_geog, use_tmp=False, simulated=False):
     # 1 for deaths forecast; 0 for infections forecast
-    if plot_choice == 0:
-        #filepath = "../data/us_data/infections_timeseries.csv"
-        filepath = "../data/us_data/infections_timeseries_w_states.csv"
+    if use_tmp and plot_choice == 0:
+        filepath = 'data/tmp_cases.csv'
+    elif use_tmp and plot_choice == 1:
+        filepath = 'data/tmp_deaths.csv'
+    elif plot_choice == 0:
+        # filepath = "data/us_data/infections_timeseries.csv"
+        if (simulated):
+            filepath = "simulated/us_data/infections_timeseries_w_states.csv"
+        else:
+            filepath = "data/us_data/infections_timeseries_w_states.csv"
     else:
-        #filepath = "../data/us_data/deaths_timeseries.csv"
-        filepath = "../data/us_data/deaths_timeseries_w_states.csv"
+        # filepath = "data/us_data/deaths_timeseries.csv"
+        if (simulated):
+            filepath = "simulated/us_data/deaths_timeseries_w_states.csv"
+        else:
+            filepath = "data/us_data/deaths_timeseries_w_states.csv"
 
-    df = pd.read_csv(filepath, delimiter=',', index_col=0)
-    fips = int(dict_of_eu_geog[num_of_country].values)
 
+    df = pd.read_csv(filepath, delimiter=',', dtype={'FIPS': str})
+            
+    # get rid of cummulative if not using the tmp_timeseries.csv hack
+    if not use_tmp:
+        col_names = df.columns.values[3:]
+        new_df = pd.DataFrame()
+        new_df['FIPS'] = df['FIPS']
+        new_df['Combined_Key'] = df['Combined_Key']
+        new_df[df.columns.values[2]] = df[df.columns.values[2]]
+        
+        # get the daily values from cumulative
+        for i, col_name in enumerate(col_names):
+            new_df[col_name] = df[col_name] - df[col_names[i - 1]]
+        df = remove_negative_values(new_df)
+
+    df = df.set_index('FIPS')
+    fips = str(dict_of_eu_geog[num_of_country].values[0]).zfill(5)
+    
     confirmed_start_date = datetime.datetime.strptime(start_day_of_confirmed, '%m/%d/%y')
-    print(dict_of_start_dates)
-    print(str(dict_of_start_dates[num_of_country].values[0]))
+    # print(dict_of_start_dates)
+    # print(str(dict_of_start_dates[num_of_country].values[0]))
     forecast_start_date = datetime.datetime.strptime(str(dict_of_start_dates[num_of_country].values[0]), '%m/%d/%y')
-    print(forecast_start_date)
+    # print(forecast_start_date)
     diff = (forecast_start_date - confirmed_start_date).days + 1  # since it also has a name skip it
 
+    print(df)
     confirmed_cases = list(df.loc[fips][diff:])
-    sustracted_confirmed_cases = [confirmed_cases[0]]
+    #sustracted_confirmed_cases = [confirmed_cases[0]]
     # since us data is cummulative
-    for i in range(1, len(confirmed_cases)):
-        sustracted_confirmed_cases.append(confirmed_cases[i]-confirmed_cases[i-1])
-    county_name = df.loc[fips][0]
-    return sustracted_confirmed_cases, county_name
+    #for i in range(1, len(confirmed_cases)):
+    #    sustracted_confirmed_cases.append(confirmed_cases[i]-confirmed_cases[i-1])
+    # print(f'region: {fips}')
+    county_name = df.at[fips, 'Combined_Key']
+    # print('county_name:', county_name)
+    return confirmed_cases, county_name #sustracted_confirmed_cases, county_name
 
 
 # create a batch of all possible plots for usa
-def make_all_us_county_plots():
-    dict_of_start_dates = pd.read_csv('../results/us_county_start_dates.csv', delimiter=',', index_col=0)
-    dict_of_eu_geog = pd.read_csv('../results/us_county_geocode.csv', delimiter=',', index_col=0)
-    path = "../results/US_county_summary.csv"
+def make_all_us_county_plots(start_date_dict_path, geocode_dict_path, summary_path, output_path, use_tmp=False):
+    dict_of_start_dates = pd.read_csv(start_date_dict_path, delimiter=',', index_col=0)
+    dict_of_eu_geog = pd.read_csv(geocode_dict_path, delimiter=',', index_col=0)
+    path = summary_path 
 
     for plot_choice in range(0, 2):
         for num_of_country in dict_of_eu_geog.keys():
             confirmed_cases, county_name = read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates,
-                                                              dict_of_eu_geog)
+                                                              dict_of_eu_geog, use_tmp=use_tmp)
             plot_daily_infections_num(path, confirmed_cases, county_name, plot_choice, num_of_country,
-                                      dict_of_start_dates, dict_of_eu_geog)
+                                      dict_of_start_dates, dict_of_eu_geog, output_path)
     return
 
 
 # create a batch of all possible plots for usa
-def make_all_us_states_plots():
-    dict_of_start_dates = pd.read_csv('../results/us_states_start_dates.csv', delimiter=',', index_col=0)
-    dict_of_eu_geog = pd.read_csv('../results/us_states_geocode.csv', delimiter=',', index_col=0)
-    path = "../results/US_state_summary.csv"
+def make_all_us_states_plots(start_date_dict_path, geocode_dict_path, summary_path, output_path):
+    dict_of_start_dates = pd.read_csv(start_date_dict_path, delimiter=',', index_col=0)
+    dict_of_eu_geog = pd.read_csv(geocode_dict_path, delimiter=',', index_col=0)
+    path = summary_path
 
     for plot_choice in range(0, 2):
         for num_of_country in dict_of_eu_geog.keys():
-            print(num_of_country)
             confirmed_cases, county_name = read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates,
                                                               dict_of_eu_geog)
             plot_daily_infections_num(path, confirmed_cases, county_name, plot_choice, num_of_country,
-                                      dict_of_start_dates, dict_of_eu_geog)
+                                      dict_of_start_dates, dict_of_eu_geog, output_path)
     return
 
 
 # create a batch of all possible plots for europe
-def make_all_eu_plots():
-    dict_of_start_dates = pd.read_csv('../results/europe_start_dates.csv', delimiter=',', index_col=0)
-    dict_of_eu_geog = pd.read_csv('../results/europe_geocode.csv', delimiter=',', index_col=0)
-    path = "../results/europe_summary.csv"
+def make_all_eu_plots(start_date_dict_path, geocode_dict_path, summary_path, output_path):
+    dict_of_start_dates = pd.read_csv(start_date_dict_path, delimiter=',', index_col=0)
+    dict_of_eu_geog = pd.read_csv(geocode_dict_path, delimiter=',', index_col=0)
+    path = summary_path
 
     for plot_choice in range(0, 2):
         for num_of_country in dict_of_eu_geog.keys():
             confirmed_cases = read_true_cases_europe(plot_choice, num_of_country, dict_of_start_dates, dict_of_eu_geog)
             plot_daily_infections_num(path, confirmed_cases, "", plot_choice, num_of_country, dict_of_start_dates,
-                                      dict_of_eu_geog)
+                                      dict_of_eu_geog, output_path)
     return
 
 
-def main():
-    if plot_settings == 'usa':
-        make_all_us_county_plots()
-        make_all_us_states_plots()
-    if plot_settings == 'eu':
-        make_all_eu_plots()
-
+def main(path):
+    cwd = path.split(os.sep)
+    
+    if cwd[-1] == '':
+        cwd = cwd[-2]
+    else:
+        cwd = cwd[-1]
+    
+    start_dates_path = join(path, 'start_dates.csv')
+    geocode_path = join(path, 'geocode.csv')
+    summary_path = join(path, 'summary.csv')
+    output_path = join(path, 'plots/forecast')
+    if not exists(output_path):
+        os.makedirs(output_path)
+    if 'europe' in cwd:
+        make_all_eu_plots(start_dates_path, geocode_path, summary_path, output_path)     
+    if 'county' in cwd:
+        make_all_us_county_plots(start_dates_path, geocode_path, summary_path, output_path)     
+    if 'state' in cwd :
+        make_all_us_states_plots(start_dates_path, geocode_path, summary_path, output_path)     
 
 if __name__ == '__main__':
-    main()
+    # run from base directory 
+    unique_results_path = sys.argv[1]    
+    main(unique_results_path)

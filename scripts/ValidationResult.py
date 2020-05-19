@@ -1,0 +1,194 @@
+import os 
+import csv
+import argparse
+import datetime as dt 
+import pandas as pd 
+import numpy as np
+import scipy
+from os.path import join, exists
+from statsmodels.stats import weightstats as stests
+from scipy import stats
+
+class ValidationResult():
+    """
+        Compares two distributions via the ks-test and saves the resulting score and p value in a csv file
+
+        Usage:
+            - specify 2 result directories to compare after the ---results_path argument
+            -> the resulting 'comparison.csv' is saved in the first directory
+
+        Example:
+        python scripts/ValidationResult.py --results-path results/05_13_20_23_54_17_US_county_iter_200_warmup_100_num_counties_100_processing_Processing.REMOVE_NEGATIVE_VALUES/ results/05_14_20_01_27_52_US_county_validation_withholding_iter_200_warmup_100_num_counties_100_processing_Processing.REMOVE_NEGATIVE_VALUES/
+    
+        
+    """
+    def __init__(self, args):
+        self.args = args
+        for k, v in args.__dict__.items():
+            setattr(self, k, v)
+
+        self.summary_list = []
+        for path in self.results_path:
+            self.summary_list.append(self.parse_summary(path))
+        
+        print(type(self.summary_list[0][3]))
+        final_dict, final_list = self.compare_2(self.summary_list[0], self.summary_list[1])
+        self.write_results(self.results_path[0], final_list)
+        # if self.val == 1:
+        # We want to compare mu, alpha and predicted deaths           
+
+
+    def parse_summary(self, path):
+        with open(join(path, 'summary.csv'), 'r') as f:
+            reader = csv.reader(f, delimiter=',')
+            header = next(reader)
+
+            # read parameters
+            # They are order in the summary file in the same way, i.e. from 1 to M
+            mu = [] # length M
+            kappa = [] # length 1 
+            alpha = [] # length M 
+            predicted_deaths = {} # M key-val pairs with length N
+            rt_adj = {}  # M key-val pairs with length N
+            # y = []
+            
+            self.parameter_name_list = ['mu', 'kappa', 'alpha', 'predicted_deaths', 'rt_adj']
+            for row in reader:
+                if row[0][:2] == 'mu':
+                    mu.append(row[1:])
+                
+                if row[0][:5] == 'kappa':
+                    kappa.append(row[1:])
+
+                if row[0][:6] == 'alpha[':
+                    alpha.append(row[1:])
+
+                #if row[0][:2] == 'y[':
+                 #   y.append(row[1:])
+
+                if row[0][:9] == 'E_deaths0':
+                    pos = row[0][row[0].find('[')+1:row[0].find(']')]
+                    t, m = pos.split(',')
+                    predicted_deaths.setdefault(int(m), []).append(row[1:])
+                
+                if row[0][:6] == 'Rt_adj':
+                    pos = row[0][row[0].find('[')+1:row[0].find(']')]
+                    t, m = pos.split(',')
+                    rt_adj.setdefault(int(m), []).append(row[1:])
+                        
+
+        return mu, kappa, alpha, predicted_deaths, rt_adj 
+
+
+
+
+    #def compare(self, summary_list):
+    #    """ compares a list of distributions with each other
+    #    - saves the results in a dictionary"""
+    #    final_dict = {}
+    #    remaining_summaries = summary_list.copy()
+     #   for i, summary in enumerate(summary_list):
+     #       remaining_summaries.remove(summary)
+     #       for j, summary_comparison in enumerate(remaining_summaries):
+     #           for k in range(len(summary_comparison)):
+     #               identifier_string = '_'.join([i,j,self.parameter_name_list[k]])
+     #               final_dict[] = ks_test(summary[k],summary_comparison[k])
+                    
+    def compare_2(self, summary1, summary2):
+        final_dict = {}
+        final_list = []
+        
+        if self.test == 'z':
+            test_function = self.z_test
+        elif self.test == 'ks':
+            test_function = self.ks_test
+
+        for i in range(len(summary1)):
+            if  isinstance(summary1[i], list):
+                for j in range(len(summary1[i])):
+                    print(self.parameter_name_list[i],j)
+                    identifier = '_'.join([self.parameter_name_list[i], str(j)])
+                    final_dict[identifier] = test_function(summary1[i][j], summary2[i][j])
+                    final_list.append([identifier]+list(test_function(summary1[i][j], summary2[i][j])))
+            else:
+                for (key1, val1), (key2, val2) in zip(summary1[i].items(), summary2[i].items()):
+                    for k in range(len(val1)):
+                        print(self.parameter_name_list[i], key1, k)
+                        identifier = '_'.join([self.parameter_name_list[i], str(key1), str(k)])
+                        final_list.append([identifier]+list(test_function(val1[k],val2[k])))
+                        final_dict[identifier] = test_function(val1[k], val2[k])
+
+        return final_dict, final_list
+    
+    def z_test(self, distribution1, distribution2):
+        """ distribution is a tuple:
+        - mean
+        - standard error mean
+        - std
+        - 2.5%
+        - 25%
+        - 50 %
+        - 75 %
+        - 97.5%
+        - n_eff
+        - R_hat
+        """
+        delta = 0
+        mean_1 = float(distribution1[0])
+        mean_2 = float(distribution2[0])
+        std_1 = float(distribution1[2])
+        std_2 = float(distribution2[2])
+        se_1 = float(distribution1[1])
+        se_2 = float(distribution2[1])
+
+
+
+        pooledSE = np.sqrt(se_1**2 + se_2**2)
+        z = ((mean_1 - mean_2) - delta)/pooledSE
+        pval = 2*(1 - stats.norm.cdf(np.abs(z)))
+        return np.round(z, 3), np.round(pval, 4)
+
+
+
+    def ks_test(self, distribution1, distribution2):
+        """ distribution is a tuple:
+            - mean
+            - standard error mean
+            - std
+            - 2.5%
+            - 25%
+            - 50 %
+            - 75 %
+            - 97.5%
+            - n_eff
+            - R_hat"""
+        # Assume normal distributions for the distributions
+        np.random.seed(0)
+        x = np.random.normal(float(distribution1[0]), float(distribution1[2]), 10000)
+        y = np.random.normal(float(distribution2[0]), float(distribution2[2]), 10000)
+
+        statistic, pvalue = scipy.stats.ks_2samp(x,y)
+
+        return statistic, pvalue
+
+    def write_results(self, path, final_list):
+        with open(join(path,f'comparison_{self.test}.csv'), 'w', newline='') as f:
+            writer = csv.writer(f, delimiter=',')
+            writer.writerow([f'Comparing {self.results_path[0]} and {self.results_path[1]}'])
+            writer.writerow(['-----------------------------'])
+            writer.writerow(['identifier', f'{self.test}','p-val'])
+            writer.writerows(final_list)
+
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--data-dir', default='./data/', help='directory for the data')
+    parser.add_argument('--results', default='./results', help='directory to save the results and plots in')
+    parser.add_argument('--results-path', default=None, nargs='+', help='paths to the result folder to compare')
+    parser.add_argument('--test', default='ks', choices=['ks', 'z'], help='test to compare distributions')
+    #parser.add_argument('-val', choices=[1, 2, 3], help='Types of validation to compare')
+    args = parser.parse_args()
+
+    model = ValidationResult(args)
