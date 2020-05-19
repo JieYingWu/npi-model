@@ -14,12 +14,24 @@ register_matplotlib_converters()
 ticker.Locator.MAXTICKS = 10000
 
 # colors
-lightgreen = '#B8EBEB'
-darkgreen = '#79CCCC'
-lightgray = '#C7C7C7'
-darkgray = '#666666'
-lightorange = '#FBE7C5'
-darkorange = '#FDBD84'
+# lightgreen = '#B8EBEB'
+# darkgreen = '#79CCCC'
+# lightgray = '#C7C7C7'
+# darkgray = '#666666'
+# lightorange = '#FBE7C5'
+# darkorange = '#FDBD84'
+
+darkgray = '#9A9A9A'
+darkblue = '#377EB8'
+lightblue = '#8DC4F0'
+h1 = '#E41A1C'
+h2 = '#984EA3'
+h3 = '#4DAF4A'
+h4 = '#FF7F00'
+h5 = '#67000D'
+h6 = '#C8C8C8'
+h7 = '#F5F542'
+h8 = '#36EEF5'
 
 
 def plot_rt_europe(simulation_file, interventions_file, country_number, country_name, start_date, num_days=75, save_img=False, show_img=True):
@@ -48,18 +60,19 @@ def plot_rt_europe(simulation_file, interventions_file, country_number, country_
     # 50% conf interval
     upper = Rt_data['75%'][:num_days]
     lower = Rt_data['25%'][:num_days]
-    plt.fill_between(time_data, lower, upper, step='post', alpha=0.4, color=darkgreen, label='50% conf. interval')
+    plt.fill_between(time_data, lower, upper, step='post', alpha=0.5, color=darkblue, label='50% conf. interval')
 
     # 95% conf interval
     upper = Rt_data['97.5%'][:num_days]
     lower = Rt_data['2.5%'][:num_days]
-    plt.fill_between(time_data, lower, upper, step='post', alpha=0.4, color=lightgreen, label='95% conf. interval')
+    plt.fill_between(time_data, lower, upper, step='post', alpha=0.2, color=darkblue, label='95% conf. interval')
 
     init_height = 1.2 * plt.gca().get_ylim()[1]
     plt.ylim([0, init_height])
 
     # markers used for different kinds of interventions
     marker = ['o', 'v', '^', '<', '>', 's', '*', 'D']
+    color = [h1, h2, h3, h4, h5, h6, h7, h8]
     # need to make sure marker for several interventions on the same day don't overlap
     adjust_height = []
 
@@ -74,7 +87,7 @@ def plot_rt_europe(simulation_file, interventions_file, country_number, country_
             plt.axvline(pd.to_datetime(date), drawstyle='steps-pre', color=darkgray, ls='--')
         # plot marker for this intervention
         plt.plot(pd.to_datetime(date), init_height - (num + 1) * 0.05 * init_height, marker=marker[ind],
-                 label=intervention, linestyle='None')
+                 label=intervention, linestyle='None', color=color[ind])
 
     # legend for interventions
     box = plt.gca().get_position()
@@ -91,7 +104,7 @@ def plot_rt_europe(simulation_file, interventions_file, country_number, country_
 
     plt.title(country_name.title())
     plt.xlabel('Date')
-    plt.ylabel('Time-dependent Reproduction Number')
+    plt.ylabel('Time-dependent reproduction number')
 
     if save_img:
         path = join('results','plots','europe_interventions',r'Rt_{}.png'.format(country_name))
@@ -101,8 +114,10 @@ def plot_rt_europe(simulation_file, interventions_file, country_number, country_
         plt.show()
 
 
-def plot_rt_US(simulation_file, interventions_file, county_number, fips, start_date, state_level, output_path, save_img=False, show_img=True):
+def plot_rt_US(simulation_file, interventions_file, county_number, fips, start_date, state_level,
+               output_path, save_img=False, show_img=True):
     # read data
+    fips = str(fips).zfill(5)
     simulation_data = pd.read_csv(simulation_file, delimiter=',', index_col=0)
     interventions, interventions_data = get_interventions_US(interventions_file, state_level=state_level)
     interventions_data = interventions_data[interventions_data['FIPS'] == fips]
@@ -110,7 +125,7 @@ def plot_rt_US(simulation_file, interventions_file, county_number, fips, start_d
     time_data = list(pd.date_range(start=start_date, end='05/01/20'))
     num_days = len(time_data)
     # remove those interventions, that are not considered in the report
-#    interventions.remove('foreign travel ban')
+    # interventions.remove('foreign travel ban')
 
     start = 'Rt[1,' + str(county_number) + ']'
     end = 'Rt[' + str(num_days) + ',' + str(county_number) + ']'
@@ -125,27 +140,30 @@ def plot_rt_US(simulation_file, interventions_file, county_number, fips, start_d
     # 50% conf interval
     upper = Rt_data['75%'][:num_days]
     lower = Rt_data['25%'][:num_days]
-    plt.fill_between(time_data, lower, upper, step='post', alpha=0.4, color=darkgreen, label='50% conf. interval')
+    plt.fill_between(time_data, lower, upper, step='post', alpha=0.5, color=darkblue, label='50% conf. interval')
 
     # 95% conf interval
     upper = Rt_data['97.5%'][:num_days]
     lower = Rt_data['2.5%'][:num_days]
-    plt.fill_between(time_data, lower, upper, step='post', alpha=0.4, color=lightgreen, label='95% conf. interval')
+    plt.fill_between(time_data, lower, upper, step='post', alpha=0.2, color=darkblue, label='95% conf. interval')
 
     init_height = 1.2 * plt.gca().get_ylim()[1]
     plt.ylim([0, init_height])
 
     # markers used for different kinds of interventions
     marker = ['o', 'v', '^', '<', '>', 's', '*', 'D']
+    color = [h1, h2, h3, h4, h5, h6, h7, h8]
     # neede to make sure marker for several interventions on the same day don't overlap
     adjust_height = []
-
+    
     # plot vertical lines and markers for each intervention
     # make sure markers for several interventions on the same day are drawn at different positions
     for ind, intervention in enumerate(interventions):
-        print('intervention:', ind, intervention, interventions_data[intervention])
+        if len(interventions_data[intervention].values) == 0:
+            continue
+        # print('intervention:', ind, intervention, interventions_data[intervention])
         date = interventions_data[intervention].values[0]
-        print('date:', date)
+        # print('date:', date)
         if not pd.isna(date):
             num = adjust_height.count(date)
             adjust_height.append(date)
@@ -154,13 +172,13 @@ def plot_rt_US(simulation_file, interventions_file, county_number, fips, start_d
                 plt.axvline(pd.to_datetime(date), drawstyle='steps-pre', color=darkgray, ls='--')
             # plot marker for this intervention
             plt.plot(pd.to_datetime(date), init_height - (num + 1) * 0.05 * init_height, marker=marker[ind],
-                     label=intervention, linestyle='None')
+                     label=intervention, linestyle='None', color=color[ind])
 
     # legend for interventions
     box = plt.gca().get_position()
     plt.gca().set_position([box.x0, box.y0, box.width * 0.8, box.height])
     lgd = plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-
+    
     # adjust x axis labels and figure size
     date_form = DateFormatter("%Y-%m-%d")
     plt.gca().xaxis.set_major_formatter(date_form)
@@ -171,8 +189,8 @@ def plot_rt_US(simulation_file, interventions_file, county_number, fips, start_d
 
     plt.title(interventions_data['AREA_NAME'].values[0].title())
     plt.xlabel('Date')
-    plt.ylabel('Time-dependent Reproduction Number')
-
+    plt.ylabel('Time-dependent reproduction number')
+    
     if save_img:
         if state_level:
             path = join(output_path,r'Rt_state_{}.png'.format(fips))
@@ -252,21 +270,19 @@ def get_interventions_US(interventions_file, state_level=False):
         interventions = state_interventions
 
     else:
-        interventions = pd.read_csv(interventions_file, engine='python')
+        interventions = pd.read_csv(interventions_file, engine='python', dtype={'FIPS': str})
         id_cols = ['SUPERCOUNTY', 'FIPS', 'STATE', 'AREA_NAME', 'Combined_Key', 'Unnamed: 0']
         #id_cols = ['FIPS', 'STATE', 'AREA_NAME']
         int_cols = [col for col in interventions.columns.tolist() if col not in id_cols]
-        print(f'int_cols: {int_cols}')
+        # print(f'int_cols: {int_cols}')
         #interventions.fillna(1, inplace=True)
         for col in int_cols: ### convert date from given format
-            print('col:', col)
+            # print('col:', col)
             interventions[col] = interventions[col].apply(
                 lambda x: dt.date.fromordinal(int(x)) if not pd.isna(x) else x)
 
-    print(interventions)
-
+    # print(interventions)
     interventions_list = [x for x in list(interventions.columns.values) if x not in id_cols]
-
     return interventions_list, interventions
 
 
@@ -289,6 +305,7 @@ def make_all_us_plots(summary_path, geocode_path, start_dates_path, intervention
     county_numbers = np.arange(1, len(fips_list) + 1)
     
     for county, fips, date in zip(county_numbers, fips_list, start_dates):
+        print('county, fips, date:', county, fips, date)
         plot_rt_US(summary_path, interventions_path , county, fips, date, state_level, output_path, save_img=True, show_img=False)
 
 

@@ -1,13 +1,20 @@
 import os 
 import csv
+import json
 import argparse
 import datetime as dt 
 import pandas as pd 
 import numpy as np
 import scipy
+
+
 from os.path import join, exists
 from statsmodels.stats import weightstats as stests
 from scipy import stats
+from matplotlib import pyplot as plt
+
+plt.style.use('seaborn-darkgrid')
+
 
 class ValidationResult():
     """
@@ -31,11 +38,24 @@ class ValidationResult():
         for path in self.results_path:
             self.summary_list.append(self.parse_summary(path))
         
-        print(type(self.summary_list[0][3]))
+
+        # always save results into the first directory
+        self.save_path = self.results_path[0]
+        print(self.results_path[0])
+        geocode_1 = self.get_geocode(self.results_path[0])
+        geocode_2 = self.get_geocode(self.results_path[1])
+
+        assert geocode_1 == geocode_2, ValueError('geocode.csv for the two paths not similar')
+
+        self.geocode = geocode_1
+        self.num_counties = self.get_num_counties(self.results_path[0])
+        self.start_date = self.get_start_dates(self.results_path[0])
+
+        # final_dict, final_list = self.compare_2_daily(self.summary_list[0], self.summary_list[1])
         final_dict, final_list = self.compare_2(self.summary_list[0], self.summary_list[1])
-        self.write_results(self.results_path[0], final_list)
-        # if self.val == 1:
-        # We want to compare mu, alpha and predicted deaths           
+        
+        # write results to a csv 
+        self.write_results(self.save_path, final_list)
 
 
     def parse_summary(self, path):
@@ -50,7 +70,6 @@ class ValidationResult():
             alpha = [] # length M 
             predicted_deaths = {} # M key-val pairs with length N
             rt_adj = {}  # M key-val pairs with length N
-            # y = []
             
             self.parameter_name_list = ['mu', 'kappa', 'alpha', 'predicted_deaths', 'rt_adj']
             for row in reader:
@@ -62,9 +81,6 @@ class ValidationResult():
 
                 if row[0][:6] == 'alpha[':
                     alpha.append(row[1:])
-
-                #if row[0][:2] == 'y[':
-                 #   y.append(row[1:])
 
                 if row[0][:9] == 'E_deaths0':
                     pos = row[0][row[0].find('[')+1:row[0].find(']')]
@@ -81,20 +97,29 @@ class ValidationResult():
 
 
 
+    def get_num_counties(self, path):
+        with open(join(path, 'logfile.txt'),'r') as f:
+            args = json.load(f)
+        return args['M']   
 
-    #def compare(self, summary_list):
-    #    """ compares a list of distributions with each other
-    #    - saves the results in a dictionary"""
-    #    final_dict = {}
-    #    remaining_summaries = summary_list.copy()
-     #   for i, summary in enumerate(summary_list):
-     #       remaining_summaries.remove(summary)
-     #       for j, summary_comparison in enumerate(remaining_summaries):
-     #           for k in range(len(summary_comparison)):
-     #               identifier_string = '_'.join([i,j,self.parameter_name_list[k]])
-     #               final_dict[] = ks_test(summary[k],summary_comparison[k])
+
+    def get_start_dates(self, path):
+        with open(join(path,'start_dates.csv'), 'r') as f:
+            reader = csv.reader(f, delimiter=',')
+            next(reader)
+            start_dates = next(reader)[1:]
+        return start_dates
+
+    def get_geocode(self,path):
+        with open(join(path,'geocode.csv'), 'r') as f:
+            reader = csv.reader(f, delimiter=',')
+            next(reader)
+            geocode = next(reader)
+        geocode = [i.zfill(5) for i in geocode]
+        return geocode
+
                     
-    def compare_2(self, summary1, summary2):
+    def compare_2_daily(self, summary1, summary2):
         final_dict = {}
         final_list = []
         
@@ -120,6 +145,36 @@ class ValidationResult():
 
         return final_dict, final_list
     
+    
+
+    def compare_2(self, summary1, summary2):
+        final_list = []
+        final_dict = {}
+        
+        test_function = self.ks_test
+
+        for i in range(len(summary1)):
+            if  isinstance(summary1[i], dict):
+                print(len(summary1[i]))
+                for (key1, val1), (key2, val2) in zip(summary1[i].items(), summary2[i].items()):
+                    identifier = '_'.join([self.parameter_name_list[i], str(key1)])
+                    print(identifier)
+                    # pick the mean
+                    dis_1 = np.array(val1, dtype=np.float)[:,0]
+                    dis_2 = np.array(val2, dtype=np.float)[:,0]
+                    
+                    statistic, pval = stats.ks_2samp(dis_1, dis_2)
+
+                    final_dict[identifier] = (statistic, pval)
+                    final_list.append([identifier]+[statistic, pval])
+
+                    self.plot_qq(self.save_path, dis_1, dis_2, self.geocode[key1], statistic, pval, self.parameter_name_list[i])
+        
+        return final_dict, final_list
+    
+
+
+
     def z_test(self, distribution1, distribution2):
         """ distribution is a tuple:
         - mean
@@ -172,12 +227,36 @@ class ValidationResult():
         return statistic, pvalue
 
     def write_results(self, path, final_list):
-        with open(join(path,f'comparison_{self.test}.csv'), 'w', newline='') as f:
+        test_value = self.test
+        with open(join(path,'comparison.csv'), 'w', newline='') as f:
             writer = csv.writer(f, delimiter=',')
+
             writer.writerow([f'Comparing {self.results_path[0]} and {self.results_path[1]}'])
             writer.writerow(['-----------------------------'])
             writer.writerow(['identifier', f'{self.test}','p-val'])
+            print(type(final_list))
             writer.writerows(final_list)
+
+    def plot_qq(self, path, timeseries_1, timeseries_2, fips, statistic, pval, tag):
+        save_path = join(path, 'plots','qq')
+
+        if not exists(save_path):
+            os.mkdir(save_path)
+
+        individual_save_path = join(save_path, f'{tag}_{fips}_qq_plot_.png')
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+
+        # ax.set(xlim=[0,1],ylim=[0,1])
+        # ax.scatter(np.linspace(0, len(timeseries_1), len(timeseries_1)), timeseries_1)
+        ax.plot(sorted(timeseries_1), sorted(timeseries_2), '.', rasterized=True)
+        ax.set(title=f'Q-Q Plot for County {fips} for {tag}',
+                ylabel='First Sample',
+                xlabel='Second Sample')
+        plt.savefig(individual_save_path)
+
+        plt.close(fig)
+
 
 
 

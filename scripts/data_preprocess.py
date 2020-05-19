@@ -197,8 +197,9 @@ def merge_supercounties(cases, deaths, interventions, population, threshold=5, c
     # print('POPULATION', population, sep='\n')
 
     print('supercounties:', supercounties)
-    with open(join('data', 'us_data', 'supercounties.json'), 'w') as file:
-        json.dump(supercounties, file)
+    # with open(join('data', 'us_data', 'supercounties.json'), 'w') as file:
+    #     json.dump(supercounties, file)
+    #     print('saved supercounties.json to data/us_data')
     return cases, deaths, interventions, population
     
 
@@ -229,14 +230,6 @@ def select_regions(cases, deaths, interventions, M, population, fips_list=None,
         cases, deaths, interventions, population = merge_supercounties(
             cases, deaths, interventions, population, clustering=clustering)
 
-    #if validation > 0:
-     #   cases = cases.iloc[:,:-(validation-1)]
-     #   cases_val = cases.iloc[:,-(validation+1):]
-     #   
-     #   deaths = deaths.iloc[:,:-(validation-1)]
-     #   deaths_val = deaths.iloc[:,-(validation+1):]
-
-     #   return cases, deaths, interventions, population 
     return cases, deaths, interventions, population
 
 
@@ -384,7 +377,7 @@ def get_validation_dict(data_dir, cases, deaths, fips_list, cases_dates):
     validation_days_path = join(data_dir, 'us_data', 'validation_days.csv')
     
     # set seed for numpy
-    np.random.seed(0)
+    #np.random.seed(999)
 
     # get last day of current data
     first_day_cases = cases_dates[0]
@@ -425,18 +418,13 @@ def get_validation_dict(data_dir, cases, deaths, fips_list, cases_dates):
             for j in range(len(death)):
                 if death[j] > 0:
                     validation_days_dict.setdefault(fips, []).append(j)
-            try:
-                validation_days_dict[fips] = np.random.choice(validation_days_dict[fips], 3, replace=False)
-            except ValueError as e:
-                validation_days_dict[fips] = []
-                print(e)
-                print(f'Very few datapoints available for this FIPS code: {fips}.')
+            validation_days_dict[fips] = get_unique_validation_days(validation_days_dict[fips])
         with open(validation_days_path, 'w', newline='' ) as f:
             writer = csv.writer(f, delimiter=',')
             writer.writerow([first_day_cases, last_day_cases])
             writer.writerow(['FIPS', 'Indices of val days'])
             for key, val in validation_days_dict.items():
-                list_to_write = [key] + list(val)
+                list_to_write = [key] + val
                 writer.writerow(list_to_write)
     
 
@@ -446,24 +434,43 @@ def get_validation_dict(data_dir, cases, deaths, fips_list, cases_dates):
             for j in range(len(deaths.T[i])):
                 if deaths.T[i,j] > 0:
                     validation_days_dict.setdefault(fips, []).append(j)
-            try:
-                validation_days_dict[fips] = np.random.choice(validation_days_dict[fips], 3, replace=False)
-            except ValueError as e:
-                validation_days_dict[fips] = []
-                print(e)
-                print('Very few datapoints available for this FIPS code.')
+            validation_days_dict[fips] = get_unique_validation_days(validation_days_dict[fips])
         with open(validation_days_path, 'w', newline='' ) as f:
             writer = csv.writer(f, delimiter=',')
             writer.writerow([first_day_cases, last_day_cases])
             writer.writerow(['FIPS', 'Indices of val days'])
             for key, val in validation_days_dict.items():
-                list_to_write = [key] + list(val)
+                list_to_write = [key] + val
                 writer.writerow(list_to_write)
 
     return validation_days_dict
                     
+def get_unique_validation_days(days_list):
+    if len(days_list) < 3:
+        return []
+    
+    np.random.seed(1234)
+    
+    num_validation_days = 3
+    i = 0
+    output = []
+    while i < num_validation_days:
+        day_to_drop = np.random.choice(days_list, 1, replace = True)[0]
+        output.append(day_to_drop)
+        idx = days_list.index(output[i])
+        del days_list[idx]
+        try:
+            if abs(days_list[idx-1] - output[i]) < 2:
+                del days_list[idx-1]
+            if abs(days_list[idx+1] - output[i]) < 2:
+                del days_list[idx+1]
+        except IndexError:
+            pass
+        i += 1
 
+    return output
 
+        
 
 def apply_validation(deaths, fips_list, validation_days_dict):
     """Sets the deaths of the days in the validation_days_dict to 0"""
