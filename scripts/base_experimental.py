@@ -109,7 +109,7 @@ def main():
     
     print ("Start sampling -------------------")
     
-    fit = sm.sampling(data=stan_data, iter=500, chains=4, warmup=250, thin=4, n_jobs=8, control={'adapt_delta':0.95, 'max_treedepth':15})
+    fit = sm.sampling(data=stan_data, iter=300, chains=4, warmup=150, thin=4, n_jobs=8, control={'adapt_delta':0.95, 'max_treedepth':15})
     # fit = sm.sampling(data=stan_data, iter=1000, chains=4, warmup=500, thin=4, control={'adapt_delta':0.9, 'max_treedepth':12})
     # fit = sm.sampling(data=stan_data, iter=2000, chains=4, warmup=10, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
     print ("Fitted model --------------------")
