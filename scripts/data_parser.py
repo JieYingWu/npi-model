@@ -245,8 +245,8 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
 
 
 if __name__ == '__main__':
-    stan_data, regions, start_date, geocode = get_data(100, 'data', processing=Processing.REMOVE_NEGATIVE_VALUES, state=False, fips_list=None, validation=True)
-    print(stan_data['deaths'])
-    print(stan_data['deaths'][:,0])
-    print(geocode[0])
+    stan_data_val, regions, start_date, geocode = get_data(100, 'data', processing=Processing.REMOVE_NEGATIVE_VALUES, state=False, fips_list=None, validation=True)
+    stan_data, regions, start_date, geocode = get_data(100, 'data', processing=Processing.REMOVE_NEGATIVE_VALUES, state=False, fips_list=None, validation=False)
+    print(stan_data['deaths'][:,0][30:105])
+    print(stan_data_val['deaths'][:,0][30:105])
     

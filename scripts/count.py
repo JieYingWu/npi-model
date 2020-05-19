@@ -6,6 +6,13 @@ import pandas as pd
 import datetime
 from data_parser import impute, remove_negative_values
 
+"""
+    Read the timeseries and write out the cumulative deaths 
+    Hardcoded path to timeseries
+    Input: Path to start_dates/geocode/summary
+    Output: counts.csv with fips vs. measured vs. model fit
+"""
+
 def read_timeseries(fips, end_date):
     cases = pd.read_csv("data/us_data/infections_timeseries_w_states.csv", index_col=0, delimiter=',')
     deaths = pd.read_csv("data/us_data/deaths_timeseries_w_states.csv", index_col=0, delimiter=',')

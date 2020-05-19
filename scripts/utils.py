@@ -80,6 +80,5 @@ if __name__ == '__main__':
     
     data_dir = 'data'
     interventions = get_npis(data_dir)
-    counties = get_counties_isolated_NPIs(interventions, 'stay at home')
-    print(len(counties))
-    print(counties)
+
+    counties = get_counties_isolated_NPIs(interventions, 'public school')

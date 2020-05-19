@@ -66,20 +66,23 @@ def plot_forecasts_wo_dates_quantiles(quantiles_dict, confirmed_cases, county_na
         barplot_missing_values = np.zeros(days_to_predict - np.shape(confirmed_cases)[0])
         barplot_values = list(confirmed_cases) + list(barplot_missing_values)
 
-    print(np.shape(days_to_predict), np.shape(confirmed_cases)[0])
+    # print(np.shape(days_to_predict), np.shape(confirmed_cases)[0])
     # plot creation
+    #print([(param, value) for param, value in plt.rcParams.items() if 'color' in param])
+
     fig = plt.figure('Forecast ')
     ax = fig.add_subplot(111)
-    ax.fill_between(date_list, quantiles_dict['2.5%'], quantiles_dict['97.5%'], alpha=0.25, color='b')
-    ax.fill_between(date_list, quantiles_dict['25%'], quantiles_dict['75%'], alpha=0.2, color='b')
-    ax.bar(date_list, barplot_values, color='r', width=0.9, alpha=0.3)
+    ax.fill_between(date_list, quantiles_dict['2.5%'], quantiles_dict['97.5%'], alpha=0.2, color='#377EB8')
+    ax.fill_between(date_list, quantiles_dict['25%'], quantiles_dict['75%'], alpha=0.5, color='#377EB8')
+    ax.bar(date_list, barplot_values, color='#666666', width=0.5, alpha=0.2)
     ax.set_ylabel("Daily number of {}".format(metric))
     ax.set_xlabel("Date")
 
     if county_name == "":
-        geography_name = str(dict_of_eu_geog[num_of_country].values[0])
+        name = dict_of_eu_geog[num_of_country].values[0]
+        geography_name = str(name)[0].upper() + str(name)[1:]
     else:
-        geography_name = str(county_name)
+        geography_name = str(county_name)[0].upper() + str(county_name)[1:]
     ax.title.set_text(geography_name)
     ax.xaxis_date()
     fig.autofmt_xdate()
@@ -167,7 +170,7 @@ def read_true_cases_europe(plot_choice, num_of_country, dict_of_start_dates, dic
     return confirmed_cases
 
 
-def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of_eu_geog, use_tmp=False):
+def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of_eu_geog, use_tmp=False, simulated=False):
     # 1 for deaths forecast; 0 for infections forecast
     if use_tmp and plot_choice == 0:
         filepath = 'data/tmp_cases.csv'
@@ -175,28 +178,36 @@ def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of
         filepath = 'data/tmp_deaths.csv'
     elif plot_choice == 0:
         # filepath = "data/us_data/infections_timeseries.csv"
-        filepath = "simulated/us_data/infections_timeseries_w_states.csv"
+        if (simulated):
+            filepath = "simulated/us_data/infections_timeseries_w_states.csv"
+        else:
+            filepath = "data/us_data/infections_timeseries_w_states.csv"
     else:
         # filepath = "data/us_data/deaths_timeseries.csv"
-        filepath = "simulated/us_data/deaths_timeseries_w_states.csv"
+        if (simulated):
+            filepath = "simulated/us_data/deaths_timeseries_w_states.csv"
+        else:
+            filepath = "data/us_data/deaths_timeseries_w_states.csv"
+
 
     df = pd.read_csv(filepath, delimiter=',', dtype={'FIPS': str})
             
-    # get rid of cummulative
-    col_names = df.columns.values[3:]
-    new_df = pd.DataFrame()
-    new_df['FIPS'] = df['FIPS']
-    new_df['Combined_Key'] = df['Combined_Key']
-    new_df[df.columns.values[2]] = df[df.columns.values[2]]
 
-    for i in range(0, len(col_names)):
-        new_df[col_names[i]] = df[col_names[i]] - df[col_names[i-1]]
-    df = new_df
-#    df = remove_negative_values(new_df)
+    # get rid of cummulative if not using the tmp_timeseries.csv hack
+    if not use_tmp:
+        col_names = df.columns.values[3:]
+        new_df = pd.DataFrame()
+        new_df['FIPS'] = df['FIPS']
+        new_df['Combined_Key'] = df['Combined_Key']
+        new_df[df.columns.values[2]] = df[df.columns.values[2]]
+        
+        # get the daily values from cumulative
+        for i, col_name in enumerate(col_names):
+            new_df[col_name] = df[col_name] - df[col_names[i - 1]]
+        df = remove_negative_values(new_df)
 
     df = df.set_index('FIPS')
-
-    fips = dict_of_eu_geog[num_of_country].values[0]
+    fips = str(dict_of_eu_geog[num_of_country].values[0]).zfill(5)
     
     confirmed_start_date = datetime.datetime.strptime(start_day_of_confirmed, '%m/%d/%y')
     # print(dict_of_start_dates)
@@ -204,7 +215,8 @@ def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of
     forecast_start_date = datetime.datetime.strptime(str(dict_of_start_dates[num_of_country].values[0]), '%m/%d/%y')
     # print(forecast_start_date)
     diff = (forecast_start_date - confirmed_start_date).days + 1  # since it also has a name skip it
-    
+
+    print(df)
     confirmed_cases = list(df.loc[fips][diff:])
     #sustracted_confirmed_cases = [confirmed_cases[0]]
     # since us data is cummulative
@@ -283,5 +295,5 @@ def main(path):
 
 if __name__ == '__main__':
     # run from base directory 
-    unique_results_path = sys.argv[1]    
+    unique_results_path = sys.argv[1]
     main(unique_results_path)
