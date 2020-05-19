@@ -24,17 +24,17 @@ class CountyGenerator():
     def generate_alphas(self, num_alphas, type_of_alpha):
         if type_of_alpha == 'random':
             alphas = np.random.normal(self.alpha_mu, self.alpha_var, num_alphas)
-            self.alphas = -1*alphas
+        
         elif type_of_alpha=='same':
-            self.alphas = [0.518984242,
+            alphas = np.array([0.518984242,
                             0.153196975,
                             0.229991992,
                             0.121329594,
                             0.048057066,
                             0.059884373,
                             0.077400202,
-                            0.03996699]
-
+                            0.03996699])
+        self.alphas = -1*alphas
         
     # Generate fataility rates or read from cached 
     def calculate_fatality_rate(self, region):
@@ -85,11 +85,12 @@ class CountyGenerator():
 
     
     # Generate the number of cases given some Rt
-    def predict_cases(self, rt):
-        tau = np.random.exponential(0.03) # Seed the first 6 days
+    def predict_cases(self, rt, initial_prediction):
+        #tau = np.random.exponential(0.03) # Seed the first 6 days
         si = self.si[::-1]
         prediction = np.zeros(rt.shape[0])
-        prediction[0:6] = np.random.exponential(1/tau)
+        #prediction[0:6] = np.random.exponential(1/tau)
+        prediction[0:6] = initial_prediction
 
 
         for i in range(6, rt.shape[0]):
@@ -109,11 +110,11 @@ class CountyGenerator():
 
     
     # Create the rt, cases, and deaths timeseries given a region characteristics
-    def make_county(self, r0, interventions, region):
+    def make_county(self, r0, initial_predictions, interventions, region):
         #print(interventions.shape)
         rt = self.calculate_rt(r0, interventions)
         #print(rt.shape)
-        cases = self.predict_cases(rt)
+        cases = self.predict_cases(rt, initial_predictions)
         fatality = self.calculate_fatality_rate(region)
         deaths = self.predict_deaths(rt, cases, fatality)
 
@@ -143,17 +144,18 @@ if __name__ == '__main__':
     data_dir = 'simulated'
     N2 = 150
 
-    r0_file_path = join('results', 'real_county', 'summary.csv')
+    r0_file_path = join('results', 'real_county', 'summary_300.csv')
     r0_file = pd.read_csv(r0_file_path)
-    geocode_path = join('results', 'real_county', 'geocode.csv')
+    geocode_path = join('results', 'real_county', 'geocode_300.csv')
     geocode_file = pd.read_csv(geocode_path)
     geocode = geocode_file.values[0][1:]
     interventions_path = join('data', 'us_data/interventions.csv')
     interventions = pd.read_csv(interventions_path)
 
 
-    alpha_mu = 0.4
-    alpha_var = 0.2
+
+    alpha_mu = 0.2
+    alpha_var = 0.4
     num_alphas = 8
     
     type_of_alpha = 'same'
@@ -165,6 +167,13 @@ if __name__ == '__main__':
     regions.sort()
     
     n = len(regions)
+    
+    params = r0_file.iloc[:, 0]
+    p = []
+    for i in range(1, n+1):
+        p.append('prediction[1,' + str(i) + ']')
+    initial_predictions = r0_file[params.isin(p)]['mean'].to_numpy()
+    
     means = r0_file['mean'].values
     means= means[0:n]
     all_r0 = {}
@@ -172,9 +181,12 @@ if __name__ == '__main__':
         all_r0[geocode[i]] = means[i]
     
     serial_interval = np.loadtxt(join(data_dir, 'serial_interval.csv'), skiprows=1, delimiter=',')
-    si = serial_interval[:,1]
-    n_si = si.shape[0]
-    si[n_si:N2] = 0
+    si = np.zeros(N2)
+    n_si = serial_interval.shape[0]
+    #print(n_si, N2, serial_interval.shape)
+    si[0:n_si] = serial_interval[:,1]
+    if n_si < N2:
+        si[n_si:N2] = 0
 
     generator = CountyGenerator(N2, si, num_alphas, alpha_mu, alpha_var, type_of_alpha)
 #    generator.alphas = [-0.124371438107218, -0.196069499889346, -0.194197939254073, -0.495431571118872, -0.378146551081655, -0.137932933788039, -0.29558366952368, -0.422007707986038]
@@ -188,19 +200,17 @@ if __name__ == '__main__':
         region = geocode[r]
         r0 = all_r0[region]
         intervention = interventions[r,:,:]
-        rt, cases, deaths = generator.make_county(r0, intervention, region)
+        initial_prediction = initial_predictions[r]
+        rt, cases, deaths = generator.make_county(r0, initial_prediction, intervention, region)
         all_rt[region] = rt
         all_cases[region] = cases
         all_deaths[region] = deaths
 
-    name_summary = 'summary_' + type_of_alpha + '.csv'
-    summary_path = join(data_dir, 'us_data', name_summary)
-    name_interventions = 'interventions_timeseries_' + type_of_alpha + '.csv'
-    interventions_path = join(data_dir, 'us_data', name_interventions)
-    name_cases = 'infections_timeseries_w_states_' + type_of_alpha + '.csv'
-    cases_path = join(data_dir, 'us_data', name_cases)
-    name_deaths = 'deaths_timeseries_w_states_' + type_of_alpha + '.csv'
-    deaths_path = join(data_dir, 'us_data', name_deaths)
+
+    summary_path = join(data_dir, 'us_data', 'summary.csv')
+    interventions_path = join(data_dir, 'us_data', 'interventions_timeseries.csv')
+    cases_path = join(data_dir, 'us_data', 'infections_timeseries_w_states.csv')
+    deaths_path = join(data_dir, 'us_data', 'deaths_timeseries_w_states.csv')
 
     real_cases_path = join('data', 'us_data', 'infections_timeseries_w_states.csv')
     real_deaths_path = join('data', 'us_data', 'deaths_timeseries_w_states.csv')
