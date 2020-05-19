@@ -51,9 +51,10 @@ def plot_clustering(state):
     color='cluster',
     color_discrete_map=color_discrete_map
   )
-  fig.update_layout(legend_title_text='Cluster Label')
+  fig.update_layout(legend_title_text='Cluster Label',
+                    legend=dict(traceorder='normal', orientation='h'))
   fig.update_geos(fitbounds="locations", visible=False)
-  fig.write_image(join('visualizations', f'{state}_clustering.png'), scale=3)
+  fig.write_image(join('visualizations', f'{state}_clustering.pdf'), scale=3)
 
 
 def plot_deaths(state):
@@ -79,7 +80,7 @@ def plot_deaths(state):
     ticktext=['0', '10', '20', '30', '40', '50+'],
     dtick=5,
     yanchor='middle'))
-  fig.write_image(join('visualizations', f'{state}_deaths.png'), scale=3)
+  fig.write_image(join('visualizations', f'{state}_deaths.pdf'), scale=3)
   
   
 def plot_supercounties(state, num_clusters=5):
@@ -109,11 +110,19 @@ def plot_supercounties(state, num_clusters=5):
     )
     fig.update_layout(showlegend=False)
     fig.update_geos(fitbounds="locations", visible=False)
-    fig.write_image(join('visualizations', f'{supercounty}_supercounty.png'), scale=3)
+    fig.write_image(join('visualizations', f'{supercounty}_supercounty.pdf'), scale=3)
 
+
+def make_plots(state):
+  plot_deaths(state)   # texas
+  plot_clustering(state)   # texas
+  plot_supercounties(state)
+    
 
 if __name__ == '__main__':
-  # plot_supercounties('36000')   # new york
-  plot_deaths('48000')   # texas
-  plot_clustering('48000')   # texas
-  plot_supercounties('48000')
+  make_plots('36000')           # new york
+  make_plots('48000')           # texas
+  make_plots('06000')           # california
+  make_plots('24000')           # maryland
+  make_plots('53000')           # washington
+
