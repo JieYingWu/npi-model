@@ -51,7 +51,8 @@ def plot_clustering(state):
     color='cluster',
     color_discrete_map=color_discrete_map
   )
-  fig.update_layout(legend_title_text='Cluster Label')
+  fig.update_layout(legend_title_text='Cluster Label',
+                    legend=dict(traceorder='normal', orientation='h'))
   fig.update_geos(fitbounds="locations", visible=False)
   fig.write_image(join('visualizations', f'{state}_clustering.pdf'), scale=3)
 
