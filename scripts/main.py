@@ -242,7 +242,8 @@ class MainStanModel():
         # print('start_date:', start_date)
         # print('geocode:', geocode)
         
-    # Build a dictionary of region identifier to weighted fatality rate
+        # Build a dictionary of region identifier to weighted fatality rate
+        print('running model on {} counties...'.format(stan_data['M']))
         ifrs = {}
         for i in range(weighted_fatalities.shape[0]):
             ifrs[weighted_fatalities[i, 0]] = weighted_fatalities[i, -1]

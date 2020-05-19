@@ -200,10 +200,9 @@ def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of
         # get the daily values from cumulative
         for i, col_name in enumerate(col_names):
             new_df[col_name] = df[col_name] - df[col_names[i - 1]]
-
         df = remove_negative_values(new_df)
-        df = df.set_index('FIPS')
 
+    df = df.set_index('FIPS')
     fips = str(dict_of_eu_geog[num_of_country].values[0]).zfill(5)
     
     confirmed_start_date = datetime.datetime.strptime(start_day_of_confirmed, '%m/%d/%y')
