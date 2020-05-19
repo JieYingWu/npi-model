@@ -53,7 +53,7 @@ def plot_clustering(state):
   )
   fig.update_layout(legend_title_text='Cluster Label')
   fig.update_geos(fitbounds="locations", visible=False)
-  fig.write_image(join('visualizations', f'{state}_clustering.png'), scale=3)
+  fig.write_image(join('visualizations', f'{state}_clustering.pdf'), scale=3)
 
 
 def plot_deaths(state):
@@ -79,7 +79,7 @@ def plot_deaths(state):
     ticktext=['0', '10', '20', '30', '40', '50+'],
     dtick=5,
     yanchor='middle'))
-  fig.write_image(join('visualizations', f'{state}_deaths.png'), scale=3)
+  fig.write_image(join('visualizations', f'{state}_deaths.pdf'), scale=3)
   
   
 def plot_supercounties(state, num_clusters=5):
@@ -109,7 +109,7 @@ def plot_supercounties(state, num_clusters=5):
     )
     fig.update_layout(showlegend=False)
     fig.update_geos(fitbounds="locations", visible=False)
-    fig.write_image(join('visualizations', f'{supercounty}_supercounty.png'), scale=3)
+    fig.write_image(join('visualizations', f'{supercounty}_supercounty.pdf'), scale=3)
 
 
 def make_plots(state):
