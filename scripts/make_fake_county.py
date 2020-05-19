@@ -26,14 +26,15 @@ class CountyGenerator():
             alphas = np.random.normal(self.alpha_mu, self.alpha_var, num_alphas)
         
         elif type_of_alpha=='same':
-            alphas = np.array([0.518984242,
-                            0.153196975,
-                            0.229991992,
-                            0.121329594,
-                            0.048057066,
-                            0.059884373,
-                            0.077400202,
-                            0.03996699])
+            alphas = np.array([0.50139503890605,
+                                0.217169224276522,
+                                0.248010571963931,
+                                0.117646922519726,
+                                0.05062532012758,
+                                0.06010421956639,
+                                0.051055705791372,
+                                0.04306614871147
+                                ])
             
         self.alphas = -1*alphas
         
@@ -145,18 +146,16 @@ if __name__ == '__main__':
     data_dir = 'simulated'
     N2 = 150
 
-    r0_file_path = join('results', 'real_county', 'summary_300.csv')
+    r0_file_path = join('results', 'real_county', 'summary.csv')
     r0_file = pd.read_csv(r0_file_path)
-    geocode_path = join('results', 'real_county', 'geocode_300.csv')
+    geocode_path = join('results', 'real_county', 'geocode.csv')
     geocode_file = pd.read_csv(geocode_path)
     geocode = geocode_file.values[0][1:]
     interventions_path = join('data', 'us_data/interventions.csv')
     interventions = pd.read_csv(interventions_path)
 
-
-
-    alpha_mu = 0.2
-    alpha_var = 0.4
+    alpha_mu = 0.3
+    alpha_var = 0.3
     num_alphas = 8
     
     type_of_alpha = 'same'
@@ -207,10 +206,10 @@ if __name__ == '__main__':
         all_cases[region] = cases
         all_deaths[region] = deaths
 
-    summary_path = join(data_dir, 'us_data', 'summary.csv')
-    interventions_path = join(data_dir, 'us_data', 'interventions_timeseries.csv')
-    cases_path = join(data_dir, 'us_data', 'infections_timeseries_w_states.csv')
-    deaths_path = join(data_dir, 'us_data', 'deaths_timeseries_w_states.csv')
+    summary_path = join(data_dir, 'us_data', 'summary_same.csv')
+    interventions_path = join(data_dir, 'us_data', 'interventions_timeseries_same.csv')
+    cases_path = join(data_dir, 'us_data', 'infections_timeseries_w_states_same.csv')
+    deaths_path = join(data_dir, 'us_data', 'deaths_timeseries_w_states_same.csv')
 
     real_cases_path = join('data', 'us_data', 'infections_timeseries_w_states.csv')
     real_deaths_path = join('data', 'us_data', 'deaths_timeseries_w_states.csv')
