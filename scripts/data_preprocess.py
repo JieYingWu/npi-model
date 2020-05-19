@@ -409,22 +409,6 @@ def get_validation_dict(data_dir, cases, deaths, fips_list, cases_dates):
                 if death[j] > 0:
                     validation_days_dict.setdefault(fips, []).append(j)
             validation_days_dict[fips] = get_unique_validation_days(validation_days_dict[fips])
-            #try:
-            #    is_consecutive = True
-             #   while is_consecutive:
-            #        candidates = np.random.choice(validation_days_dict[fips], 3, replace=False)
-            #        if abs(candidates[1] - candidates[0]) < 2 or \
-            #            abs(candidates[0]- candidates[2]) < 2 or \
-            #            abs(candidates[1] - candidates[2]) < 2:
-            #                pass
-            #        else:
-            #            is_consecutive = False
-            #        print(candidates)
-            #    validation_days_dict[fips] = candidates
-            #except ValueError as e:
-             #   validation_days_dict[fips] = []
-            #    print(e)
-            #    print('Very few datapoints available for this FIPS code.')
         with open(validation_days_path, 'w', newline='' ) as f:
             writer = csv.writer(f, delimiter=',')
             writer.writerow([first_day_cases, last_day_cases])
@@ -462,8 +446,6 @@ def get_unique_validation_days(days_list):
     output = []
     while i < num_validation_days:
         day_to_drop = np.random.choice(days_list, 1, replace = True)[0]
-        print(days_list)
-        print(day_to_drop)
         output.append(day_to_drop)
         idx = days_list.index(output[i])
         del days_list[idx]
