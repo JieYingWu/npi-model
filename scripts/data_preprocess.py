@@ -437,7 +437,7 @@ def get_validation_dict(data_dir, cases, deaths, fips_list, cases_dates):
     return validation_days_dict
                     
 def get_unique_validation_days(days_list):
-    if len(days_list) < 3:
+    if len(days_list) < 5:
         return []
     
     np.random.seed(1234)
@@ -446,6 +446,7 @@ def get_unique_validation_days(days_list):
     i = 0
     output = []
     while i < num_validation_days:
+        print(days_list)
         day_to_drop = np.random.choice(days_list, 1, replace = True)[0]
         output.append(day_to_drop)
         idx = days_list.index(output[i])
