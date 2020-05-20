@@ -30,7 +30,10 @@ def load_timeseries(timeseries_type):
 def in_state(county, state):
   return county[:2] == state[:2]
 
-def filter_by_state(df, state):
+
+def filter_by_state(df, state=None):
+  if state is None:
+    return df
   return df[[in_state(fips, state) for fips in df['FIPS']]]
 
 
@@ -42,22 +45,30 @@ color_discrete_map['-1'] = '#ffffff'
 height = 400
 
 
-def plot_clustering(state):
+def plot_clustering(state=None):
   clustering = filter_by_state(load_clustering(), state)
   fig = px.choropleth(
     clustering,
     geojson=counties_geojson,
     locations='FIPS',
     color='cluster',
-    color_discrete_map=color_discrete_map
+    color_discrete_map=color_discrete_map,
+    scope='usa' if state is None else None
   )
   fig.update_layout(legend_title_text='Cluster Label',
                     legend=dict(traceorder='normal', orientation='h'))
-  fig.update_geos(fitbounds="locations", visible=False)
-  fig.write_image(join('visualizations', f'{state}_clustering.pdf'), scale=3)
+  if state is None:
+    fig.update_geos(visible=False)
+  else:
+    fig.update_geos(fitbounds="locations", visible=False)
+    
+  if state is None:
+    fig.write_image(join('visualizations', f'us_clustering.pdf'))
+  else:
+    fig.write_image(join('visualizations', f'{state}_clustering.pdf'), scale=3)
 
 
-def plot_deaths(state):
+def plot_deaths(state=None):
   deaths = filter_by_state(load_timeseries('deaths'), state)
   col = deaths.columns.tolist()[-1]
   fig = px.choropleth(
@@ -83,7 +94,7 @@ def plot_deaths(state):
   fig.write_image(join('visualizations', f'{state}_deaths.pdf'), scale=3)
   
   
-def plot_supercounties(state, num_clusters=5):
+def plot_supercounties(state=None, num_clusters=5):
   """Plot the supercounties for the given state.
 
   Plot each supercounty on its own, plus all the counties that are included but not a part of a supercounty.
@@ -113,16 +124,17 @@ def plot_supercounties(state, num_clusters=5):
     fig.write_image(join('visualizations', f'{supercounty}_supercounty.pdf'), scale=3)
 
 
-def make_plots(state):
-  plot_deaths(state)   # texas
-  plot_clustering(state)   # texas
-  plot_supercounties(state)
+def make_plots(state=None):
+  # plot_deaths(state) 
+  plot_clustering(state)
+  # plot_supercounties(state)
     
 
 if __name__ == '__main__':
-  make_plots('36000')           # new york
-  make_plots('48000')           # texas
-  make_plots('06000')           # california
-  make_plots('24000')           # maryland
-  make_plots('53000')           # washington
+  # make_plots('36000')           # new york
+  # make_plots('48000')           # texas
+  # make_plots('06000')           # california
+  # make_plots('24000')           # maryland
+  # make_plots('53000')           # washington
+  make_plots()
 
