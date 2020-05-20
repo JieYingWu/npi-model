@@ -27,7 +27,8 @@ class CountyGenerator():
         elif type_of_alpha=='same':
             alphas = np.array(real_alphas)
         elif type_of_alpha == 'gamma':
-            alphas = np.random.gamma(0.1667, 1, num_alphas, seed = 42)
+            np.random.seed(10)
+            alphas = np.random.gamma(0.5, 1, num_alphas)
         elif type_of_alpha == 'uniform':
             alphas = np.random.uniform(0,1, num_alphas)
         
