@@ -15,7 +15,7 @@ import seaborn as sns
 from plotly import graph_objects as go
 
 class DashboardData(object):
-  data_dir = './data'
+  data_dir = 'data/us_data'
   converters = {'FIPS': lambda x: str(x).zfill(5)}
 
   columns_to_include = {
