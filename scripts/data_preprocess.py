@@ -343,8 +343,30 @@ def preprocessing_us_data(data_dir, mode='county'):
     
     cols_population = ['FIPS', 'POP_ESTIMATE_2018']
     population = counties[cols_population]
+    
+    #set population of NY county by aggregating population of 
+    # Bronx County (Bronx) 36005
+    # Kings County (Brooklyn) 36047
+    # New York COunty (Manhattan) 36061
+    # Queens County (Queens) 36081
+    # Richmond County(Staten Island) 36085
+    print(population)
+    print('Population before:')
+    print(population.loc[population['FIPS'] == '36061', 'POP_ESTIMATE_2018'])
 
+    population.at[population['FIPS']=='36061','POP_ESTIMATE_2018'] =str(int(population.loc[population['FIPS']=='36005','POP_ESTIMATE_2018']) + \
+                                                                    int(population.loc[population['FIPS']=='36047','POP_ESTIMATE_2018']) + \
+                                                                    int(population.loc[population['FIPS']=='36081','POP_ESTIMATE_2018']) + \
+                                                                    int(population.loc[population['FIPS']=='36061','POP_ESTIMATE_2018']) + \
+                                                                    int(population.loc[population['FIPS']=='36085','POP_ESTIMATE_2018'])) 
+    
+    population.at[population['FIPS']=='36005','POP_ESTIMATE_2018'] = '0'
+    population.at[population['FIPS']=='36047','POP_ESTIMATE_2018'] = '0'
+    population.at[population['FIPS']=='36081','POP_ESTIMATE_2018'] = '0'
+    population.at[population['FIPS']=='36085','POP_ESTIMATE_2018'] = '0'
 
+    print(population.loc[population['FIPS'] == '36061', 'POP_ESTIMATE_2018'])
+    
     def get_daily_counts(L):
         diff = np.array([y - x for x, y in zip(L, L[1:])])
         L[1:] = diff
@@ -446,7 +468,6 @@ def get_unique_validation_days(days_list):
     i = 0
     output = []
     while i < num_validation_days:
-        print(days_list)
         day_to_drop = np.random.choice(days_list, 1, replace = True)[0]
         output.append(day_to_drop)
         idx = days_list.index(output[i])

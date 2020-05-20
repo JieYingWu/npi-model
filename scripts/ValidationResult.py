@@ -160,8 +160,8 @@ class ValidationResult():
                     identifier = '_'.join([self.parameter_name_list[i], str(key1)])
                     print(identifier)
                     # pick the mean
-                    dis_1 = np.array(val1, dtype=np.float)[:,0]
-                    dis_2 = np.array(val2, dtype=np.float)[:,0]
+                    dis_1 = np.array(val1)[:,0].astype(np.float)
+                    dis_2 = np.array(val2)[:,0].astype(np.float)
                     
                     statistic, pval = stats.ks_2samp(dis_1, dis_2)
 
@@ -242,18 +242,28 @@ class ValidationResult():
 
         if not exists(save_path):
             os.mkdir(save_path)
-
-        individual_save_path = join(save_path, f'{tag}_{fips}_qq_plot_.png')
+        # storage efficient plotting
+        rasterized = False
+        
+        max_value = int(max(max(timeseries_1), max(timeseries_2)))
+        min_value = int(min(min(timeseries_1), min(timeseries_2)))
+        individual_save_path = join(save_path, f'{tag}_{fips}_qq_plot.png')
         fig = plt.figure()
         ax = fig.add_subplot(111)
 
         # ax.set(xlim=[0,1],ylim=[0,1])
         # ax.scatter(np.linspace(0, len(timeseries_1), len(timeseries_1)), timeseries_1)
-        ax.plot(sorted(timeseries_1), sorted(timeseries_2), '.', rasterized=True)
-        ax.set(title=f'Q-Q Plot for County {fips} for {tag}',
-                ylabel='First Sample',
-                xlabel='Second Sample')
-        plt.savefig(individual_save_path)
+        ax.plot(sorted(timeseries_1), sorted(timeseries_2), '.', rasterized=rasterized, label='Timeseries')
+
+
+        t = np.linspace(min_value, max_value, max_value)
+        ax.plot(t,t, rasterized=rasterized, label='Perfect Fit')
+        title = 'Q-Q Plot for County:{} for {} \n {} score: {:.2f}, pvalue:{:.2f}'.format(fips, tag, self.test, statistic, pval)
+        ax.set(title=title,
+                ylabel='Validation Sample',
+                xlabel='Regular Sample')
+        ax.legend(loc='best')
+        plt.savefig(individual_save_path, dpi=1200)
 
         plt.close(fig)
 
