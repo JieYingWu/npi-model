@@ -288,7 +288,7 @@ def main(path):
     if 'europe' in cwd:
         make_all_eu_plots(start_dates_path, geocode_path, summary_path, output_path)     
     if 'county' in cwd:
-        make_all_us_county_plots(start_dates_path, geocode_path, summary_path, output_path)     
+        make_all_us_county_plots(start_dates_path, geocode_path, summary_path, output_path, use_tmp = True)
     if 'state' in cwd :
         make_all_us_states_plots(start_dates_path, geocode_path, summary_path, output_path)     
 
