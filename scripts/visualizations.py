@@ -3,12 +3,19 @@ import pandas as pd
 from os.path import join, exists
 from urllib.request import urlopen
 import seaborn as sns
+import wget
 
 import plotly.express as px
 
 
-with urlopen('https://raw.githubusercontent.com/plotly/datasets/master/geojson-counties-fips.json') as response:
-  counties_geojson = json.load(response)
+fname = join('data', 'geojson-counties-fips.json')
+if not exists(fname):
+  print('downloading geojson data')
+  url = 'https://raw.githubusercontent.com/plotly/datasets/master/geojson-counties-fips.json'
+  wget.download(url, out=fname)
+  
+with open(fname) as file:
+  counties_geojson = json.load(file)
   
 
 def load_supercounties():
