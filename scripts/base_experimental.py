@@ -121,7 +121,7 @@ def main():
     df.to_csv(join(path, 'summary.csv'), sep=',')
     
     df_sd = pd.DataFrame(start_date, index=[0])
-    df_geo = pd.DataFrame(geocode, index=[0])
+    df_geo = pd.DataFrame(geocode, index=[0]) 
     df_sd.to_csv(join(path, 'start_dates.csv'), sep=',')
     df_geo.to_csv(join(path, 'geocode.csv'), sep=',')
 
