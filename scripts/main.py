@@ -46,9 +46,12 @@ class MainStanModel():
             train, val = self.validation_county_split(stan_data, regions, start_date, geocode, weighted_fatalities)
             stan_data, regions, start_date, geocode, weighted_fatalities = train
             print(f'Validating on: {val[1]}')
-            
-        result_df = self.run_model(stan_data, regions, start_date, geocode, weighted_fatalities)
-        self.save_results(result_df, start_date, geocode)
+
+        if self.result_dir is None:
+            result_df = self.run_model(stan_data, regions, start_date, geocode, weighted_fatalities)
+            self.save_results(result_df, start_date, geocode)
+        else:
+            result_df = pd.read_csv(join(self.result_dir, 'summary.csv'), index_col=0)
 
         self.make_plots()
             
@@ -325,21 +328,27 @@ class MainStanModel():
 
     @property
     def unique_results_path(self):
-        if not hasattr(self, '_unique_results_path'):
-            timestamp = dt.datetime.now().strftime('%m-%d-%y_%H-%M-%S')
-            unique_folder_name_list = [timestamp, str(self.mode), 'iter', str(self.iter), 'warmup',
-                                       str(self.warmup_iter), 'num_counties', str(self.M), 'processing',
-                                       str(data_parser.Processing(self.processing))]
-            if self.validation_withholding:
-                unique_folder_name_list.insert(2, 'validation_withholding')
-            if self.cluster is not None:
-                unique_folder_name_list.insert(3, 'cluster')
-                unique_folder_name_list.insert(4, str(self.cluster))
+        if hasattr(self, '_unique_results_path'):
+            return self._unique_results_path
 
-            #make unique results folder
-            self._unique_results_path = join(self.output_path, '_'.join(unique_folder_name_list))
-            if not exists(self._unique_results_path):
-                os.mkdir(self._unique_results_path)
+        if self.result_dir is not None:
+            self._unique_results_path = self.result_dir
+            return self.result_dir
+        
+        timestamp = dt.datetime.now().strftime('%m-%d-%y_%H-%M-%S')
+        unique_folder_name_list = [timestamp, str(self.mode), 'iter', str(self.iter), 'warmup',
+                                   str(self.warmup_iter), 'num_counties', str(self.M), 'processing',
+                                   str(data_parser.Processing(self.processing))]
+        if self.validation_withholding:
+            unique_folder_name_list.insert(2, 'validation_withholding')
+        if self.cluster is not None:
+            unique_folder_name_list.insert(3, 'cluster')
+            unique_folder_name_list.insert(4, str(self.cluster))
+            
+        #make unique results folder
+        self._unique_results_path = join(self.output_path, '_'.join(unique_folder_name_list))
+        if not exists(self._unique_results_path):
+            os.mkdir(self._unique_results_path)
         return self._unique_results_path
     
     def save_results(self, df, start_date, geocode, validation=False):
@@ -409,6 +418,7 @@ if __name__ == '__main__':
     parser.add_argument('--data-dir', default='./data/', help='directory for the data')
     parser.add_argument('--output-path', default='./results', help='directory to save the results and plots in')
     parser.add_argument('--mode', default='US_county', choices=['europe', 'US_state', 'US_county'], help='choose which data to use')
+    parser.add_argument('--result-dir', default=None, help='path to result dir to load the summary.csv from instead of running the model')
     parser.add_argument('--processing', type=int, default=1, choices=[0,1,2], help=' choose the processing technique to remove negative values. \n 0 : interpolation \n 1 : replacing with 0 \n 2 : discarding regions with negative values')
     parser.add_argument('-M', default=25, type=int, help='threshold for relevant counties')
     parser.add_argument('-val-1', '--validation-withholding', action='store_true', help='whether to apply validation by withholding days')

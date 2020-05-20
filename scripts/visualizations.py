@@ -114,15 +114,15 @@ def plot_supercounties(state, num_clusters=5):
 
 
 def make_plots(state):
-  plot_deaths(state)   # texas
+  # plot_deaths(state)   # texas
   plot_clustering(state)   # texas
-  plot_supercounties(state)
+  # plot_supercounties(state)
     
 
 if __name__ == '__main__':
-  make_plots('36000')           # new york
+  # make_plots('36000')           # new york
   make_plots('48000')           # texas
-  make_plots('06000')           # california
-  make_plots('24000')           # maryland
-  make_plots('53000')           # washington
+  # make_plots('06000')           # california
+  # make_plots('24000')           # maryland
+  # make_plots('53000')           # washington
 
