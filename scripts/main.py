@@ -51,7 +51,7 @@ class MainStanModel():
             result_df = self.run_model(stan_data, regions, start_date, geocode, weighted_fatalities)
             self.save_results(result_df, start_date, geocode)
         else:
-            result_df = pd.read_csv(join(self.result_dir, 'summary.csv'), index_col=0)
+            result_df = self.load_results(self.result_dir)
 
         self.make_plots()
             
@@ -250,7 +250,7 @@ class MainStanModel():
         # print('geocode:', geocode)
         
         # Build a dictionary of region identifier to weighted fatality rate
-        print('running model on {} counties...'.format(stan_data['M']))
+        print('running model on {} counties...'.format(stan_data['M']))        
         ifrs = {}
         for i in range(weighted_fatalities.shape[0]):
             ifrs[weighted_fatalities[i, 0]] = weighted_fatalities[i, -1]
@@ -350,6 +350,16 @@ class MainStanModel():
         if not exists(self._unique_results_path):
             os.mkdir(self._unique_results_path)
         return self._unique_results_path
+
+    def load_results(self, result_dir=None):
+        """load the result df, and set geocodes and start date paths"""
+        if result_dir is None:
+            result_dir = self.unique_results_path
+
+        self.summary_path = join(result_dir, 'summary.csv')
+        self.start_dates_path = join(result_dir, 'start_dates.csv')
+        self.geocode_path = join(result_dir, 'geocode.csv')
+        return pd.read_csv(self.summary_path, index_col=0)
     
     def save_results(self, df, start_date, geocode, validation=False):
         """save the result dict, geocodes and start_dates into a unique folder"""
@@ -392,8 +402,11 @@ class MainStanModel():
         else:
             forecast_plots_path = join(self.unique_results_path, 'plots', 'forecast') 
             rt_plots_path = join(self.unique_results_path, 'plots', 'rt')
-        os.makedirs(forecast_plots_path)
-        os.makedirs(rt_plots_path)
+
+        if not exists(forecast_plots_path):
+            os.makedirs(forecast_plots_path)
+        if not exists(rt_plots_path):
+            os.makedirs(rt_plots_path)
 
         # interventions_path = join(self.data_dir, 'us_data', 'interventions.csv')
         interventions_path = join(self.data_dir, 'tmp_interventions.csv')
