@@ -30,7 +30,7 @@ def count(path, end_date):
     dict_of_fips = pd.read_csv(path + 'geocode.csv', delimiter=',', index_col=0)
     list_of_fips = dict_of_fips.values.tolist()[0]
 
-    total_cases, total_deaths = read_timeseries(list_of_fips, end_date)
+    #total_cases, total_deaths = read_timeseries(list_of_fips, end_date)
     predict_cases = np.zeros(len(list_of_fips))
     predict_deaths = np.zeros(len(list_of_fips))
     df = pd.read_csv(path + 'summary.csv', delimiter=',', index_col=0)
@@ -52,13 +52,14 @@ def count(path, end_date):
         predict_cases[i] = predict_case
         predict_deaths[i] = predict_death
 
-    write_out = np.stack((list_of_fips, total_cases, predict_cases, total_deaths, predict_deaths), axis=1)
+#    write_out = np.stack((list_of_fips, total_cases, predict_cases, total_deaths, predict_deaths), axis=1)
+    write_out = np.stack((list_of_fips, predict_cases, predict_deaths), axis=1).astype(np.float)
     np.savetxt(path + 'counts.csv', write_out, delimiter=',')
         
 def main():
-    region = sys.argv[1]
-    end_date = '5/4/20'  # Count to this date
-    count(region, end_date)
+    path = sys.argv[1]
+    end_date = '5/8/20'  # Count to this date
+    count(path, end_date)
     
 if __name__ == '__main__':
     main()
