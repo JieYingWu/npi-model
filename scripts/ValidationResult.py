@@ -247,7 +247,7 @@ class ValidationResult():
         
         max_value = int(max(max(timeseries_1), max(timeseries_2)))
         min_value = int(min(min(timeseries_1), min(timeseries_2)))
-        individual_save_path = join(save_path, f'{tag}_{fips}_qq_plot.png')
+        individual_save_path = join(save_path, f'{tag}_{fips}_qq_plot.pdf')
         fig = plt.figure()
         ax = fig.add_subplot(111)
 
@@ -263,7 +263,7 @@ class ValidationResult():
                 ylabel='Validation Sample',
                 xlabel='Regular Sample')
         ax.legend(loc='best')
-        plt.savefig(individual_save_path, dpi=1200)
+        plt.savefig(individual_save_path)
 
         plt.close(fig)
 
