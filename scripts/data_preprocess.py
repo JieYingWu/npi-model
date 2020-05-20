@@ -83,7 +83,7 @@ def select_top_regions(df_cases, df_deaths, interventions, num_counties, populat
     return df_cases, df_deaths, interventions, population, fips_list
 
 
-def merge_supercounties(cases, deaths, interventions, population, threshold=5, clustering=None):
+def merge_supercounties(cases, deaths, interventions, population, threshold=5, clustering=None, save_supercounties=False):
     """Join counties in the same state if they don't have enough deaths.
 
     Checks that the average daily deaths for the past 10 days is more than `threshold`. If the
@@ -194,9 +194,10 @@ def merge_supercounties(cases, deaths, interventions, population, threshold=5, c
     # print('POPULATION', population, sep='\n')
 
     print('supercounties:', supercounties)
-    # with open(join('data', 'us_data', 'supercounties.json'), 'w') as file:
-    #     json.dump(supercounties, file)
-    #     print('saved supercounties.json to data/us_data')
+    if save_supercounties:
+        with open(join('data', 'us_data', 'supercounties.json'), 'w') as file:
+            json.dump(supercounties, file)
+            print('saved supercounties.json to data/us_data')
     return cases, deaths, interventions, population
     
 
@@ -219,7 +220,7 @@ def select_regions(cases, deaths, interventions, M, population, fips_list=None,
         # join counties with less than a given threshold of deaths with other counties in the same state.
         # and if their interventions are the same as the other counties
         cases, deaths, interventions, population = merge_supercounties(
-            cases, deaths, interventions, population, clustering=clustering)
+            cases, deaths, interventions, population, clustering=clustering, save_supercounties=(fips_list is None))
 
     return cases, deaths, interventions, population
 
