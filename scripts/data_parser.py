@@ -98,6 +98,7 @@ def get_regions(data_dir, M, cases, deaths, processing, interventions, populatio
         cases.to_csv('data/tmp_cases.csv')
         deaths.to_csv('data/tmp_deaths.csv')
         save_interventions(interventions, 'data/tmp_interventions.csv')
+    
     # print('CASES', cases, sep='\n')
     # print('DEATHS', deaths, sep='\n')
     # print('INTERVENTIONS', interventions, sep='\n')
