@@ -17,8 +17,8 @@ import sys
 interventions_path = join('data', 'us_data/interventions.csv')
 interventions = pd.read_csv(interventions_path)
 
-#num_of_counties = sys.argv[1]
-num_of_counties = '20'
+num_of_counties = sys.argv[1]
+#num_of_counties = '20'
 
 if num_of_counties == '20':
     regions = [1073, 8115, 13095, 15007, 18051, 29095, 37049, 48041, 48157, 48439,
