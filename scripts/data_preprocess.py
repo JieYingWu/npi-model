@@ -39,7 +39,7 @@ def select_top_regions(df_cases, df_deaths, interventions, num_counties, populat
     """
 
     headers = df_cases.columns.values
-    last_day = headers[-5]
+    last_day = headers[-1]
     observed_days = len(headers[2:])
 
     if threshold is None:

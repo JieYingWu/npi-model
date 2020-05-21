@@ -4,6 +4,7 @@ from os.path import join, exists
 import pandas as pd
 from data_parser import get_data, Processing
 from statsmodels.distributions.empirical_distribution import ECDF
+from utils import *
 
 
 class CountyGenerator():
@@ -29,7 +30,7 @@ class CountyGenerator():
     # Generate fataility rates or read from cached 
     def calculate_fatality_rate(self, region):
             
-        ifr = self.weighted_fatalities.loc[region, 'fatality_rate']
+        ifr = self.weighted_fatalities.loc[int(region), 'fatality_rate']
         SI = self.si[0:self.N2]
 
         # infection to onset
@@ -79,7 +80,7 @@ class CountyGenerator():
 #        tau = np.random.exponential(0.03, (6)) # Seed the first 6 days
         si = self.si[::-1]
         prediction = np.zeros(rt.shape[0])
-        prediction[0:6] = 600 #np.exp(np.arange(6))*6
+        prediction[0:6] = 300 #np.exp(np.arange(6))*6
 #        print(prediction)
 #        exit()
         for i in range(6, rt.shape[0]):
@@ -113,7 +114,7 @@ class CountyGenerator():
     
 # Get interventions as binary timeseries
 def parse_interventions(regions, data_dir='data'):
-    stan_data, regions, start_date, geocode = get_data(len(regions), data_dir, processing=Processing.REMOVE_NEGATIVE_VALUES, state=False, fips_list=regions)
+    stan_data, regions, start_date, geocode = get_data(len(regions), data_dir, processing=Processing.REMOVE_NEGATIVE_VALUES, state=False, fips_list=regions, threshold=5)
     i1 = np.expand_dims(stan_data['covariate1'], axis=2)
     i2 = np.expand_dims(stan_data['covariate2'], axis=2)
     i3 = np.expand_dims(stan_data['covariate3'], axis=2)
@@ -129,7 +130,7 @@ def parse_interventions(regions, data_dir='data'):
     
 if __name__ == '__main__':
     data_dir = 'simulated'
-    N2 = 100
+    N2 = 150
 
     r0_file_path = join('results', 'real_county', 'summary.csv')
     r0_file = pd.read_csv(r0_file_path)
@@ -138,19 +139,24 @@ if __name__ == '__main__':
     geocode = geocode_file.values[0][1:]
     
     means = r0_file['mean'].values
-    means= means[0:58]
+    M = len(geocode)
+    means= means[0:M]
     all_r0 = {}
-    for i in range(58):
-        all_r0[geocode[i]] = means[i]
+    for i in range(M):
+        all_r0[str(geocode[i])] = means[i]
 
     alpha_mu = 0.2
     alpha_var = 0.1
     num_alphas = 8
 
-    regions = [55079, 53033, 42101, 36119, 36103, 36087, 36071, 36061, 36059, 36055, 36029, 34039, 34035, 34031, 34029, 34027, 34025, 34023, 34021, 34017, 34013, 34007, 34005, 34003, 32003, 29189, 27053, 26163, 26125, 26099, 26049, 24510, 24033, 24031, 24005, 24003, 22103, 22071, 22051, 22033, 18097, 18089, 17197, 17097, 17043, 17031, 13121, 12099, 12086, 12011, 11001, 9009, 9007, 9003, 9001, 6073, 6065, 6037]
+    interventions = get_npis(data_dir)
+    regions = get_counties_isolated_NPIs(interventions, 'public schools').values.tolist()
     regions.sort()
+
+    for i in range(len(regions)):
+        regions[i] = str(regions[i])
     
-    serial_interval = np.loadtxt(join(data_dir, 'serial_interval.csv'), skiprows=1, delimiter=',')
+    serial_interval = np.loadtxt(join(data_dir, 'us_data', 'serial_interval.csv'), skiprows=1, delimiter=',')
     si = serial_interval[:,1]
 
     generator = CountyGenerator(N2, si, num_alphas, alpha_mu, alpha_var)
@@ -160,8 +166,8 @@ if __name__ == '__main__':
     all_rt = {}
     all_cases = {}
     all_deaths = {}
-    
-    for r in range(len(regions)):
+
+    for r in range(len(geocode)):
         region = geocode[r]
         r0 = all_r0[region]
         intervention = interventions[r,:,:]
@@ -188,14 +194,14 @@ if __name__ == '__main__':
     cases_df = real_cases_df.copy()
     deaths_df = real_deaths_df.copy()
 
-    for r in range(len(regions)):
+    for r in range(len(geocode)):
         region = geocode[r]
 
-        simulated_cases = all_cases[region][0:len(real_cases_df.loc[region, start_date[r]:])]
-        cases_df.loc[region, start_date[r]:] = simulated_cases
+        simulated_cases = all_cases[region][0:len(real_cases_df.loc[int(region), start_date[r]:])]
+        cases_df.loc[int(region), start_date[r]:] = simulated_cases
 
-        simulated_deaths = all_deaths[region][0:len(real_deaths_df.loc[region, start_date[r]:])]
-        deaths_df.loc[region, start_date[r]:] = simulated_deaths
+        simulated_deaths = all_deaths[region][0:len(real_deaths_df.loc[int(region), start_date[r]:])]
+        deaths_df.loc[int(region), start_date[r]:] = simulated_deaths
 
     cases_df.to_csv(cases_path)
     deaths_df.to_csv(deaths_path)
