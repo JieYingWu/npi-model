@@ -17,8 +17,8 @@ import sys
 interventions_path = join('data', 'us_data/interventions.csv')
 interventions = pd.read_csv(interventions_path)
 
-num_of_counties = sys.argv[1]
-#num_of_counties = 'all'
+#num_of_counties = sys.argv[1]
+num_of_counties = '20'
 
 if num_of_counties == '20':
     regions = [1073, 8115, 13095, 15007, 18051, 29095, 37049, 48041, 48157, 48439,
@@ -43,9 +43,12 @@ interventions.drop(id_cols, axis = 1, inplace=True)
 _, n = interventions.shape
 mean_matrix = np.zeros((n, n))
 sd_matrix = np.zeros((n, n))
+
+print(interventions.head())
 for i in range(n):
     for j in range(n):
-        diff_int = abs(interventions.iloc[:, i] - interventions.iloc[:, j]).dt.days
+        find_diff = abs(interventions.iloc[:, i] - interventions.iloc[:, j]).dt.days
+        diff_int = find_diff[find_diff<100]
         diff_int = diff_int.to_numpy()
         avg = np.average(diff_int)
         sd = np.std(diff_int)
