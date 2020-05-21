@@ -92,7 +92,7 @@ def plot_forecasts_wo_dates_quantiles(quantiles_dict, confirmed_cases, county_na
     if save_image:
         name = str(metric) + str(dict_of_eu_geog[num_of_country].values[0])
         plt.tight_layout()
-        fig.savefig(join(output_path, name+'.png'))
+        fig.savefig(join(output_path, name+'.pdf'))
         fig.clf()
     else:
         plt.show()
@@ -288,7 +288,7 @@ def main(path):
     if 'europe' in cwd:
         make_all_eu_plots(start_dates_path, geocode_path, summary_path, output_path)     
     if 'county' in cwd:
-        make_all_us_county_plots(start_dates_path, geocode_path, summary_path, output_path)     
+        make_all_us_county_plots(start_dates_path, geocode_path, summary_path, output_path, use_tmp = True)
     if 'state' in cwd :
         make_all_us_states_plots(start_dates_path, geocode_path, summary_path, output_path)     
 
