@@ -9,17 +9,28 @@ import numpy as np
 import pandas as pd
 from os.path import join
 import datetime as dt
-from data_parser import get_data, Processing
+#from data_parser import get_data, Processing
 from datetime import datetime
+import sys
 
-regions = [1073, 8115, 13095, 15007, 18051, 29095, 37049, 48041, 48157, 48439,
-               55079, 53033, 42101, 47089, 36119, 50027, 20101, 29077, 34025, 18097]
-
-regions.sort()
 
 interventions_path = join('data', 'us_data/interventions.csv')
 interventions = pd.read_csv(interventions_path)
 
+num_of_counties = sys.argv[1]
+#num_of_counties = 'all'
+
+if num_of_counties == '20':
+    regions = [1073, 8115, 13095, 15007, 18051, 29095, 37049, 48041, 48157, 48439,
+                   55079, 53033, 42101, 47089, 36119, 50027, 20101, 29077, 34025, 18097]
+    save_path = 'results/compare_interventions/20_counties'
+    
+elif num_of_counties == 'all':
+    interventions = interventions[interventions['FIPS']%1000!=0]
+    regions = interventions['FIPS'].to_numpy()
+    save_path = 'results/compare_interventions/all_counties'
+
+regions.sort()
 # print(interventions.columns)
 interventions = interventions[interventions['FIPS'].isin(regions)]
 id_cols = ['FIPS', 'STATE', 'AREA_NAME']    
@@ -46,19 +57,23 @@ print(mean_matrix)
 print("Std matrix -----------")
 print(sd_matrix)
 
+idx = np.argwhere(mean_matrix<3)
+to_keep = [x for x in idx if x[0]!=x[1]]
+print("\n\nInterventions with average less than 3-----------")
+print(to_keep)
 df_mean = pd.DataFrame(mean_matrix)
 df_mean.columns = int_cols
 df_mean.index = int_cols
 
-print(df_mean)
-df_mean.to_csv('results/interventions_mean.csv')
+#print(df_mean)
+df_mean.to_csv(join(save_path, 'interventions_mean.csv'))
 
 df_std = pd.DataFrame(sd_matrix)
 df_std.columns = int_cols
 df_std.index = int_cols
 
-print(df_std)
-df_std.to_csv('results/interventions_std.csv')
+#print(df_std)
+df_std.to_csv(join(save_path, 'interventions_std.csv'))
 
 # for key, val in diff.items():
 #     if val<4:
