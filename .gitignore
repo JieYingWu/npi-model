@@ -8,3 +8,4 @@ venv
 *.pyc
 .idea/
 **.DS_Store
+data/geojson-counties-fips.json
