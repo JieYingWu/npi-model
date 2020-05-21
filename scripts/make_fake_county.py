@@ -8,12 +8,12 @@ import utils
 
 class CountyGenerator():
 
-    def __init__(self, N2, si, num_alphas, alpha_mu, alpha_var, type_of_alpha, real_alphas):
+    def __init__(self, N2, si, num_alphas, alpha_param1, alpha_param2, type_of_alpha, real_alphas):
         super(CountyGenerator, self).__init__()
         self.N2 = N2
         self.si = si
-        self.alpha_mu = alpha_mu
-        self.alpha_var = alpha_var
+        self.alpha_param1 = alpha_param1
+        self.alpha_param2 = alpha_param2
         self.generate_alphas(num_alphas, type_of_alpha, real_alphas)
 
         wf_file = join(data_dir, 'us_data', 'weighted_fatality_new.csv')
@@ -23,14 +23,14 @@ class CountyGenerator():
     # Generate all alphas for this object (cluster)
     def generate_alphas(self, num_alphas, type_of_alpha, real_alphas):
         if type_of_alpha == 'normal':
-            alphas = np.random.normal(self.alpha_mu, self.alpha_var, num_alphas)
+            alphas = np.random.normal(self.alpha_param1, self.alpha_param2, num_alphas)
         elif type_of_alpha=='same':
             alphas = np.array(real_alphas)
         elif type_of_alpha == 'gamma':
             np.random.seed(10)
-            alphas = np.random.gamma(0.5, 1, num_alphas)
+            alphas = np.random.gamma(self.alpha_param1, self.alpha_param2, num_alphas)
         elif type_of_alpha == 'uniform':
-            alphas = np.random.uniform(0,1, num_alphas)
+            alphas = np.random.uniform(self.alpha_param1, self.alpha_param2, num_alphas)
         
         self.alphas = -1*alphas
 
@@ -143,6 +143,8 @@ def parse_interventions(regions, data_dir='data'):
     
 if __name__ == '__main__':
     data_dir = 'simulated'
+
+        
     N2 = 150
 
     r0_file_path = join('results', 'real_county', 'summary.csv')
@@ -153,17 +155,25 @@ if __name__ == '__main__':
     interventions_path = join('data', 'us_data/interventions.csv')
     interventions = pd.read_csv(interventions_path)
 
-    alpha_mu = 0.3
-    alpha_var = 0.3
 
     num_alphas = 8
     
     type_of_alpha = 'gamma'
 
+    if type_of_alpha=='normal':
+        param1, param2 = 0.3, 0.4
+        rs = 10
+    elif type_of_alpha == 'gamma':
+        param1, param2 = 0.5, 1
+        rs = 10
+    elif type_of_alpha == 'uniform':
+        param1, param2 = 0, 1
+        rs = 10
+        
 #    regions = [55079, 53033, 42101, 36119, 36103, 36087, 36071, 36061, 36059, 36055, 36029, 34039, 34035, 34031, 34029, 34027, 34025, 34023, 34021, 34017, 34013, 34007, 34005, 34003, 32003, 29189, 27053, 26163, 26125, 26099, 26049, 24510, 24033, 24031, 24005, 24003, 22103, 22071, 22051, 22033, 18097, 18089, 17197, 17097, 17043, 17031, 13121, 12099, 12086, 12011, 11001, 9009, 9007, 9003, 9001, 6073, 6065, 6037]
 #    regions = [1073, 8000, 8001, 8003, 8005, 8007, 8009, 8011, 8013, 8014, 8015, 8017, 8019, 8021, 8023, 8025, 8027, 8029, 8031, 8033, 8035, 8037, 8039, 8041, 8043, 8045, 8047, 8049, 8051, 8053, 8055, 8057, 8059, 8061, 8063, 8065, 8067, 8069, 8071, 8073, 8075, 8077, 8079, 8081, 8083, 8085, 8087, 8089, 8091, 8093, 8095, 8097, 8099, 8101, 8103, 8105, 8107, 8109, 8111, 8113, 8115, 8117, 8119, 8121, 8123, 8125, 48015, 48027, 48029, 48041, 48085, 48141, 48157, 48167, 48201, 48309, 48439]
     regions = [1073, 8115, 13095, 15007, 18051, 29095, 37049, 48041, 48157, 48439,
-               55079, 53033, 42101, 47089, 36119, 50027, 20101, 29077, 34025, 18097]
+                55079, 53033, 42101, 47089, 36119, 50027, 20101, 29077, 34025, 18097]
     regions.sort()
     
     n = len(regions)
@@ -193,7 +203,7 @@ if __name__ == '__main__':
     if n_si < N2:
         si[n_si:N2] = 0
 
-    generator = CountyGenerator(N2, si, num_alphas, alpha_mu, alpha_var, type_of_alpha, real_alphas)
+    generator = CountyGenerator(N2, si, num_alphas, param1, param2, type_of_alpha, real_alphas)
 #    generator.alphas = [-0.124371438107218, -0.196069499889346, -0.194197939254073, -0.495431571118872, -0.378146551081655, -0.137932933788039, -0.29558366952368, -0.422007707986038]
     print(generator.alphas)
     interventions, start_date, geocode_intervention = parse_interventions(regions)
@@ -223,7 +233,8 @@ if __name__ == '__main__':
     real_cases_df = pd.read_csv(real_cases_path, index_col='FIPS')
     real_deaths_df = pd.read_csv(real_deaths_path, index_col='FIPS')
     
-    summary = {'N2':N2, 'alpha_mu':alpha_mu, 'alpha_var':alpha_var, 'alphas':generator.alphas}
+    summary = {'N2':N2, 'Alpha distribution': type_of_alpha, 'Random seed': rs,
+               'alpha_parameter1':param1, 'alpha_parameter2':param2, 'alphas':generator.alphas}
     df = pd.DataFrame.from_dict(summary)
     df.to_csv(summary_path)
     
