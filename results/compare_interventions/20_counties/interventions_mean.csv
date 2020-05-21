@@ -1,0 +1,9 @@
+,stay at home,>50 gatherings,>500 gatherings,public schools,restaurant dine-in,entertainment/gym,federal guidelines,foreign travel ban
+stay at home,0.0,3.7,8.05,5.7,6.1,5.95,8.9,13.9
+>50 gatherings,3.7,0.0,4.35,3.3,3.4,4.65,5.2,10.2
+>500 gatherings,8.05,4.35,0.0,4.85,4.05,5.7,3.85,5.85
+public schools,5.7,3.3,4.85,0.0,2.4,5.05,3.2,8.2
+restaurant dine-in,6.1,3.4,4.05,2.4,0.0,3.05,2.8,7.8
+entertainment/gym,5.95,4.65,5.7,5.05,3.05,0.0,5.55,10.55
+federal guidelines,8.9,5.2,3.85,3.2,2.8,5.55,0.0,5.0
+foreign travel ban,13.9,10.2,5.85,8.2,7.8,10.55,5.0,0.0
