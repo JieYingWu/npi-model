@@ -13,29 +13,29 @@ class CountyGenerator():
         super(CountyGenerator, self).__init__()
         self.N2 = N2
         self.si = si
-        self.alpha_param1 = alpha_param1
-        self.alpha_param2 = alpha_param2
-        self.generate_alphas(num_alphas, type_of_alpha, real_alphas)
+        # self.alpha_param1 = alpha_param1
+        # self.alpha_param2 = alpha_param2
+        self.generate_alphas(num_alphas, type_of_alpha, real_alphas, alpha_param1, alpha_param2)
 
         wf_file = join(data_dir, 'us_data', 'weighted_fatality_new.csv')
         self.weighted_fatalities = pd.read_csv(wf_file, encoding='latin1', index_col='FIPS')
 
 
     # Generate all alphas for this object (cluster)
-    def generate_alphas(self, num_alphas, type_of_alpha, real_alphas):
+    def generate_alphas(self, num_alphas, type_of_alpha, real_alphas, alpha_param1, alpha_param2):
         if type_of_alpha == 'normal':
             alphas = np.random.normal(self.alpha_param1, self.alpha_param2, num_alphas)
         elif type_of_alpha=='same':
             alphas = np.array(real_alphas)
         elif type_of_alpha == 'gamma1':
             np.random.seed(10)
-            mean1, cv1 = 0.1667, 1
+            mean1, cv1 = alpha_param1, alpha_param2
             self.alpha_param1 = cv1**-2
             self.alpha_param2 = mean1/self.alpha_param1
             alphas = np.random.gamma(self.alpha_param1, self.alpha_param2, num_alphas)
         elif type_of_alpha == 'gamma2':
             np.random.seed(123)
-            mean1, cv1 = 0.5, 1
+            mean1, cv1 = alpha_param1, alpha_param2
             self.alpha_param1 = cv1**-2
             self.alpha_param2 = mean1/alpha1
             alphas = np.random.gamma(self.alpha_param1, self.alpha_param2, num_alphas)
@@ -174,9 +174,12 @@ if __name__ == '__main__':
     if type_of_alpha=='normal':
         param1, param2 = 0.3, 0.4
         rs = 10
-    elif type_of_alpha == 'gamma':
-        param1, param2 = 0.5, 1
+    elif type_of_alpha == 'gamma1':
+        param1, param2 = 0.1667, 1
         rs = 10
+    elif type_of_alpha == 'gamma2':
+        param1, param2 = 0.5, 1
+        rs = 123
     elif type_of_alpha == 'uniform':
         param1, param2 = 0, 1
         rs = 10
