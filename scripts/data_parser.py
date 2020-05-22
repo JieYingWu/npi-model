@@ -39,7 +39,7 @@ def get_clustering(data_dir):
 
     
 def get_data(M, data_dir, processing=None, state=False, fips_list=None, validation=False,
-             clustering=None, supercounties=False, validation_on_county=False):
+             clustering=None, supercounties=False, validation_on_county=False, threshold=50):
     cases, deaths, interventions, population = preprocessing_us_data(data_dir)
 
     if state:
@@ -52,7 +52,7 @@ def get_data(M, data_dir, processing=None, state=False, fips_list=None, validati
     # Not filtering interventions data since we're not selecting counties based on that
     final_dict, fips_list, dict_of_start_dates, dict_of_geo = get_regions(
         data_dir, M, cases, deaths, processing, interventions, population, fips_list,
-        validation=validation, supercounties=supercounties, clustering=clustering)
+        validation=validation, supercounties=supercounties, clustering=clustering, threshold=threshold)
 
     return final_dict, fips_list, dict_of_start_dates, dict_of_geo
 
@@ -72,7 +72,7 @@ def save_interventions(interventions, fname):
 
 
 def get_regions(data_dir, M, cases, deaths, processing, interventions, population, fips_list=None,
-                validation=False, clustering=None, supercounties=False):
+                validation=False, clustering=None, supercounties=False, threshold=50):
     if processing == Processing.INTERPOLATE:
         cases = impute(cases, allow_decrease_towards_end=False)
         deaths = impute(deaths, allow_decrease_towards_end=False)
@@ -90,7 +90,7 @@ def get_regions(data_dir, M, cases, deaths, processing, interventions, populatio
         cases, deaths, interventions, M, population, fips_list=fips_list,
         clustering=clustering, supercounties=supercounties)
     cases, deaths, interventions, population, fips_list = select_top_regions(
-        cases, deaths, interventions, M, population, validation=validation)
+        cases, deaths, interventions, M, population, validation=validation, threshold=threshold)
 
     if save_tmp:
         print('saving tmp data')
