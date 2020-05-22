@@ -60,7 +60,6 @@ def get_data(M, data_dir, processing=None, state=False, fips_list=None, validati
 def save_interventions(interventions, fname):
     def func(d):
         x = d.toordinal()
-        print(d, x)
         if x == 1:
             return 'NA'
         else:

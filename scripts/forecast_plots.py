@@ -206,7 +206,9 @@ def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of
         df = remove_negative_values(new_df)
 
     df = df.set_index('FIPS')
-    fips = str(dict_of_eu_geog[num_of_country].values[0]).zfill(5)
+    fips = dict_of_eu_geog[num_of_country].values[0]
+    if isinstance(fips, int):
+        fips = str(fips).zfill(5)
     
     confirmed_start_date = datetime.datetime.strptime(start_day_of_confirmed, '%m/%d/%y')
     # print(dict_of_start_dates)
@@ -228,7 +230,7 @@ def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of
 
 
 # create a batch of all possible plots for usa
-def make_all_us_county_plots(start_date_dict_path, geocode_dict_path, summary_path, output_path, use_tmp=False):
+def make_all_us_county_plots(start_date_dict_path, geocode_dict_path, summary_path, output_path, use_tmp=True):
     dict_of_start_dates = pd.read_csv(start_date_dict_path, delimiter=',', index_col=0)
     dict_of_eu_geog = pd.read_csv(geocode_dict_path, delimiter=',', index_col=0)
     path = summary_path 
@@ -290,7 +292,8 @@ def main(path):
     elif len(sys.argv) > 1 and'state' in cwd :
         make_all_us_states_plots(start_dates_path, geocode_path, summary_path, output_path)     
     else:
-        make_all_us_county_plots(start_dates_path, geocode_path, summary_path, output_path, use_tmp = True)
+        make_all_us_county_plots(start_dates_path, geocode_path, summary_path, output_path, use_tmp=True)
+
 
 if __name__ == '__main__':
     # run from base directory 
