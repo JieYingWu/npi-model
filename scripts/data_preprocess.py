@@ -125,7 +125,6 @@ def merge_supercounties(cases, deaths, interventions, population, threshold=THRE
         # print('INTERVENTIONS:\n', interventions_row)
         
         county_deaths = deaths_row[2:].to_numpy()
-        print(county_deaths[-5:].sum())
         if np.all(county_deaths == 0):
             # county has no data to contribute at all
             continue
