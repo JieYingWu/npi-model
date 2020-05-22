@@ -50,7 +50,7 @@ def select_top_regions(df_cases, df_deaths, interventions, num_counties, populat
         df_deaths = df_deaths.reset_index(drop=True)
     else:
         cumulative_deaths = df_deaths.iloc[:, 2:].sum(axis=1).to_numpy()
-        df_deaths = df_deaths.iloc[cumulative_deaths > threshold].copy()
+        df_deaths = df_deaths.iloc[cumulative_deaths >= threshold].copy()
         df_deaths = df_deaths.reset_index(drop=True)
 
     # print('cumulative_deaths:', df_deaths.iloc[:, 2:].sum(axis=1).to_numpy())
