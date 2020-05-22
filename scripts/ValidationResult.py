@@ -267,7 +267,19 @@ class ValidationResult():
 
         plt.close(fig)
 
+    def write_final_results(self, final_list, num_counties):
+        # select only the first num counties entries which correspont to the predicted deaths
+        final_list = final_list[:num_counties]
+        final_arr = np.array(final_list)
+        max_value = max(final_arr)
+        min_value = min(final_arr)
 
+        mean = np.mean(final_arr)
+        std = np.std(final_arr)
+        median = np.median(final_arr)
+
+        
+        
 
 
 if __name__ == '__main__':
