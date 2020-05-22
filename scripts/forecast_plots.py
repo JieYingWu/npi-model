@@ -287,12 +287,13 @@ def main(path):
     output_path = join(path, 'plots/forecast')
     if not exists(output_path):
         os.makedirs(output_path)
-    if 'europe' in cwd:
+    if len(sys.argv) > 1 and 'europe' in cwd:
         make_all_eu_plots(start_dates_path, geocode_path, summary_path, output_path)     
-    if 'county' in cwd:
-        make_all_us_county_plots(start_dates_path, geocode_path, summary_path, output_path, use_tmp=True)
-    if 'state' in cwd :
+    elif len(sys.argv) > 1 and'state' in cwd :
         make_all_us_states_plots(start_dates_path, geocode_path, summary_path, output_path)     
+    else:
+        make_all_us_county_plots(start_dates_path, geocode_path, summary_path, output_path, use_tmp=True)
+
 
 if __name__ == '__main__':
     # run from base directory 
