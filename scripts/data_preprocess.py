@@ -39,7 +39,7 @@ def select_top_regions(df_cases, df_deaths, interventions, num_counties, populat
     """
 
     headers = df_cases.columns.values
-    last_day = headers[-5]
+    last_day = headers[-1]
     observed_days = len(headers[2:])
 
     if threshold is None:
@@ -83,7 +83,7 @@ def select_top_regions(df_cases, df_deaths, interventions, num_counties, populat
     return df_cases, df_deaths, interventions, population, fips_list
 
 
-def merge_supercounties(cases, deaths, interventions, population, threshold=5, clustering=None):
+def merge_supercounties(cases, deaths, interventions, population, threshold=5, clustering=None, save_supercounties=False):
     """Join counties in the same state if they don't have enough deaths.
 
     Checks that the average daily deaths for the past 10 days is more than `threshold`. If the
@@ -194,9 +194,10 @@ def merge_supercounties(cases, deaths, interventions, population, threshold=5, c
     # print('POPULATION', population, sep='\n')
 
     print('supercounties:', supercounties)
-    # with open(join('data', 'us_data', 'supercounties.json'), 'w') as file:
-    #     json.dump(supercounties, file)
-    #     print('saved supercounties.json to data/us_data')
+    if save_supercounties:
+        with open(join('data', 'us_data', 'supercounties.json'), 'w') as file:
+            json.dump(supercounties, file)
+            print('saved supercounties.json to data/us_data')
     return cases, deaths, interventions, population
     
 
@@ -219,7 +220,7 @@ def select_regions(cases, deaths, interventions, M, population, fips_list=None,
         # join counties with less than a given threshold of deaths with other counties in the same state.
         # and if their interventions are the same as the other counties
         cases, deaths, interventions, population = merge_supercounties(
-            cases, deaths, interventions, population, clustering=clustering)
+            cases, deaths, interventions, population, clustering=clustering, save_supercounties=(fips_list is None))
 
     return cases, deaths, interventions, population
 
@@ -343,8 +344,25 @@ def preprocessing_us_data(data_dir, mode='county'):
     
     cols_population = ['FIPS', 'POP_ESTIMATE_2018']
     population = counties[cols_population]
+    
+    #set population of NY county by aggregating population of 
+    # Bronx County (Bronx) 36005
+    # Kings County (Brooklyn) 36047
+    # New York COunty (Manhattan) 36061
+    # Queens County (Queens) 36081
+    # Richmond County(Staten Island) 36085
+    population.at[population['FIPS']=='36061','POP_ESTIMATE_2018'] =str(int(population.loc[population['FIPS']=='36005','POP_ESTIMATE_2018']) + \
+                                                                    int(population.loc[population['FIPS']=='36047','POP_ESTIMATE_2018']) + \
+                                                                    int(population.loc[population['FIPS']=='36081','POP_ESTIMATE_2018']) + \
+                                                                    int(population.loc[population['FIPS']=='36061','POP_ESTIMATE_2018']) + \
+                                                                    int(population.loc[population['FIPS']=='36085','POP_ESTIMATE_2018'])) 
+    # Set all remaining NYC counties to 0 
+    population.at[population['FIPS']=='36005','POP_ESTIMATE_2018'] = '0'
+    population.at[population['FIPS']=='36047','POP_ESTIMATE_2018'] = '0'
+    population.at[population['FIPS']=='36081','POP_ESTIMATE_2018'] = '0'
+    population.at[population['FIPS']=='36085','POP_ESTIMATE_2018'] = '0'
 
-
+    
     def get_daily_counts(L):
         diff = np.array([y - x for x, y in zip(L, L[1:])])
         L[1:] = diff
@@ -437,7 +455,7 @@ def get_validation_dict(data_dir, cases, deaths, fips_list, cases_dates):
     return validation_days_dict
                     
 def get_unique_validation_days(days_list):
-    if len(days_list) < 3:
+    if len(days_list) < 5:
         return []
     
     np.random.seed(1234)
