@@ -32,7 +32,7 @@ class CountyGenerator():
         elif type_of_alpha == 'uniform':
             alphas = np.random.uniform(self.alpha_param1, self.alpha_param2, num_alphas)
         elif type_of_alpha=='custom':
-            alphas = [0.6, 0.12, 0.12, 0.12, 0.12, 0.12, 0.12, 0.4]
+            alphas = np.array([0.6, 0.012, 0.012, 0.012, 0.012, 0.012, 0.012, 0.4])
         self.alphas = -1*alphas
 
         
@@ -159,7 +159,7 @@ if __name__ == '__main__':
 
     num_alphas = 8
     
-    type_of_alpha = 'custom'
+    type_of_alpha = sys.argv[1]
 
     if type_of_alpha=='normal':
         param1, param2 = 0.3, 0.4
