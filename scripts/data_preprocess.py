@@ -29,7 +29,8 @@ def remove_negative_regions(df_cases, df_deaths, idx):
 
     return df_cases, df_deaths
 
-def select_top_regions(df_cases, df_deaths, interventions, num_counties, population, validation=False, supercounties=False, threshold=50):
+def select_top_regions(df_cases, df_deaths, interventions, num_counties, population,
+                       validation=False, supercounties=False, threshold=50):
     """"
     Returns:
         df_cases: Infections timeseries for top N places
@@ -51,7 +52,11 @@ def select_top_regions(df_cases, df_deaths, interventions, num_counties, populat
         df_deaths = df_deaths.iloc[cumulative_deaths > threshold].copy()
         df_deaths = df_deaths.reset_index(drop=True)
 
+    # print('cumulative_deaths:', df_deaths.iloc[:, 2:].sum(axis=1).to_numpy())
+
     fips_list = df_deaths['FIPS'].tolist()
+    for fips, cum_deaths in zip(fips_list, df_deaths.iloc[:, 2:].sum(axis=1).to_numpy().astype(int)):
+        print(f'{fips}: {cum_deaths:,d} deaths')
 
     merge_df = pd.DataFrame({'merge': fips_list})
     df_cases = df_cases.loc[df_cases['FIPS'].isin(fips_list)]
@@ -193,7 +198,7 @@ def merge_supercounties(cases, deaths, interventions, population, threshold=5, c
     # print('INTERVENTIONS', interventions, sep='\n')
     # print('POPULATION', population, sep='\n')
 
-    print('supercounties:', supercounties)
+    # print('supercounties:', supercounties)
     if save_supercounties:
         with open(join('data', 'us_data', 'supercounties.json'), 'w') as file:
             json.dump(supercounties, file)

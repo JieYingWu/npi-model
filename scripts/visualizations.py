@@ -6,6 +6,7 @@ import seaborn as sns
 import wget
 
 import plotly.express as px
+import plotly.graph_objects as go
 
 
 fname = join('data', 'geojson-counties-fips.json')
