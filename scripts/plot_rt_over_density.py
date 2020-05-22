@@ -8,6 +8,7 @@ import datetime
 import json
 from matplotlib import gridspec
 import seaborn as sns
+from brokenaxes import brokenaxes
 
 
 def get_means_list(path, geo_list):
@@ -48,28 +49,68 @@ def create_geocodes_dict(path_rt, path_density):
     return selected_dict, supercounties_names
 
 
-def read_density_sum(path_density, selected_dict):
+def create_deaths_dict(path_density, date, selected_dict):
+    df_deaths = pd.read_csv(path_density + "\\deaths_timeseries_w_states.csv", delimiter=',')
+    df_deaths = df_deaths.set_index('FIPS')
+    dict_deaths = {}
+
+    for key in selected_dict.keys():
+        for county in selected_dict[key]:
+            dict_deaths[county] = df_deaths.at[int(county), date]
+    print(dict_deaths)
+    return dict_deaths
+
+
+def read_density_sum(path_density, selected_dict, r0_means_list, plot_variable, pos, start_day_dict):
     df = pd.read_csv(path_density + "\\counties.csv", delimiter=',')
     df = df.set_index('FIPS')
     sum_density_dict = {}
+    r0_dict = {}
+    # pass the date for r0 plots
+    # division over the zero
+    df_deaths = pd.read_csv(path_density + "\\deaths_timeseries_w_states.csv", delimiter=',')
+    df_deaths = df_deaths.set_index('FIPS')
     for key in selected_dict.keys():
-        t_sum = 0
-        for county in selected_dict[key]:
-            found_number = df.at[int(county), 'Density per square mile of land area - Population']
-            t_sum = t_sum + found_number
-        sum_density_dict[key] = t_sum
-    return sum_density_dict
+        pop_sum = 0
+        total = 0
+        if use_death_weight:
+            for county in selected_dict[key]:
+                if pos == 0:
+                    date = start_day_dict[key]
+                else:
+                    date = dates[pos-1]
+                total = total + df_deaths.at[int(county), date]
+            for county in selected_dict[key]:
+                if pos == 0:
+                    date = start_day_dict[key]
+                else:
+                    date = dates[pos-1]
+                weighted_avg = (df_deaths.at[int(county), date] / total)
+                pop_sum = pop_sum + df.at[int(county), plot_variable] * weighted_avg
+
+        elif use_weight_average:
+            for county in selected_dict[key]:
+                total = total + df.at[int(county), 'POP_ESTIMATE_2018']
+            for county in selected_dict[key]:
+                weighted_avg = (df.at[int(county), 'POP_ESTIMATE_2018'] / total)
+                pop_sum = pop_sum + df.at[int(county), plot_variable] * weighted_avg
+        else:
+            for county in selected_dict[key]:
+                pop_sum = pop_sum + df.at[int(county), plot_variable]
+
+        sum_density_dict[key] = pop_sum
+        r0_dict[key] = r0_means_list[key]
+    return sum_density_dict, r0_dict
 
 
-def read_density(path_density, selected_dict, dict_r0_supercounty):
+def read_density(path_density, selected_dict, dict_r0_supercounty, plot_variable):
     df = pd.read_csv(path_density + "\\counties.csv", delimiter=',')
     df = df.set_index('FIPS')
     density_dict = {}
     dict_r0 = {}
     for key in selected_dict.keys():
         for county in selected_dict[key]:
-            density_dict[county] = df.at[int(
-                county), 'Density per square mile of land area - Housing units']  # / df.at[int(county),'POP_ESTIMATE_2018']
+            density_dict[county] = df.at[int(county), plot_variable]  # / df.at[int(county),'POP_ESTIMATE_2018']
             dict_r0[county] = dict_r0_supercounty[key]
     return density_dict, dict_r0
 
@@ -80,7 +121,6 @@ def get_rt_adj(path, geo_list, start_day_dict):
     df = pd.read_csv(path + "\\summary.csv", delimiter=',', index_col=0)
     row_names = list(df.index.tolist())
     means = {}
-    # start_day = 1
     for num_of_country in range(0, len(geo_list)):
         county_number = str(int(num_of_country) + 1) + "]"
         for name in row_names:
@@ -106,20 +146,34 @@ def get_start_day_dict(path, geo_list, date_plot):
         dict_start_days[geo_list[i]] = days_to_predict
     return dict_start_days
 
+def get_start_day(path, geo_list):
+    dict_start_days = {}
+    df = pd.read_csv(path + "\\start_dates.csv", delimiter=',', index_col=0)
+    supercounties_dates = list(df.loc[0][:])
+    for i in range(0, len(geo_list)):
+        dict_start_days[geo_list[i]] = supercounties_dates[i]
+    return dict_start_days
 
-def plot_scatter_r0(path):
+
+def plot_scatter_r0(path, plot_variable):
     pos = 0
     path_density = r"D:\JHU\corona\npi-model\npi-model\data\us_data"
     ax[pos].set_title("R0")
     colors = ["#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00"]
-    ax[pos].set_xscale('log')
 
     for cluster_n in range(0, 5):
         print(cluster_n)
         path_rt = path + str(cluster_n)
         supercounties_dist, supercounties_names = create_geocodes_dict(path_rt, path_density)
+
+        start_day_dict = get_start_day(path_rt, supercounties_names)
         r0_means_list = get_means_list(path_rt, supercounties_names)
-        density_dict, dict_r0 = read_density(path_density, supercounties_dist, r0_means_list)
+        # to plot all supercouties only
+        if plot_supercounties:
+            density_dict, dict_r0 = read_density_sum(path_density, supercounties_dist, r0_means_list, plot_variable, pos, start_day_dict)
+        # to plot all counties
+        else:
+            density_dict, dict_r0 = read_density(path_density, supercounties_dist, r0_means_list, plot_variable)
 
         y_list = []
         for key in density_dict.keys():
@@ -127,25 +181,25 @@ def plot_scatter_r0(path):
             y = dict_r0[key]
             if y is not None:
                 y_list.append(y)
-            if x < 10000:
-                ax[pos].scatter(x, y, color=colors[cluster_n], s=8, alpha=0.3)
-
+            #if x < 10000:
+            ax[pos].scatter(x, y, color=colors[cluster_n], s=8, alpha=set_transparency)
+        # plot distrubution
+        ax2 = ax[pos].twiny()
         sns.distplot(y_list, hist=False, kde=True, vertical=True, norm_hist=True,
                      bins=10, color=colors[cluster_n],
                      hist_kws={'edgecolor': 'black'},
                      kde_kws={'shade': True, 'linewidth': 1},
-                     ax=ax[pos])
+                     ax=ax2)
+        ax2.tick_params(axis='x')
+        ax2.set_xlim(0, 10)
+        ax[pos].set_xlim(20000, 200000)
+        ax[pos].tick_params(axis='x', labelrotation=45)
 
 
-
-def plot_scatter_radj(path, date_plot, pos):
+def plot_scatter_radj(path, date_plot, pos, plot_variable):
     path_density = r"D:\JHU\corona\npi-model\npi-model\data\us_data"
-    #ax[pos].set_ylabel("R_now")
     ax[pos].set_title(date_plot)
-    #plt.xscale("log")
     colors = ["#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00"]
-    #ax2 = ax[pos].twiny()
-    ax[pos].set_xscale('log')
 
     for cluster_n in range(0, 5):
         print(cluster_n)
@@ -154,8 +208,14 @@ def plot_scatter_radj(path, date_plot, pos):
 
         start_day_dict = get_start_day_dict(path_rt, supercounties_names, date_plot)
         rt_adj_list = get_rt_adj(path_rt, supercounties_names, start_day_dict)
-
-        density_dict, dict_r0 = read_density(path_density, supercounties_dist, rt_adj_list)
+        # to plot all supercouties only
+        if plot_supercounties:
+            density_dict, dict_r0 = read_density_sum(path_density, supercounties_dist, rt_adj_list, plot_variable, pos, start_day_dict)
+            print(density_dict)
+            print(dict_r0)
+        # to plot all counties
+        else:
+            density_dict, dict_r0 = read_density(path_density, supercounties_dist, rt_adj_list, plot_variable)
 
         y_list = []
         for key in density_dict.keys():
@@ -163,31 +223,45 @@ def plot_scatter_radj(path, date_plot, pos):
             y = dict_r0[key]
             if y is not None:
                 y_list.append(y)
-            if x < 10000:
-                ax[pos].scatter(x, y, color=colors[cluster_n], s=8, alpha=0.3)
+            #if x < 10000:
+            ax[pos].scatter(x, y, color=colors[cluster_n], s=8, alpha=set_transparency)
 
+        ax2 = ax[pos].twiny()
         sns.distplot(y_list, hist=False, kde=True, vertical=True, norm_hist=True,
                      bins=10, color=colors[cluster_n],
                      hist_kws={'edgecolor': 'black'},
                      kde_kws={'shade': True, 'linewidth': 1},
-                     ax=ax[pos])
-    #ax[pos].set_xlim([0, 1000])
-    #plt.xscale("log")
+                     ax=ax2)
+        ax2.tick_params(axis='x')
+        ax2.set_xlim(0, 10)
+        ax[pos].set_xlim(10000, 150000)
+        ax[pos].tick_params(axis='x', labelrotation=45)
 
 
-def main():
-    path = r"D:\JHU\corona\npi-model\npi-model\results\table_no_validation\cluster"
+def main(path, plot_variable):
     pos = 1  # for aligning plots
-    plot_scatter_r0(path)
+    plot_scatter_r0(path, plot_variable)
+
     for date_plot in dates:
-        plot_scatter_radj(path, date_plot, pos)
+        plot_scatter_radj(path, date_plot, pos, plot_variable)
         pos += 1
 
 
 if __name__ == '__main__':
     dates = ['3/10/20', '3/15/20', '3/25/20', '4/1/20', '4/10/20']  # , '5/18/20']
+    #plot_variable = 'Density per square mile of land area - Housing units'
+    plot_variable = 'Median_Household_Income_2018'
+    #plot_variable = 'transit_scores - population weighted averages aggregated from town/city level to county'
+    path = r"D:\JHU\corona\npi-model\npi-model\results\table_no_validation\cluster"
+    plot_supercounties = True
+    use_weight_average = True
+    use_death_weight = True
+    set_transparency = 0.5
+
     fig, ax = plt.subplots(1, len(dates) + 1, sharex=True, sharey=True)
-    main()
-    fig.suptitle('Density per square mile of land area - Housing units')
+
+    main(path, plot_variable)
+    fig.suptitle(plot_variable)
+    fig.tight_layout()
     plt.show()
-    plt.savefig('grid_figure.pdf')
+    #plt.savefig(plot_variable+'.pdf')
