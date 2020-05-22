@@ -6,6 +6,7 @@ import seaborn as sns
 import wget
 
 import plotly.express as px
+import plotly.graph_objects as go
 
 
 fname = join('data', 'geojson-counties-fips.json')
@@ -63,7 +64,8 @@ def plot_clustering(state=None):
     scope='usa' if state is None else None
   )
   fig.update_layout(legend_title_text='Cluster Label',
-                    legend=dict(traceorder='normal', orientation='h'))
+                    legend=dict(traceorder='normal', orientation='h'),
+                    font=dict(family='Times New Roman'))
   if state is None:
     fig.update_geos(visible=False)
   else:
@@ -87,17 +89,20 @@ def plot_deaths(state=None):
     range_color=(0, 50)
   )
   fig.update_geos(fitbounds="locations", visible=False)
-  fig.update_layout(coloraxis_showscale=True, coloraxis_colorbar=dict(
-    title='',
-    thicknessmode="pixels",
-    thickness=10,
-    lenmode='pixels',
-    len=300,
-    ticks='outside',
-    tickvals=[0, 10, 20, 30, 40, 50],
-    ticktext=['0', '10', '20', '30', '40', '50+'],
-    dtick=5,
-    yanchor='middle'))
+  fig.update_layout(
+    coloraxis_showscale=True,
+    font=dict(family='Times New Roman'),
+    coloraxis_colorbar=dict(
+      title='',
+      thicknessmode="pixels",
+      thickness=10,
+      lenmode='pixels',
+      len=300,
+      ticks='outside',
+      tickvals=[0, 10, 20, 30, 40, 50],
+      ticktext=['0', '10', '20', '30', '40', '50+'],
+      dtick=5,
+      yanchor='middle'))
   fig.write_image(join('visualizations', f'{state}_deaths.pdf'), scale=3)
   
   
@@ -126,16 +131,16 @@ def plot_supercounties(state=None, num_clusters=5):
       color=y,
       color_discrete_map=color_discrete_map,
     )
-    fig.update_layout(showlegend=False)
+    fig.update_layout(showlegend=False, font=dict(family='Times New Roman'))
     fig.update_geos(fitbounds="locations", visible=False)
     fig.write_image(join('visualizations', f'{supercounty}_supercounty.pdf'), scale=3)
 
 
 def make_plots(state=None):
-  # plot_deaths(state) 
+  plot_deaths(state)
   plot_clustering(state)
-  # plot_supercounties(state)
-    
+  plot_supercounties(state)
+
 
 if __name__ == '__main__':
   # make_plots('36000')           # new york

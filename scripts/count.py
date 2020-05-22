@@ -58,7 +58,7 @@ def count(path, end_date):
         
 def main():
     path = sys.argv[1]
-    end_date = '5/8/20'  # Count to this date
+    end_date = '5/18/20'  # Count to this date
     count(path, end_date)
     
 if __name__ == '__main__':

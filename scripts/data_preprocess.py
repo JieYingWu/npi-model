@@ -6,6 +6,7 @@ from os.path import join, exists
 import json
 
 pd.set_option('mode.chained_assignment', None)
+THRESHOLD = 100
 
 def remove_negative_regions(df_cases, df_deaths, idx):
     """"
@@ -29,7 +30,8 @@ def remove_negative_regions(df_cases, df_deaths, idx):
 
     return df_cases, df_deaths
 
-def select_top_regions(df_cases, df_deaths, interventions, num_counties, population, validation=False, supercounties=False, threshold=50):
+def select_top_regions(df_cases, df_deaths, interventions, num_counties, population,
+                       validation=False, supercounties=False, threshold=THRESHOLD):
     """"
     Returns:
         df_cases: Infections timeseries for top N places
@@ -39,7 +41,7 @@ def select_top_regions(df_cases, df_deaths, interventions, num_counties, populat
     """
 
     headers = df_cases.columns.values
-    last_day = headers[-5]
+    last_day = headers[-1]
     observed_days = len(headers[2:])
 
     if threshold is None:
@@ -48,10 +50,14 @@ def select_top_regions(df_cases, df_deaths, interventions, num_counties, populat
         df_deaths = df_deaths.reset_index(drop=True)
     else:
         cumulative_deaths = df_deaths.iloc[:, 2:].sum(axis=1).to_numpy()
-        df_deaths = df_deaths.iloc[cumulative_deaths > threshold].copy()
+        df_deaths = df_deaths.iloc[cumulative_deaths >= threshold].copy()
         df_deaths = df_deaths.reset_index(drop=True)
 
+    # print('cumulative_deaths:', df_deaths.iloc[:, 2:].sum(axis=1).to_numpy())
+
     fips_list = df_deaths['FIPS'].tolist()
+    for fips, cum_deaths in zip(fips_list, df_deaths.iloc[:, 2:].sum(axis=1).to_numpy().astype(int)):
+        print(f'{fips}: {cum_deaths:,d} deaths')
 
     merge_df = pd.DataFrame({'merge': fips_list})
     df_cases = df_cases.loc[df_cases['FIPS'].isin(fips_list)]
@@ -83,7 +89,8 @@ def select_top_regions(df_cases, df_deaths, interventions, num_counties, populat
     return df_cases, df_deaths, interventions, population, fips_list
 
 
-def merge_supercounties(cases, deaths, interventions, population, threshold=5, clustering=None, save_supercounties=False):
+def merge_supercounties(cases, deaths, interventions, population,
+                        threshold=THRESHOLD, clustering=None, save_supercounties=False):
     """Join counties in the same state if they don't have enough deaths.
 
     Checks that the average daily deaths for the past 10 days is more than `threshold`. If the
@@ -127,7 +134,7 @@ def merge_supercounties(cases, deaths, interventions, population, threshold=5, c
         if np.all(county_deaths == 0):
             # county has no data to contribute at all
             continue
-        if county_deaths[-5:].mean() >= threshold:
+        if county_deaths.sum() >= threshold:
             # county should have enough data on its own
             new_cases.append(cases_row)
             new_deaths.append(deaths_row)
@@ -193,7 +200,7 @@ def merge_supercounties(cases, deaths, interventions, population, threshold=5, c
     # print('INTERVENTIONS', interventions, sep='\n')
     # print('POPULATION', population, sep='\n')
 
-    print('supercounties:', supercounties)
+    # print('supercounties:', supercounties)
     if save_supercounties:
         with open(join('data', 'us_data', 'supercounties.json'), 'w') as file:
             json.dump(supercounties, file)

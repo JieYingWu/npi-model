@@ -7,3 +7,6 @@ __pycache__/
 venv
 *.pyc
 .idea/
+**.DS_Store
+data/geojson-counties-fips.json
+data/us_data/cc-est2018-alldata.csv

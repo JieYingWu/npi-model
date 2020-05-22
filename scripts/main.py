@@ -229,6 +229,17 @@ class MainStanModel():
 
         return stan_data, regions, start_date, geocode, weighted_fatalities
 
+    def load_supercounties():
+        with open(join(self.data_dir, 'us_data', 'supercounties.json'), 'r') as file:
+            supercounties = json.load(file)
+        return supercounties
+    
+    # def print_counts(self, regions):
+    #     supercounties = load_supercounties()
+    #     for region in regions:
+    #         if is_county(region):
+    #             pass
+
     def run_model(self, stan_data, regions, start_date, geocode, weighted_fatalities, validation=False):
         """Run the model
 
@@ -250,7 +261,7 @@ class MainStanModel():
         # print('geocode:', geocode)
         
         # Build a dictionary of region identifier to weighted fatality rate
-        print('running model on {} counties...'.format(stan_data['M']))        
+        
         ifrs = {}
         for i in range(weighted_fatalities.shape[0]):
             ifrs[weighted_fatalities[i, 0]] = weighted_fatalities[i, -1]
