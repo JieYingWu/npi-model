@@ -5,6 +5,7 @@ import pandas as pd
 from data_parser import get_data, Processing
 from statsmodels.distributions.empirical_distribution import ECDF
 import utils
+import sys 
 
 class CountyGenerator():
 
@@ -26,8 +27,17 @@ class CountyGenerator():
             alphas = np.random.normal(self.alpha_param1, self.alpha_param2, num_alphas)
         elif type_of_alpha=='same':
             alphas = np.array(real_alphas)
-        elif type_of_alpha == 'gamma':
+        elif type_of_alpha == 'gamma1':
             np.random.seed(10)
+            mean1, cv1 = 0.1667, 1
+            self.alpha_param1 = cv1**-2
+            self.alpha_param2 = mean1/self.alpha_param1
+            alphas = np.random.gamma(self.alpha_param1, self.alpha_param2, num_alphas)
+        elif type_of_alpha == 'gamma2':
+            np.random.seed(123)
+            mean1, cv1 = 0.5, 1
+            self.alpha_param1 = cv1**-2
+            self.alpha_param2 = mean1/alpha1
             alphas = np.random.gamma(self.alpha_param1, self.alpha_param2, num_alphas)
         elif type_of_alpha == 'uniform':
             alphas = np.random.uniform(self.alpha_param1, self.alpha_param2, num_alphas)
