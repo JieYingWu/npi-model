@@ -9,6 +9,7 @@ import json
 from matplotlib import gridspec
 import seaborn as sns
 from brokenaxes import brokenaxes
+import math
 
 
 def get_means_list(path, geo_list):
@@ -161,7 +162,7 @@ def plot_scatter_r0(path, plot_variable):
     ax[pos].set_title("R0")
     colors = ["#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00"]
 
-    for cluster_n in range(0, 5):
+    for cluster_n in range(0,1):#, 5):
         print(cluster_n)
         path_rt = path + str(cluster_n)
         supercounties_dist, supercounties_names = create_geocodes_dict(path_rt, path_density)
@@ -179,7 +180,7 @@ def plot_scatter_r0(path, plot_variable):
         for key in density_dict.keys():
             x = density_dict[key]
             y = dict_r0[key]
-            if y is not None:
+            if (y is not None) and (not math.isnan(x)):
                 y_list.append(y)
             #if x < 10000:
             ax[pos].scatter(x, y, color=colors[cluster_n], s=8, alpha=set_transparency)
@@ -192,7 +193,7 @@ def plot_scatter_r0(path, plot_variable):
                      ax=ax2)
         ax2.tick_params(axis='x')
         ax2.set_xlim(0, 10)
-        ax[pos].set_xlim(20000, 200000)
+        ax[pos].set_xlim(0, 10)
         ax[pos].tick_params(axis='x', labelrotation=45)
 
 
@@ -201,7 +202,7 @@ def plot_scatter_radj(path, date_plot, pos, plot_variable):
     ax[pos].set_title(date_plot)
     colors = ["#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00"]
 
-    for cluster_n in range(0, 5):
+    for cluster_n in range(0,1):#, 5):
         print(cluster_n)
         path_rt = path + str(cluster_n)
         supercounties_dist, supercounties_names = create_geocodes_dict(path_rt, path_density)
@@ -221,12 +222,14 @@ def plot_scatter_radj(path, date_plot, pos, plot_variable):
         for key in density_dict.keys():
             x = density_dict[key]
             y = dict_r0[key]
-            if y is not None:
+            if (y is not None) and (not math.isnan(x)):
+                print(x, y)
                 y_list.append(y)
             #if x < 10000:
             ax[pos].scatter(x, y, color=colors[cluster_n], s=8, alpha=set_transparency)
 
         ax2 = ax[pos].twiny()
+        print(y_list)
         sns.distplot(y_list, hist=False, kde=True, vertical=True, norm_hist=True,
                      bins=10, color=colors[cluster_n],
                      hist_kws={'edgecolor': 'black'},
@@ -234,7 +237,7 @@ def plot_scatter_radj(path, date_plot, pos, plot_variable):
                      ax=ax2)
         ax2.tick_params(axis='x')
         ax2.set_xlim(0, 10)
-        ax[pos].set_xlim(10000, 150000)
+        ax[pos].set_xlim(0, 10)
         ax[pos].tick_params(axis='x', labelrotation=45)
 
 
@@ -243,16 +246,17 @@ def main(path, plot_variable):
     plot_scatter_r0(path, plot_variable)
 
     for date_plot in dates:
+        print(date_plot)
         plot_scatter_radj(path, date_plot, pos, plot_variable)
         pos += 1
 
 
 if __name__ == '__main__':
-    dates = ['3/10/20', '3/15/20', '3/25/20', '4/1/20', '4/10/20']  # , '5/18/20']
-    #plot_variable = 'Density per square mile of land area - Housing units'
-    plot_variable = 'Median_Household_Income_2018'
+    dates = ['3/10/20', '3/15/20', '3/25/20']#, '4/1/20', '4/10/20']  # , '5/18/20']
+    plot_variable = 'Density per square mile of land area - Housing units'
+    #plot_variable = 'Median_Household_Income_2018'
     #plot_variable = 'transit_scores - population weighted averages aggregated from town/city level to county'
-    path = r"D:\JHU\corona\npi-model\npi-model\results\table_no_validation\cluster"
+    path = r"D:\JHU\corona\npi-model\npi-model\results\no_validation_clusters\cluster_"
     plot_supercounties = True
     use_weight_average = True
     use_death_weight = True
