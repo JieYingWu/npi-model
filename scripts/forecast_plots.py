@@ -206,7 +206,8 @@ def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of
         df = remove_negative_values(new_df)
 
     df = df.set_index('FIPS')
-    fips = str(dict_of_eu_geog[num_of_country].values[0]).zfill(5)
+    fips = dict_of_eu_geog[num_of_country].values[0]
+    fips = str(fips).zfill(5)
     
     confirmed_start_date = datetime.datetime.strptime(start_day_of_confirmed, '%m/%d/%y')
     # print(dict_of_start_dates)
@@ -215,7 +216,6 @@ def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of
     # print(forecast_start_date)
     diff = (forecast_start_date - confirmed_start_date).days + 1  # since it also has a name skip it
 
-    print(df)
     confirmed_cases = list(df.loc[fips][diff:])
     #sustracted_confirmed_cases = [confirmed_cases[0]]
     # since us data is cummulative
@@ -228,7 +228,7 @@ def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of
 
 
 # create a batch of all possible plots for usa
-def make_all_us_county_plots(start_date_dict_path, geocode_dict_path, summary_path, output_path, use_tmp=False):
+def make_all_us_county_plots(start_date_dict_path, geocode_dict_path, summary_path, output_path, use_tmp=True):
     dict_of_start_dates = pd.read_csv(start_date_dict_path, delimiter=',', index_col=0)
     dict_of_eu_geog = pd.read_csv(geocode_dict_path, delimiter=',', index_col=0)
     path = summary_path 
@@ -285,12 +285,13 @@ def main(path):
     output_path = join(path, 'plots/forecast')
     if not exists(output_path):
         os.makedirs(output_path)
-    if 'europe' in cwd:
+    if len(sys.argv) > 1 and 'europe' in cwd:
         make_all_eu_plots(start_dates_path, geocode_path, summary_path, output_path)     
-    if 'county' in cwd:
-        make_all_us_county_plots(start_dates_path, geocode_path, summary_path, output_path, use_tmp = True)
-    if 'state' in cwd :
+    elif len(sys.argv) > 1 and'state' in cwd :
         make_all_us_states_plots(start_dates_path, geocode_path, summary_path, output_path)     
+    else:
+        make_all_us_county_plots(start_dates_path, geocode_path, summary_path, output_path, use_tmp=True)
+
 
 if __name__ == '__main__':
     # run from base directory 

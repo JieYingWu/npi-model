@@ -60,7 +60,6 @@ def get_data(M, data_dir, processing=None, state=False, fips_list=None, validati
 def save_interventions(interventions, fname):
     def func(d):
         x = d.toordinal()
-        print(d, x)
         if x == 1:
             return 'NA'
         else:
@@ -229,7 +228,7 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
     final_dict['N'] = np.asarray(N_arr, dtype=np.int)
     final_dict['N2'] = N2
     final_dict['p'] = covariates.shape[1] - 1
-    final_dict['x'] = np.arange(1, N2+1)
+    final_dict['x'] = np.arange(1, N2 + 1)
     final_dict['cases'] = cases
     final_dict['deaths'] = deaths
     final_dict['EpidemicStart'] = np.asarray(start_dates).astype(np.int)
