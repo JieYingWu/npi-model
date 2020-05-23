@@ -162,7 +162,7 @@ def plot_scatter_r0(path, plot_variable):
     ax[pos].set_title("R0")
     colors = ["#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00"]
 
-    for cluster_n in range(0,1):#, 5):
+    for cluster_n in range(0, 5):
         print(cluster_n)
         path_rt = path + str(cluster_n)
         supercounties_dist, supercounties_names = create_geocodes_dict(path_rt, path_density)
@@ -193,7 +193,7 @@ def plot_scatter_r0(path, plot_variable):
                      ax=ax2)
         ax2.tick_params(axis='x')
         ax2.set_xlim(0, 10)
-        ax[pos].set_xlim(0, 10)
+        ax[pos].set_xlim(0, 2000)
         ax[pos].tick_params(axis='x', labelrotation=45)
 
 
@@ -202,7 +202,7 @@ def plot_scatter_radj(path, date_plot, pos, plot_variable):
     ax[pos].set_title(date_plot)
     colors = ["#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00"]
 
-    for cluster_n in range(0,1):#, 5):
+    for cluster_n in range(0, 5):
         print(cluster_n)
         path_rt = path + str(cluster_n)
         supercounties_dist, supercounties_names = create_geocodes_dict(path_rt, path_density)
@@ -223,7 +223,6 @@ def plot_scatter_radj(path, date_plot, pos, plot_variable):
             x = density_dict[key]
             y = dict_r0[key]
             if (y is not None) and (not math.isnan(x)):
-                print(x, y)
                 y_list.append(y)
             #if x < 10000:
             ax[pos].scatter(x, y, color=colors[cluster_n], s=8, alpha=set_transparency)
@@ -237,7 +236,7 @@ def plot_scatter_radj(path, date_plot, pos, plot_variable):
                      ax=ax2)
         ax2.tick_params(axis='x')
         ax2.set_xlim(0, 10)
-        ax[pos].set_xlim(0, 10)
+        ax[pos].set_xlim(0, 2000)
         ax[pos].tick_params(axis='x', labelrotation=45)
 
 
@@ -259,7 +258,7 @@ if __name__ == '__main__':
     path = r"D:\JHU\corona\npi-model\npi-model\results\no_validation_clusters\cluster_"
     plot_supercounties = True
     use_weight_average = True
-    use_death_weight = True
+    use_death_weight = False
     set_transparency = 0.5
 
     fig, ax = plt.subplots(1, len(dates) + 1, sharex=True, sharey=True)
