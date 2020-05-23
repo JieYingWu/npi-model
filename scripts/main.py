@@ -83,12 +83,11 @@ class MainStanModel():
                 stan_data_[k] = stan_data[k][i:i + 1]
             
             weighted_fatalities_ = weighted_fatalities[i:i + 1]
-            start_date_ = {idx: start_date[idx]}
-            geocode_ = {idx: geocode[idx]}
+            start_date_ = {0: start_date[idx]}
+            geocode_ = {0: geocode[idx]}
             regions_ = [regions[i]]
             vals.append((stan_data_, regions_, start_date_, geocode_, weighted_fatalities_))
         return vals
-            
         
     def get_cluster(self, region):
         """
@@ -103,7 +102,8 @@ class MainStanModel():
         else:
             return int(region.split('_')[1])
 
-    def validation_county_split(self, stan_data, regions, start_date, geocode, weighted_fatalities, counties_per_cluster=1):
+    def validation_county_split(self, stan_data, regions, start_date, geocode, weighted_fatalities,
+                                counties_per_cluster=1):
         """Separate into training and validation data by taking out the first county/supercounty for each cluster.
 
         So if cluster was specified, the validation size will be 1. If no cluster specified, there
@@ -119,6 +119,9 @@ class MainStanModel():
         :param counties_per_cluster: validation counties per cluster to withhold
 
         """
+        # print('before split: {}, {}, {}'.format(regions[0], stan_data['pop'][0], weighted_fatalities[0, :3]))
+        # print('before split: {}, {}, {}'.format(regions[-1], stan_data['pop'][-1], weighted_fatalities[-1, :3]))
+        # print(f'geocode: {geocode}')
         counts = {}
         val_regions = []
         train_regions = []
@@ -129,6 +132,9 @@ class MainStanModel():
         val_start_date = {}
         train_geocode = {}
         val_geocode = {}
+
+        validx = 0
+        trainidx = 0
         
         for i, region in enumerate(regions):
             c = self.get_cluster(region)
@@ -137,18 +143,22 @@ class MainStanModel():
                 counts[c] = count + 1
                 val_regions.append(region)
                 val_indices.append(i)
-                val_start_date[i] = start_date[i]
-                val_geocode[i] = geocode[i]
+                val_start_date[validx] = start_date[i]
+                val_geocode[validx] = geocode[i]
+                validx += 1
             else:
                 train_regions.append(region)
                 train_indices.append(i)
-                train_start_date[i] = start_date[i]
-                train_geocode[i] = geocode[i]
+                train_start_date[trainidx] = start_date[i]
+                train_geocode[trainidx] = geocode[i]
+                trainidx += 1
+
+        # print(f'val_regions: {val_regions}')
         
         train_stan_data = stan_data.copy()
         val_stan_data = stan_data.copy()
-        val_stan_data['M'] = sum(counts.values())
-        train_stan_data['M'] = int(stan_data['M'] - val_stan_data['M'])
+        val_stan_data['M'] = len(val_regions)
+        train_stan_data['M'] = len(train_regions)
 
         for k in ['cases', 'deaths'] + [f'covariate{i}' for i in range(1, 9)]:
             train_stan_data[k] = stan_data[k][:, train_indices]
@@ -160,18 +170,14 @@ class MainStanModel():
         train_weighted_fatalities = weighted_fatalities[train_indices]
         val_weighted_fatalities = weighted_fatalities[val_indices]
 
+        # print('after split: {}, {}, {}'.format(
+        #     train_regions[0], train_stan_data['pop'][0], train_weighted_fatalities[0, :3]))
+        # print('after split: {}, {}, {}'.format(
+        #     train_regions[-1], train_stan_data['pop'][-1], train_weighted_fatalities[-1, :3]))
+        # print(f'train_geocode: {train_geocode}')
+        
         return ((train_stan_data, train_regions, train_start_date, train_geocode, train_weighted_fatalities),
                 (val_stan_data, val_regions, val_start_date, val_geocode, val_weighted_fatalities))
-    
-    # def load_supercounties_fatalities(self):
-    #     fatalities = np.loadtxt(
-    #         join(self.data_dir, 'us_data', 'weighted_fatality_supercounties.csv'),
-    #         skiprows=1, delimiter=',', dtype=str)
-    #     indexing = [int(x.split('_')[1]) == self.cluster for x in fatalities[:, 0]]
-    #     fatalities[:, 0] = [str(int(x.split('_')[0])) for x in fatalities[:, 0]]
-    #     fatalities = fatalities[indexing]
-    #     # fatalities = np.concatenate([fatalities[:, 0:1], np.zeros((fatalities.shape[0], 2), dtype=str), fatalities[:, 1:]], axis=1) 
-    #     return fatalities
 
     def get_weighted_fatalities(self, regions):
         county_weighted_fatalities = np.loadtxt(
