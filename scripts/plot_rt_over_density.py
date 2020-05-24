@@ -161,6 +161,7 @@ def plot_scatter_r0(path, plot_variable):
     path_density = r"D:\JHU\corona\npi-model\npi-model\data\us_data"
     ax[pos].set_title("R0")
     colors = ["#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00"]
+    x_array = []
 
     for cluster_n in range(0, 5):
         print(cluster_n)
@@ -177,11 +178,13 @@ def plot_scatter_r0(path, plot_variable):
             density_dict, dict_r0 = read_density(path_density, supercounties_dist, r0_means_list, plot_variable)
 
         y_list = []
+        x_list = []
         for key in density_dict.keys():
             x = density_dict[key]
             y = dict_r0[key]
             if (y is not None) and (not math.isnan(x)):
                 y_list.append(y)
+                x_list.append(x)
             #if x < 10000:
             ax[pos].scatter(x, y, color=colors[cluster_n], s=8, alpha=set_transparency)
         # plot distrubution
@@ -193,11 +196,25 @@ def plot_scatter_r0(path, plot_variable):
                      ax=ax2)
         ax2.tick_params(axis='x')
         ax2.set_xlim(0, 10)
-        ax[pos].set_xlim(0, 2000)
+        ax2.tick_params(labeltop=False)
+
+        ax3 = ax[pos].twinx()
+        sns.distplot(x_list, hist=False, kde=True,  norm_hist=True,
+                     bins=15, color=colors[cluster_n],
+                     hist_kws={'edgecolor': 'black'},
+                     kde_kws={'shade': True, 'linewidth': 1},
+                     ax=ax3)
+        ax3.tick_params(axis='y')
+        ax3.set_ylim(0, 6e-2)
+        ax3.tick_params(labelright=False)
+        x_array.append(x_list)
+
+        ax[pos].set_xlim(0, 3000)
         ax[pos].tick_params(axis='x', labelrotation=45)
+    return x_array
 
 
-def plot_scatter_radj(path, date_plot, pos, plot_variable):
+def plot_scatter_radj(path, date_plot, pos, plot_variable,x_array):
     path_density = r"D:\JHU\corona\npi-model\npi-model\data\us_data"
     ax[pos].set_title(date_plot)
     colors = ["#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00"]
@@ -219,11 +236,13 @@ def plot_scatter_radj(path, date_plot, pos, plot_variable):
             density_dict, dict_r0 = read_density(path_density, supercounties_dist, rt_adj_list, plot_variable)
 
         y_list = []
+        x_list = []
         for key in density_dict.keys():
             x = density_dict[key]
             y = dict_r0[key]
             if (y is not None) and (not math.isnan(x)):
                 y_list.append(y)
+                #x_list.append(x)
             #if x < 10000:
             ax[pos].scatter(x, y, color=colors[cluster_n], s=8, alpha=set_transparency)
 
@@ -236,22 +255,35 @@ def plot_scatter_radj(path, date_plot, pos, plot_variable):
                      ax=ax2)
         ax2.tick_params(axis='x')
         ax2.set_xlim(0, 10)
-        ax[pos].set_xlim(0, 2000)
+        ax2.tick_params(labeltop=False)
+
+        ax3 = ax[pos].twinx()
+        sns.distplot(x_array[cluster_n], hist=False, kde=True, norm_hist=True,
+                     bins=10, color=colors[cluster_n],
+                     hist_kws={'edgecolor': 'black'},
+                     kde_kws={'shade': True, 'linewidth': 1},
+                     ax=ax3)
+        ax3.tick_params(axis='y')
+        ax3.set_ylim(0, 6e-2)
+        ax3.tick_params(labelright=False)
+
+
+        ax[pos].set_xlim(0, 3000)
         ax[pos].tick_params(axis='x', labelrotation=45)
 
 
 def main(path, plot_variable):
     pos = 1  # for aligning plots
-    plot_scatter_r0(path, plot_variable)
+    x_array = plot_scatter_r0(path, plot_variable)
 
     for date_plot in dates:
         print(date_plot)
-        plot_scatter_radj(path, date_plot, pos, plot_variable)
+        plot_scatter_radj(path, date_plot, pos, plot_variable, x_array)
         pos += 1
 
 
 if __name__ == '__main__':
-    dates = ['3/10/20', '3/15/20', '3/25/20']#, '4/1/20', '4/10/20']  # , '5/18/20']
+    dates = ['3/10/20', '3/15/20', '3/25/20', '4/1/20', '4/10/20']  # , '5/18/20']
     plot_variable = 'Density per square mile of land area - Housing units'
     #plot_variable = 'Median_Household_Income_2018'
     #plot_variable = 'transit_scores - population weighted averages aggregated from town/city level to county'
