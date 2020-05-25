@@ -56,7 +56,7 @@ class ValidationResult():
         
         # write results to a csv 
         self.write_results(self.save_path, final_list)
-
+        self.write_final_results(final_list, self.num_counties)
 
     def parse_summary(self, path):
         with open(join(path, 'summary.csv'), 'r') as f:
@@ -158,11 +158,15 @@ class ValidationResult():
                 print(len(summary1[i]))
                 for (key1, val1), (key2, val2) in zip(summary1[i].items(), summary2[i].items()):
                     identifier = '_'.join([self.parameter_name_list[i], str(key1)])
-                    print(identifier)
-                    # pick the mean
-                    dis_1 = np.array(val1)[:,0].astype(np.float)
-                    dis_2 = np.array(val2)[:,0].astype(np.float)
+                    print(f'Plotting {identifier}')
                     
+                    # pick the mean
+                    try:
+                        dis_1 = np.array(val1)[:,0].astype(np.float)
+                        dis_2 = np.array(val2)[:,0].astype(np.float)
+                    except ValueError:
+                        print(dis_1)
+                        print(dis_2)
                     statistic, pval = stats.ks_2samp(dis_1, dis_2)
 
                     final_dict[identifier] = (statistic, pval)
@@ -234,7 +238,6 @@ class ValidationResult():
             writer.writerow([f'Comparing {self.results_path[0]} and {self.results_path[1]}'])
             writer.writerow(['-----------------------------'])
             writer.writerow(['identifier', f'{self.test}','p-val'])
-            print(type(final_list))
             writer.writerows(final_list)
 
     def plot_qq(self, path, timeseries_1, timeseries_2, fips, statistic, pval, tag):
@@ -270,17 +273,36 @@ class ValidationResult():
     def write_final_results(self, final_list, num_counties):
         # select only the first num counties entries which correspont to the predicted deaths
         final_list = final_list[:num_counties]
-        final_arr = np.array(final_list)
-        max_value = max(final_arr)
-        min_value = min(final_arr)
+        pval_arr = np.array(final_list)[:,2].astype(np.float)
+        statistic_arr = np.array(final_list)[:,1].astype(np.float)
 
-        mean = np.mean(final_arr)
-        std = np.std(final_arr)
-        median = np.median(final_arr)
+        max_pvalue = max(pval_arr)
+        argmax_pvalue = self.geocode[np.argmax(pval_arr)]
+        min_pvalue = min(pval_arr)
+        argmin_pvalue = self.geocode[np.argmin(pval_arr)]
 
+        mean_pvalue = np.mean(pval_arr)
+        std_pvalue = np.std(pval_arr)
+        median_pvalue = np.median(pval_arr)
+
+        max_statistic = max(statistic_arr)
+        argmax_statistic = self.geocode[np.argmax(statistic_arr)]
+        min_statistic = min(statistic_arr)
+        argmin_statistic = self.geocode[np.argmin(statistic_arr)]
+
+        mean_statistic = np.mean(statistic_arr)
+        std_statistic = np.std(statistic_arr)
+        median_statistic = np.median(statistic_arr)
+
+        values_list = [max_pvalue, argmax_pvalue, min_pvalue, argmin_pvalue, mean_pvalue, std_pvalue, median_pvalue, max_statistic, argmax_statistic, min_statistic, argmin_statistic, mean_statistic, std_statistic, median_statistic]
+
+        values_names_list = ['max_pvalue', 'FIPS_max_pvalue', 'min_pvalue', 'FIPS_min_pvalue', 'mean_pvalue', 'std_pvalue', 'median_pvalue', 'max_statistic', 'FIPS_max_statistic', 'min_statistic', 'FIPS_min_statistic', 'mean_statistic', 'std_statistic', 'median_statistic']
         
-        
+        list_to_write = [[name, value] for name, value in zip(values_names_list, values_list)]
 
+        with open(join(self.save_path, 'final_comparison.csv'),'w', newline='') as f:
+            writer = csv.writer(f, delimiter=',')
+            writer.writerows(list_to_write)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

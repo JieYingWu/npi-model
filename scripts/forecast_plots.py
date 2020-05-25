@@ -207,8 +207,7 @@ def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of
 
     df = df.set_index('FIPS')
     fips = dict_of_eu_geog[num_of_country].values[0]
-    if isinstance(fips, int):
-        fips = str(fips).zfill(5)
+    fips = str(fips).zfill(5)
     
     confirmed_start_date = datetime.datetime.strptime(start_day_of_confirmed, '%m/%d/%y')
     # print(dict_of_start_dates)
@@ -217,7 +216,6 @@ def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of
     # print(forecast_start_date)
     diff = (forecast_start_date - confirmed_start_date).days + 1  # since it also has a name skip it
 
-    print(df)
     confirmed_cases = list(df.loc[fips][diff:])
     #sustracted_confirmed_cases = [confirmed_cases[0]]
     # since us data is cummulative
