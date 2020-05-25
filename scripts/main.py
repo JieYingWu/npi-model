@@ -121,7 +121,11 @@ class MainStanModel():
         """
         # print('before split: {}, {}, {}'.format(regions[0], stan_data['pop'][0], weighted_fatalities[0, :3]))
         # print('before split: {}, {}, {}'.format(regions[-1], stan_data['pop'][-1], weighted_fatalities[-1, :3]))
-        # print(f'geocode: {geocode}')
+        print(*[f'{k}: {v.shape if isinstance(v, np.ndarray) else v}' for k, v in stan_data.items()], sep='\n')
+        print(f'regions: {regions}')
+        print(f'geocode: {geocode}')
+        print(f'start_date: {start_date}')
+        print(f'weighted_fatalities: {weighted_fatalities}')
         counts = {}
         val_regions = []
         train_regions = []
@@ -152,8 +156,8 @@ class MainStanModel():
                 train_start_date[trainidx] = start_date[i]
                 train_geocode[trainidx] = geocode[i]
                 trainidx += 1
-
-        # print(f'val_regions: {val_regions}')
+                
+        print(f'val_regions: {val_regions}')
         
         train_stan_data = stan_data.copy()
         val_stan_data = stan_data.copy()
@@ -174,7 +178,11 @@ class MainStanModel():
         #     train_regions[0], train_stan_data['pop'][0], train_weighted_fatalities[0, :3]))
         # print('after split: {}, {}, {}'.format(
         #     train_regions[-1], train_stan_data['pop'][-1], train_weighted_fatalities[-1, :3]))
-        # print(f'train_geocode: {train_geocode}')
+        print(*[f'{k}: {v.shape if isinstance(v, np.ndarray) else v}' for k, v in train_stan_data.items()], sep='\n')
+        print(f'train_regions: {train_regions}')
+        print(f'train_geocode: {train_geocode}')
+        print(f'train_start_date: {train_start_date}')
+        print(f'train_weighted_fatalities: {train_weighted_fatalities}')
         
         return ((train_stan_data, train_regions, train_start_date, train_geocode, train_weighted_fatalities),
                 (val_stan_data, val_regions, val_start_date, val_geocode, val_weighted_fatalities))
