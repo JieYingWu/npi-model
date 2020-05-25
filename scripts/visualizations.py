@@ -144,9 +144,9 @@ def make_plots(state=None):
 
 if __name__ == '__main__':
   # make_plots('36000')           # new york
-  # make_plots('48000')           # texas
+  make_plots('48000')           # texas
   # make_plots('06000')           # california
   # make_plots('24000')           # maryland
   # make_plots('53000')           # washington
-  make_plots()
+  # make_plots()
 
