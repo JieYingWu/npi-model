@@ -77,7 +77,7 @@ class MainStanModel():
         for i, idx in enumerate(sorted(geocode.keys())):
             stan_data_ = stan_data.copy()
             stan_data_['M'] = 1
-            for k in ['cases', 'deaths'] + [f'covariate{cov}' for cov in range(1, 9)]:
+            for k in ['cases', 'deaths']:
                 stan_data_[k] = stan_data[k][:, i:i + 1]
             for k in ['N', 'EpidemicStart', 'pop', 'X']:
                 stan_data_[k] = stan_data[k][i:i + 1]
@@ -164,7 +164,7 @@ class MainStanModel():
         val_stan_data['M'] = len(val_regions)
         train_stan_data['M'] = len(train_regions)
 
-        for k in ['cases', 'deaths'] + [f'covariate{i}' for i in range(1, 9)]:
+        for k in ['cases', 'deaths']:
             train_stan_data[k] = stan_data[k][:, train_indices]
             val_stan_data[k] = stan_data[k][:, val_indices]
         for k in ['N', 'EpidemicStart', 'pop', 'X']:
