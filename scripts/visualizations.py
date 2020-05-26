@@ -61,7 +61,9 @@ def plot_clustering(state=None):
     locations='FIPS',
     color='cluster',
     color_discrete_map=color_discrete_map,
-    scope='usa' if state is None else None
+    scope='usa' if state is None else None,
+    height=1000,
+    width=1000,
   )
   fig.update_layout(legend_title_text='Cluster Label',
                     legend=dict(traceorder='normal', orientation='h'),
@@ -72,10 +74,21 @@ def plot_clustering(state=None):
     fig.update_geos(fitbounds="locations", visible=False)
     
   if state is None:
-    fig.write_image(join('visualizations', f'us_clustering.pdf'))
+    fig.write_image(join('visualizations', f'us_clustering.pdf'), scale=20)
   else:
     fig.write_image(join('visualizations', f'{state}_clustering.pdf'), scale=3)
 
+
+# def plot_clustering_us():
+#   clustering = load_clustering()
+#   fig = go.Figure(data=go.Choropleth(
+#     locations=clustering['FIPS'],
+#     z=clustering['cluster'],
+#     geojson=counties_geojson,
+#     locationmode='USA-states',
+#     showlegend=False,
+#     ))
+    
 
 def plot_deaths(state=None):
   deaths = filter_by_state(load_timeseries('deaths'), state)
@@ -144,9 +157,10 @@ def make_plots(state=None):
 
 if __name__ == '__main__':
   # make_plots('36000')           # new york
-  make_plots('48000')           # texas
+  # make_plots('48000')           # texas
   # make_plots('06000')           # california
   # make_plots('24000')           # maryland
   # make_plots('53000')           # washington
+  plot_clustering()             # US
   # make_plots()
 
