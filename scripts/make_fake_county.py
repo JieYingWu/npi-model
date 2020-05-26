@@ -23,7 +23,9 @@ class CountyGenerator():
 
     # Generate all alphas for this object (cluster)
     def generate_alphas(self, num_alphas):
-        alphas = np.random.normal(self.alpha_mu, self.alpha_var, num_alphas)
+        shape = self.alpha_var**-2
+        scale = shape / self.alpha_mu
+        alphas = np.random.normal(shape, scale, num_alphas)
         self.alphas = -1*alphas
 
         
@@ -80,7 +82,7 @@ class CountyGenerator():
 #        tau = np.random.exponential(0.03, (6)) # Seed the first 6 days
         si = self.si[::-1]
         prediction = np.zeros(rt.shape[0])
-        prediction[0:6] = 300 #np.exp(np.arange(6))*6
+        prediction[0:6] = 200 #np.exp(np.arange(6))*6
 #        print(prediction)
 #        exit()
         for i in range(6, rt.shape[0]):
@@ -113,8 +115,7 @@ class CountyGenerator():
 
     
 # Get interventions as binary timeseries
-def parse_interventions(regions, data_dir='data'):
-    stan_data, regions, start_date, geocode = get_data(len(regions), data_dir, processing=Processing.REMOVE_NEGATIVE_VALUES, state=False, fips_list=regions, threshold=5)
+def parse_interventions(stan_data, data_dir='data'):
     i1 = np.expand_dims(stan_data['covariate1'], axis=2)
     i2 = np.expand_dims(stan_data['covariate2'], axis=2)
     i3 = np.expand_dims(stan_data['covariate3'], axis=2)
@@ -125,44 +126,43 @@ def parse_interventions(regions, data_dir='data'):
     i8 = np.expand_dims(stan_data['covariate8'], axis=2)
     interventions = np.concatenate((i1, i2, i3, i4, i5, i6, i7, i8), axis=2)
     interventions = interventions.transpose(1, 0, 2)
-    return interventions, start_date, geocode
+    return interventions
     
     
 if __name__ == '__main__':
     data_dir = 'simulated'
     N2 = 150
 
+    alpha_mu = 0.5
+    alpha_var = 1
+    num_alphas = 8
+
+#    interventions = get_npis(data_dir)
+#    regions = get_counties_isolated_NPIs(interventions, 'public schools').values.tolist()
+#    regions.sort()
+
+#    for i in range(len(regions)):
+#        regions[i] = str(regions[i])
+    stan_data, regions, start_date, geocode = get_data(100, data_dir, processing=Processing.REMOVE_NEGATIVE_VALUES, state=False)
+
     r0_file_path = join('results', 'real_county', 'summary.csv')
     r0_file = pd.read_csv(r0_file_path)
-    geocode_path = join('results', 'real_county', 'geocode.csv')
-    geocode_file = pd.read_csv(geocode_path)
-    geocode = geocode_file.values[0][1:]
     
     means = r0_file['mean'].values
     M = len(geocode)
     means= means[0:M]
+
     all_r0 = {}
     for i in range(M):
-        all_r0[str(geocode[i])] = means[i]
+        all_r0[str(geocode[i]).zfill(5)] = means[i]
 
-    alpha_mu = 0.2
-    alpha_var = 0.1
-    num_alphas = 8
-
-    interventions = get_npis(data_dir)
-    regions = get_counties_isolated_NPIs(interventions, 'public schools').values.tolist()
-    regions.sort()
-
-    for i in range(len(regions)):
-        regions[i] = str(regions[i])
-    
     serial_interval = np.loadtxt(join(data_dir, 'us_data', 'serial_interval.csv'), skiprows=1, delimiter=',')
     si = serial_interval[:,1]
 
     generator = CountyGenerator(N2, si, num_alphas, alpha_mu, alpha_var)
 #    generator.alphas = [-0.124371438107218, -0.196069499889346, -0.194197939254073, -0.495431571118872, -0.378146551081655, -0.137932933788039, -0.29558366952368, -0.422007707986038]
 
-    interventions, start_date, geocode = parse_interventions(regions)
+    interventions = parse_interventions(stan_data)
     all_rt = {}
     all_cases = {}
     all_deaths = {}
@@ -176,6 +176,8 @@ if __name__ == '__main__':
         all_cases[region] = cases
         all_deaths[region] = deaths
 
+
+    dtype = dict(FIPS=str)
     summary_path = join(data_dir, 'us_data', 'summary.csv')
     interventions_path = join(data_dir, 'us_data', 'interventions_timeseries.csv')
     cases_path = join(data_dir, 'us_data', 'infections_timeseries_w_states.csv')
@@ -183,9 +185,11 @@ if __name__ == '__main__':
 
     real_cases_path = join('data', 'us_data', 'infections_timeseries_w_states.csv')
     real_deaths_path = join('data', 'us_data', 'deaths_timeseries_w_states.csv')
-    real_cases_df = pd.read_csv(real_cases_path, index_col='FIPS')
-    real_deaths_df = pd.read_csv(real_deaths_path, index_col='FIPS')
-    
+    real_cases_df = pd.read_csv(real_cases_path, dtype=dtype)
+    real_deaths_df = pd.read_csv(real_deaths_path, dtype=dtype)
+    real_cases_df = real_cases_df.set_index('FIPS')
+    real_deaths_df = real_deaths_df.set_index('FIPS')
+
     
     summary = {'N2':N2, 'alpha_mu':alpha_mu, 'alpha_var':alpha_var, 'alphas':generator.alphas}
     df = pd.DataFrame.from_dict(summary)
@@ -195,15 +199,24 @@ if __name__ == '__main__':
     deaths_df = real_deaths_df.copy()
 
     for r in range(len(geocode)):
-        region = geocode[r]
+        region = str(geocode[i]).zfill(5)
 
-        simulated_cases = all_cases[region][0:len(real_cases_df.loc[int(region), start_date[r]:])]
-        cases_df.loc[int(region), start_date[r]:] = simulated_cases
+        simulated_cases = all_cases[region][0:len(real_cases_df.loc[region, start_date[r]:])]
+        cases_df.loc[region, start_date[r]:] = simulated_cases
 
-        simulated_deaths = all_deaths[region][0:len(real_deaths_df.loc[int(region), start_date[r]:])]
-        deaths_df.loc[int(region), start_date[r]:] = simulated_deaths
+        simulated_deaths = all_deaths[region][0:len(real_deaths_df.loc[region, start_date[r]:])]
+        deaths_df.loc[region, start_date[r]:] = simulated_deaths
 
     cases_df.to_csv(cases_path)
     deaths_df.to_csv(deaths_path)
     rt_df = pd.DataFrame.from_dict(all_rt)
     rt_df.to_csv(interventions_path)
+
+
+
+
+
+
+
+
+
