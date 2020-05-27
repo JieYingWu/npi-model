@@ -28,6 +28,11 @@ def get_alpha_from_summary(df):
     return alpha
 
 
+def is_county(fips):
+    fips = str(fips).zfill(5)
+    return len(fips) == 5
+
+
 class MainStanModel():
     def __init__(self, args):
         self.args = args
@@ -243,16 +248,20 @@ class MainStanModel():
 
         return stan_data, regions, start_date, geocode, weighted_fatalities
 
-    def load_supercounties():
+    def load_supercounties(self):
         with open(join(self.data_dir, 'us_data', 'supercounties.json'), 'r') as file:
             supercounties = json.load(file)
         return supercounties
     
-    # def print_counts(self, regions):
-    #     supercounties = load_supercounties()
-    #     for region in regions:
-    #         if is_county(region):
-    #             pass
+    def summarize_regions(self, regions):
+        supercounties = self.load_supercounties()
+        count = 0
+        for region in regions:
+            if is_county(region):
+                count += 1
+            else:
+                count += len(supercounties[region])
+        print(f'running model on {len(regions)} regions (counties + supercounties) with {count} total counties')
 
     def run_model(self, stan_data, regions, start_date, geocode, weighted_fatalities, validation=False):
         """Run the model
@@ -275,6 +284,7 @@ class MainStanModel():
         # print('geocode:', geocode)
         
         # Build a dictionary of region identifier to weighted fatality rate
+        self.summarize_regions(regions)
         
         ifrs = {}
         for i in range(weighted_fatalities.shape[0]):
