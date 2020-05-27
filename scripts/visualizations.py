@@ -48,6 +48,7 @@ def filter_by_state(df, state=None):
 num_clusters = 5
 color_palette = sns.color_palette('Set1', n_colors=num_clusters)
 color_palette = [f'#{int(255*t[0]):02x}{int(255*t[1]):02x}{int(255*t[2]):02x}' for t in color_palette]
+print(color_palette)
 color_discrete_map = dict((str(cluster), color_palette[cluster]) for cluster in range(num_clusters))
 color_discrete_map['-1'] = '#ffffff'
 height = 400
@@ -62,8 +63,8 @@ def plot_clustering(state=None):
     color='cluster',
     color_discrete_map=color_discrete_map,
     scope='usa' if state is None else None,
-    height=1000,
-    width=1000,
+    height=1000 if state is None else None,
+    width=1000 if state is None else None,
   )
   fig.update_layout(legend_title_text='Cluster Label',
                     legend=dict(traceorder='normal', orientation='h'),
@@ -150,17 +151,17 @@ def plot_supercounties(state=None, num_clusters=5):
 
 
 def make_plots(state=None):
-  plot_deaths(state)
+  # plot_deaths(state)
   plot_clustering(state)
-  plot_supercounties(state)
+  # plot_supercounties(state)
 
 
 if __name__ == '__main__':
   # make_plots('36000')           # new york
-  # make_plots('48000')           # texas
+  make_plots('48000')           # texas
   # make_plots('06000')           # california
   # make_plots('24000')           # maryland
   # make_plots('53000')           # washington
-  plot_clustering()             # US
+  # plot_clustering()             # US
   # make_plots()
-
+  pass
