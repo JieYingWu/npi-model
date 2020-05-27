@@ -6,7 +6,7 @@ from os.path import join, exists
 import json
 
 pd.set_option('mode.chained_assignment', None)
-THRESHOLD = 100
+THRESHOLD = 50
 
 def remove_negative_regions(df_cases, df_deaths, idx):
     """"
