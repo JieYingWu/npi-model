@@ -20,19 +20,20 @@ from utils import get_cluster, get_npis, get_counties_isolated_NPIs
 #            17031, 34003, 34031, 6037, 26163, 34013, 25017, 34017, 34023, 34039, 9001, 33011, 26125, 9003, 34027, 36119, 34025, 25009, 18097, 42091,
 #            39093, 33013, 37047, 1017, 21085, 17027, 37037, 26155, 28075, 28057, 9011, 9005, 48477, 28069, 28085, 28109, 5075, 5069, 51065, 40097]
 data_dir = sys.argv[1]
-interventions = get_npis(data_dir)
-regions = get_counties_isolated_NPIs(interventions, 'public schools').values.tolist()
+#interventions = get_npis(data_dir)
+#regions = get_counties_isolated_NPIs(interventions, 'public schools').values.tolist()
 
-for i in range(len(regions)):
-    regions[i] = str(regions[i])
+#for i in range(len(regions)):
+#    regions[i] = str(regions[i])
 #filename = 'data/us_data/clustering.csv'
     
 tag = 'simulated_county' 
-regions.sort()
-M = len(regions) 
-print('Running for ' + str(M) + ' FIPS')
+#regions.sort()
+M = 100#len(regions) 
+#print('Running for ' + str(M) + ' FIPS')
 
-stan_data, regions, start_date, geocode = get_data(M, data_dir, processing=Processing.REMOVE_NEGATIVE_VALUES, state=False, fips_list=regions, threshold=5)
+#stan_data, regions, start_date, geocode = get_data(M, data_dir, processing=Processing.REMOVE_NEGATIVE_VALUES, state=False, fips_list=regions, threshold=5)w
+stan_data, regions, start_date, geocode = get_data(M, data_dir, processing=Processing.REMOVE_NEGATIVE_VALUES, state=False)
 #print(stan_data['M'])
 #exit()
 
@@ -43,6 +44,7 @@ wf_file = join(data_dir, 'us_data', 'weighted_fatality_new.csv')
 weighted_fatalities = np.loadtxt(wf_file, skiprows=1, delimiter=',', dtype=str)
 
 # Temporarily setting this so it doesn't break SI
+M = stan_data['M']
 stan_data['N2'] = 150
 N2 = stan_data['N2']
 
