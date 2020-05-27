@@ -25,7 +25,7 @@ class CountyGenerator():
     def generate_alphas(self, num_alphas):
         shape = self.alpha_var**-2
         scale = shape / self.alpha_mu
-        alphas = np.random.normal(shape, scale, num_alphas)
+        alphas = np.random.gamma(self.alpha_mu, self.alpha_var, num_alphas)/2
         self.alphas = -1*alphas
 
         
