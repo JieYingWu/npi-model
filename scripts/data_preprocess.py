@@ -6,7 +6,7 @@ from os.path import join, exists
 import json
 
 pd.set_option('mode.chained_assignment', None)
-THRESHOLD = 100
+THRESHOLD = 50
 
 def remove_negative_regions(df_cases, df_deaths, idx):
     """"
@@ -148,7 +148,7 @@ def merge_supercounties(cases, deaths, interventions, population,
         if cluster is None:
             area_name = f'{state_name} Supercounty'
         else:
-            area_name = f'{state_name} Supercounty, Cluster {cluster}'
+            area_name = f'{state_name} Supercounty, Cluster {cluster + 1}'
 
         # going to be adding to supercounty, so get rid of identifying info
         cases_row['FIPS'] = supercounty
