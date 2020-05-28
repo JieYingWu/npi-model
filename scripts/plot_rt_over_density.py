@@ -159,8 +159,8 @@ def get_start_day(path, geo_list):
 def plot_scatter_r0(path, plot_variable):
     pos = 0
     path_density = r"D:\JHU\corona\npi-model\npi-model\data\us_data"
-    ax[pos].set_title("R0")
-    colors = ["#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00"]
+    ax[pos].set_title("R0", pad=15)
+    colors =['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00']
     x_array = []
 
     for cluster_n in range(0, 5):
@@ -205,19 +205,22 @@ def plot_scatter_r0(path, plot_variable):
                      kde_kws={'shade': True, 'linewidth': 1},
                      ax=ax3)
         ax3.tick_params(axis='y')
-        ax3.set_ylim(0, 6e-2)
+        #ax3.set_ylim(0, 6e-2) # density
+        #ax3.set_ylim(0, 5e-4) # income
+        ax3.set_ylim(0, 1e-8) # transit
         ax3.tick_params(labelright=False)
+        ax3.tick_params(labeltop=False)
         x_array.append(x_list)
 
-        ax[pos].set_xlim(0, 3000)
+        ax[pos].set_xlim(0, 1e10)
         ax[pos].tick_params(axis='x', labelrotation=45)
     return x_array
 
 
 def plot_scatter_radj(path, date_plot, pos, plot_variable,x_array):
     path_density = r"D:\JHU\corona\npi-model\npi-model\data\us_data"
-    ax[pos].set_title(date_plot)
-    colors = ["#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00"]
+    ax[pos].set_title(date_plot, pad=17)
+    colors = ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00']
 
     for cluster_n in range(0, 5):
         print(cluster_n)
@@ -264,11 +267,16 @@ def plot_scatter_radj(path, date_plot, pos, plot_variable,x_array):
                      kde_kws={'shade': True, 'linewidth': 1},
                      ax=ax3)
         ax3.tick_params(axis='y')
-        ax3.set_ylim(0, 6e-2)
+        #ax3.set_ylim(0, 6e-2) # density
+        #ax3.set_ylim(0, 5e-4) # income
+        ax3.set_ylim(0, 1e-8) # transit
+        ax3.tick_params(labeltop=False)
         ax3.tick_params(labelright=False)
 
 
-        ax[pos].set_xlim(0, 3000)
+        ax[pos].set_xlim(0, 1e10) # transit
+        #ax[pos].set_xlim(0, 1e5) # income
+        #ax[pos].set_xlim(0, 3000) # density
         ax[pos].tick_params(axis='x', labelrotation=45)
 
 
@@ -283,10 +291,12 @@ def main(path, plot_variable):
 
 
 if __name__ == '__main__':
+    plt.rcParams["font.family"] = "Times New Roman"
+    plt.rcParams.update({'font.size': 16})
     dates = ['3/10/20', '3/15/20', '3/25/20', '4/1/20', '4/10/20']  # , '5/18/20']
-    plot_variable = 'Density per square mile of land area - Housing units'
+    #plot_variable = 'Density per square mile of land area - Housing units'
     #plot_variable = 'Median_Household_Income_2018'
-    #plot_variable = 'transit_scores - population weighted averages aggregated from town/city level to county'
+    plot_variable = 'transit_scores - population weighted averages aggregated from town/city level to county'
     path = r"D:\JHU\corona\npi-model\npi-model\results\no_validation_clusters\cluster_"
     plot_supercounties = True
     use_weight_average = True
@@ -296,7 +306,7 @@ if __name__ == '__main__':
     fig, ax = plt.subplots(1, len(dates) + 1, sharex=True, sharey=True)
 
     main(path, plot_variable)
-    fig.suptitle(plot_variable)
+    fig.suptitle('Transit scores - population weighted averages aggregated from town/city level to county')
     fig.tight_layout()
     plt.show()
     #plt.savefig(plot_variable+'.pdf')
