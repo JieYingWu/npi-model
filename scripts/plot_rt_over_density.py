@@ -205,14 +205,16 @@ def plot_scatter_r0(path, plot_variable):
                      kde_kws={'shade': True, 'linewidth': 1},
                      ax=ax3)
         ax3.tick_params(axis='y')
-        #ax3.set_ylim(0, 6e-2) # density
+        ax3.set_ylim(0, 6e-2) # density
         #ax3.set_ylim(0, 5e-4) # income
-        ax3.set_ylim(0, 1e-8) # transit
+        #ax3.set_ylim(0, 1e-8) # transit
         ax3.tick_params(labelright=False)
         ax3.tick_params(labeltop=False)
         x_array.append(x_list)
 
-        ax[pos].set_xlim(0, 1e10)
+        # ax[pos].set_xlim(0, 1e10) # transit
+        #ax[pos].set_xlim(0, 1e5)  # income
+        ax[pos].set_xlim(0, 2500) # density
         ax[pos].tick_params(axis='x', labelrotation=45)
     return x_array
 
@@ -267,16 +269,16 @@ def plot_scatter_radj(path, date_plot, pos, plot_variable,x_array):
                      kde_kws={'shade': True, 'linewidth': 1},
                      ax=ax3)
         ax3.tick_params(axis='y')
-        #ax3.set_ylim(0, 6e-2) # density
+        ax3.set_ylim(0, 6e-2) # density
         #ax3.set_ylim(0, 5e-4) # income
-        ax3.set_ylim(0, 1e-8) # transit
+        #ax3.set_ylim(0, 1e-8) # transit
         ax3.tick_params(labeltop=False)
         ax3.tick_params(labelright=False)
 
 
-        ax[pos].set_xlim(0, 1e10) # transit
+        #ax[pos].set_xlim(0, 1e10) # transit
         #ax[pos].set_xlim(0, 1e5) # income
-        #ax[pos].set_xlim(0, 3000) # density
+        ax[pos].set_xlim(0, 2500) # density
         ax[pos].tick_params(axis='x', labelrotation=45)
 
 
@@ -294,9 +296,9 @@ if __name__ == '__main__':
     plt.rcParams["font.family"] = "Times New Roman"
     plt.rcParams.update({'font.size': 16})
     dates = ['3/10/20', '3/15/20', '3/25/20', '4/1/20', '4/10/20']  # , '5/18/20']
-    #plot_variable = 'Density per square mile of land area - Housing units'
+    plot_variable = 'Density per square mile of land area - Housing units'
     #plot_variable = 'Median_Household_Income_2018'
-    plot_variable = 'transit_scores - population weighted averages aggregated from town/city level to county'
+    #plot_variable = 'transit_scores - population weighted averages aggregated from town/city level to county'
     path = r"D:\JHU\corona\npi-model\npi-model\results\no_validation_clusters\cluster_"
     plot_supercounties = True
     use_weight_average = True
@@ -306,7 +308,8 @@ if __name__ == '__main__':
     fig, ax = plt.subplots(1, len(dates) + 1, sharex=True, sharey=True)
 
     main(path, plot_variable)
-    fig.suptitle('Transit scores - population weighted averages aggregated from town/city level to county')
+    #fig.suptitle('Median household income 2018')
+    fig.suptitle('Density per square mile of land area - Housing units')
     fig.tight_layout()
     plt.show()
     #plt.savefig(plot_variable+'.pdf')
