@@ -17,7 +17,7 @@ class CountyGenerator():
         self.alpha_var = alpha_var
         self.generate_alphas(num_alphas)
 
-        wf_file = join(data_dir, 'us_data', 'weighted_fatality_new.csv')
+        wf_file = join('data', 'us_data', 'weighted_fatality_new.csv')
         self.weighted_fatalities = pd.read_csv(wf_file, encoding='latin1', index_col='FIPS')
 
 
@@ -25,8 +25,10 @@ class CountyGenerator():
     def generate_alphas(self, num_alphas):
         shape = self.alpha_var**-2
         scale = shape / self.alpha_mu
-        alphas = np.random.gamma(self.alpha_mu, self.alpha_var, num_alphas)/2
+        alphas = np.random.gamma(self.alpha_mu, self.alpha_var, num_alphas)/3.5
+#        alphas = np.ones(num_alphas)*0.1
         self.alphas = -1*alphas
+        print(self.alphas)
 
         
     # Generate fataility rates or read from cached 
@@ -143,7 +145,7 @@ if __name__ == '__main__':
 
 #    for i in range(len(regions)):
 #        regions[i] = str(regions[i])
-    stan_data, regions, start_date, geocode = get_data(100, data_dir, processing=Processing.REMOVE_NEGATIVE_VALUES, state=False)
+    stan_data, regions, start_date, geocode = get_data(100, 'data', processing=Processing.REMOVE_NEGATIVE_VALUES, state=False)
 
     r0_file_path = join('results', 'real_county', 'summary.csv')
     r0_file = pd.read_csv(r0_file_path)
@@ -156,7 +158,7 @@ if __name__ == '__main__':
     for i in range(M):
         all_r0[str(geocode[i]).zfill(5)] = means[i]
 
-    serial_interval = np.loadtxt(join(data_dir, 'us_data', 'serial_interval.csv'), skiprows=1, delimiter=',')
+    serial_interval = np.loadtxt(join('data', 'us_data', 'serial_interval.csv'), skiprows=1, delimiter=',')
     si = serial_interval[:,1]
 
     generator = CountyGenerator(N2, si, num_alphas, alpha_mu, alpha_var)
@@ -199,11 +201,11 @@ if __name__ == '__main__':
     deaths_df = real_deaths_df.copy()
 
     for r in range(len(geocode)):
-        region = str(geocode[i]).zfill(5)
+        region = str(geocode[r]).zfill(5)
 
         simulated_cases = all_cases[region][0:len(real_cases_df.loc[region, start_date[r]:])]
         cases_df.loc[region, start_date[r]:] = simulated_cases
-
+        
         simulated_deaths = all_deaths[region][0:len(real_deaths_df.loc[region, start_date[r]:])]
         deaths_df.loc[region, start_date[r]:] = simulated_deaths
 

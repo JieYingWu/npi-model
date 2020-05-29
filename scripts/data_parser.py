@@ -180,7 +180,7 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
 
         N = len(case)
         N_arr.append(N)
-        N2 = 150
+        N2 = 120
 
         forecast = N2 - N
 
