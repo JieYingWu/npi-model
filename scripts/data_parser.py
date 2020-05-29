@@ -39,7 +39,7 @@ def get_clustering(data_dir):
 
     
 def get_data(M, data_dir, processing=None, state=False, fips_list=None, validation=False,
-             clustering=None, supercounties=False, validation_on_county=False, threshold=50):
+             clustering=None, supercounties=False, validation_on_county=False, threshold=100):
     cases, deaths, interventions, population = preprocessing_us_data(data_dir)
 
     if state:

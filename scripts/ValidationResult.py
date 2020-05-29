@@ -331,19 +331,29 @@ class ValidationResult():
         
         regular_list = []
         validation_list = []
+        regular_mean_list = []
+        validation_mean_list = []
         for i in range(len(summary1)-1):
             if  isinstance(summary1[i], dict) and 'death' in self.parameter_name_list[i]:
                 assert (len(validation_days_list) == len(summary1[i])), f'Validation days have length {len(validation_days_list)} and summary: {len(summary1[i])}'
                 for idx, ((key1, val1), (key2, val2)) in enumerate(zip(summary1[i].items(), summary2[i].items())): # length number counties
                     assert (len(val1) == len(val2)), f'summaries have different lengths'
                     validation_days_current = validation_days_list[idx]
+                    regular_mean_list.append([])
+                    validation_mean_list.append([])
                     for value_list in [val1, val2]:
                         for j in range(len(value_list)):
                             if j in validation_days_current:
                                 if value_list == val1:
                                     regular_list.append(value_list[j])
+                                    regular_mean_list[idx].append(value_list[j][0]) # only take the mean (first value)
                                 else:
                                     validation_list.append(value_list[j])
+                                    validation_mean_list[idx].append(value_list[j][0]) # only take the mean (first value)
+                    
+                    regular_mean_list[idx] = np.mean(np.array(regular_mean_list[idx]).astype(np.float))
+                    validation_mean_list[idx] = np.mean(np.array(validation_mean_list[idx]).astype(np.float))
+
         print(f'Expected length of validation_days_list: {validation_days_list_length} \nActual length of regular list: {len(regular_list)}') 
         print(f'Expected length of validation_days_list: {validation_days_list_length} \nActual length of validation list: {len(validation_list)}') 
         
@@ -351,29 +361,75 @@ class ValidationResult():
         # Prepare arrays 
         regular_arr = np.array(regular_list).astype(np.float)[:,0]
         validation_arr = np.array(validation_list).astype(np.float)[:,0]
+
+        regular_mean_arr = np.array(regular_mean_list)
+        validation_mean_arr = np.array(validation_mean_list)
         
-        # Plotting
+        idx_reg = np.argwhere(np.isnan(regular_mean_arr))
+        idx_val = np.argwhere(np.isnan(validation_mean_arr))
+        
+        assert idx_reg.all() == idx_val.all()   
+        
+        regular_mean_arr = regular_mean_arr[~np.isnan(regular_mean_arr)]
+        validation_mean_arr = validation_mean_arr[~np.isnan(validation_mean_arr)]
+
+        pearson, _ = stats.pearsonr(regular_arr, validation_arr)
+        pearson_aggregated, _ = stats.pearsonr(regular_mean_arr, validation_mean_arr)
+        # Plotting of 3 day forecast
         individual_save_path = join(validation_save_path, f'ValidationPlot.png')
         fig = plt.figure()
         csfont = {'fontname':'Times New Roman'}
         ax = fig.add_subplot(111)
         rasterized = False
-        ax.set(xlim=[0,50],ylim=[0,50])
+        # ax.set(xlim=[0,450],ylim=[0,450])
 
         max_value = int(max(max(regular_arr), max(validation_arr)))
         min_value = int(min(min(regular_arr), min(validation_arr)))
         t = np.linspace(min_value, max_value, max_value)
         ax.plot(t, t, rasterized=rasterized, label='Optimal Fit',linewidth=2, color='orange')
-        ax.plot(sorted(regular_arr), sorted(validation_arr), '.', rasterized=rasterized, label='Timeseries', color='blue')
+        ax.plot(regular_arr, validation_arr, '.', rasterized=rasterized, label='Withheld Days', color='blue')
 
-        title = 'Q-Q Validation Plot'
+        title = 'Validation Plot \n Correlation: {:.3f}'.format(pearson)
         ax.set_title(title, fontdict = csfont)
         ax.set_ylabel('Validation Sample', fontdict = csfont)
         ax.set_xlabel('Regular Sample', fontdict=csfont)
+        ax.set_yscale('log')
+        ax.set_xscale('log')
+
+        
         ax.legend(loc='best')
+        ax.set_aspect('equal', adjustable='box')
+
         plt.savefig(individual_save_path, dpi=1200)
         plt.close(fig)
                     
+        
+        # Plotting of 3 aggregated day forecast
+        individual_save_path = join(validation_save_path, f'AggregatedValidationPlot.png')
+        fig = plt.figure()
+        csfont = {'fontname':'Times New Roman'}
+        ax = fig.add_subplot(111)
+        rasterized = False
+        # ax.set(xlim=[0,200],ylim=[0,200])
+
+        max_value = int(max(max(regular_arr), max(validation_arr)))
+        min_value = int(min(min(regular_arr), min(validation_arr)))
+        t = np.linspace(min_value, max_value, max_value)
+        ax.plot(t, t, rasterized=rasterized, label='Optimal Fit',linewidth=2, color='orange')
+        ax.plot(regular_mean_arr, validation_mean_arr, '.', rasterized=rasterized, label='Average of 3 Withheld Days', color='blue')
+
+        title = 'Aggregated Validation Plot \n Correlation: {:.3f}'.format(pearson)
+        ax.set_title(title, fontdict = csfont)
+        ax.set_ylabel('Validation Sample', fontdict = csfont)
+        ax.set_xlabel('Regular Sample', fontdict=csfont)
+        ax.set_yscale('log')
+        ax.set_xscale('log')
+
+        ax.legend(loc='best')
+        ax.set_aspect('equal', adjustable='box')
+
+        plt.savefig(individual_save_path, dpi=1200)
+        plt.close(fig)
         
 
     def write_final_results(self, final_list, num_counties):
