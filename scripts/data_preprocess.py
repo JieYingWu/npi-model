@@ -146,9 +146,9 @@ def merge_supercounties(cases, deaths, interventions, population,
         supercounties[supercounty] = supercounties.get(supercounty, []) + [fips_key]
         state_name = deaths_row['Combined_Key'].split('-')[1].strip()
         if cluster is None:
-            area_name = f'{state_name} Supercounty'
+            area_name = f'{state_name} Super-county'
         else:
-            area_name = f'{state_name} Supercounty, Cluster {cluster + 1}'
+            area_name = f'{state_name} Super-county, Cluster {cluster + 1}'
 
         # going to be adding to supercounty, so get rid of identifying info
         cases_row['FIPS'] = supercounty
