@@ -28,6 +28,11 @@ def get_alpha_from_summary(df):
     return alpha
 
 
+def is_county(fips):
+    fips = str(fips).zfill(5)
+    return len(fips) == 5
+
+
 class MainStanModel():
     def __init__(self, args):
         self.args = args
@@ -77,7 +82,7 @@ class MainStanModel():
         for i, idx in enumerate(sorted(geocode.keys())):
             stan_data_ = stan_data.copy()
             stan_data_['M'] = 1
-            for k in ['cases', 'deaths'] + [f'covariate{cov}' for cov in range(1, 9)]:
+            for k in ['cases', 'deaths']:
                 stan_data_[k] = stan_data[k][:, i:i + 1]
             for k in ['N', 'EpidemicStart', 'pop', 'X']:
                 stan_data_[k] = stan_data[k][i:i + 1]
@@ -121,7 +126,11 @@ class MainStanModel():
         """
         # print('before split: {}, {}, {}'.format(regions[0], stan_data['pop'][0], weighted_fatalities[0, :3]))
         # print('before split: {}, {}, {}'.format(regions[-1], stan_data['pop'][-1], weighted_fatalities[-1, :3]))
-        # print(f'geocode: {geocode}')
+        print(*[f'{k}: {v.shape if isinstance(v, np.ndarray) else v}' for k, v in stan_data.items()], sep='\n')
+        print(f'regions: {regions}')
+        print(f'geocode: {geocode}')
+        print(f'start_date: {start_date}')
+        print(f'weighted_fatalities: {weighted_fatalities}')
         counts = {}
         val_regions = []
         train_regions = []
@@ -152,15 +161,15 @@ class MainStanModel():
                 train_start_date[trainidx] = start_date[i]
                 train_geocode[trainidx] = geocode[i]
                 trainidx += 1
-
-        # print(f'val_regions: {val_regions}')
+                
+        print(f'val_regions: {val_regions}')
         
         train_stan_data = stan_data.copy()
         val_stan_data = stan_data.copy()
         val_stan_data['M'] = len(val_regions)
         train_stan_data['M'] = len(train_regions)
 
-        for k in ['cases', 'deaths'] + [f'covariate{i}' for i in range(1, 9)]:
+        for k in ['cases', 'deaths']:
             train_stan_data[k] = stan_data[k][:, train_indices]
             val_stan_data[k] = stan_data[k][:, val_indices]
         for k in ['N', 'EpidemicStart', 'pop', 'X']:
@@ -174,7 +183,11 @@ class MainStanModel():
         #     train_regions[0], train_stan_data['pop'][0], train_weighted_fatalities[0, :3]))
         # print('after split: {}, {}, {}'.format(
         #     train_regions[-1], train_stan_data['pop'][-1], train_weighted_fatalities[-1, :3]))
-        # print(f'train_geocode: {train_geocode}')
+        print(*[f'{k}: {v.shape if isinstance(v, np.ndarray) else v}' for k, v in train_stan_data.items()], sep='\n')
+        print(f'train_regions: {train_regions}')
+        print(f'train_geocode: {train_geocode}')
+        print(f'train_start_date: {train_start_date}')
+        print(f'train_weighted_fatalities: {train_weighted_fatalities}')
         
         return ((train_stan_data, train_regions, train_start_date, train_geocode, train_weighted_fatalities),
                 (val_stan_data, val_regions, val_start_date, val_geocode, val_weighted_fatalities))
@@ -235,16 +248,20 @@ class MainStanModel():
 
         return stan_data, regions, start_date, geocode, weighted_fatalities
 
-    def load_supercounties():
+    def load_supercounties(self):
         with open(join(self.data_dir, 'us_data', 'supercounties.json'), 'r') as file:
             supercounties = json.load(file)
         return supercounties
     
-    # def print_counts(self, regions):
-    #     supercounties = load_supercounties()
-    #     for region in regions:
-    #         if is_county(region):
-    #             pass
+    def summarize_regions(self, regions):
+        supercounties = self.load_supercounties()
+        count = 0
+        for region in regions:
+            if is_county(region):
+                count += 1
+            else:
+                count += len(supercounties[region])
+        print(f'running model on {len(regions)} regions (counties + supercounties) with {count} total counties')
 
     def run_model(self, stan_data, regions, start_date, geocode, weighted_fatalities, validation=False):
         """Run the model
@@ -267,6 +284,7 @@ class MainStanModel():
         # print('geocode:', geocode)
         
         # Build a dictionary of region identifier to weighted fatality rate
+        self.summarize_regions(regions)
         
         ifrs = {}
         for i in range(weighted_fatalities.shape[0]):
@@ -336,11 +354,10 @@ class MainStanModel():
                           thin=4, control={'adapt_delta': 0.9, 'max_treedepth': self.max_treedepth})
     # fit = sm.sampling(data=stan_data, iter=2000, chains=4, warmup=10, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
 
-        summary_dict = fit.summary()
+        summary_dict = fit.summary(pars={'mu', 'alpha', 'E_deaths', 'prediction', 'Rt_adj'})
         df = pd.DataFrame(summary_dict['summary'],
                           columns=summary_dict['summary_colnames'],
                           index=summary_dict['summary_rownames'])
-
         return df 
 
     @property
@@ -376,6 +393,7 @@ class MainStanModel():
         self.summary_path = join(result_dir, 'summary.csv')
         self.start_dates_path = join(result_dir, 'start_dates.csv')
         self.geocode_path = join(result_dir, 'geocode.csv')
+        print(f'loaded results from {self.summary_path}')
         return pd.read_csv(self.summary_path, index_col=0)
     
     def save_results(self, df, start_date, geocode, validation=False):
@@ -413,9 +431,12 @@ class MainStanModel():
     def make_plots(self, validation=False):
         """ save plots of current run"""
         print(f'Creating figures.')
-        if validation:
-            forecast_plots_path = join(self.unique_results_path, 'val_plots', 'forecast') 
-            rt_plots_path = join(self.unique_results_path, 'val_plots', 'rt')
+        if validation and self.cluster is None:
+            forecast_plots_path = join(self.unique_results_path, f'val_plots', 'forecast') 
+            rt_plots_path = join(self.unique_results_path, f'val_plots', 'rt')
+        elif validation and self.cluster is not None:
+            forecast_plots_path = join(self.unique_results_path, f'val_plots_cluster_{self.cluster}', 'forecast') 
+            rt_plots_path = join(self.unique_results_path, f'val_plots_cluster_{self.cluster}', 'rt')
         else:
             forecast_plots_path = join(self.unique_results_path, 'plots', 'forecast') 
             rt_plots_path = join(self.unique_results_path, 'plots', 'rt')

@@ -189,7 +189,6 @@ def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of
         else:
             filepath = "data/us_data/deaths_timeseries_w_states.csv"
 
-
     df = pd.read_csv(filepath, delimiter=',', dtype={'FIPS': str})
             
     # get rid of cummulative if not using the tmp_timeseries.csv hack
