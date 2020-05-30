@@ -377,11 +377,15 @@ class ValidationResult():
         pearson_aggregated, _ = stats.pearsonr(regular_mean_arr, validation_mean_arr)
         # Plotting of 3 day forecast
         individual_save_path = join(validation_save_path, f'ValidationPlot.png')
+        
+
         fig = plt.figure()
         csfont = {'fontname':'Times New Roman'}
+        #fig.add_axes()
         ax = fig.add_subplot(111)
+        #ax2 = fig.add_subplot(122)
         rasterized = False
-        # ax.set(xlim=[0,450],ylim=[0,450])
+        ax.set(xlim=[0.1,450],ylim=[0.1,450])
 
         max_value = int(max(max(regular_arr), max(validation_arr)))
         min_value = int(min(min(regular_arr), min(validation_arr)))
@@ -410,7 +414,7 @@ class ValidationResult():
         csfont = {'fontname':'Times New Roman'}
         ax = fig.add_subplot(111)
         rasterized = False
-        # ax.set(xlim=[0,200],ylim=[0,200])
+        ax.set(xlim=[0.1,200],ylim=[0.1,200])
 
         max_value = int(max(max(regular_arr), max(validation_arr)))
         min_value = int(min(min(regular_arr), min(validation_arr)))
@@ -418,7 +422,7 @@ class ValidationResult():
         ax.plot(t, t, rasterized=rasterized, label='Optimal Fit',linewidth=2, color='orange')
         ax.plot(regular_mean_arr, validation_mean_arr, '.', rasterized=rasterized, label='Average of 3 Withheld Days', color='blue')
 
-        title = 'Aggregated Validation Plot \n Correlation: {:.3f}'.format(pearson)
+        title = 'Aggregated Validation Plot \n Correlation: {:.3f}'.format(pearson_aggregated)
         ax.set_title(title, fontdict = csfont)
         ax.set_ylabel('Validation Sample', fontdict = csfont)
         ax.set_xlabel('Regular Sample', fontdict=csfont)
