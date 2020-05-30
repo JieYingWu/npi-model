@@ -1,0 +1,1 @@
+{"data_dir": "./data/", "output_path": "./results", "mode": "US_county", "result_dir": null, "processing": 1, "M": 25, "validation_withholding": false, "validation_on_county": true, "model": "pop", "plot": false, "fips_list": null, "cluster": 0, "save_tag": "", "iter": 300, "warmup_iter": 150, "max_treedepth": 12, "supercounties": true}
