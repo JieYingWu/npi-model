@@ -1,3 +1,4 @@
+import sys
 import numpy as np
 import os
 from os.path import join, exists
@@ -17,7 +18,7 @@ class CountyGenerator():
         self.alpha_var = alpha_var
         self.generate_alphas(num_alphas)
 
-        wf_file = join(data_dir, 'us_data', 'weighted_fatality_new.csv')
+        wf_file = join('data', 'us_data', 'weighted_fatality_new.csv')
         self.weighted_fatalities = pd.read_csv(wf_file, encoding='latin1', index_col='FIPS')
 
 
@@ -25,8 +26,10 @@ class CountyGenerator():
     def generate_alphas(self, num_alphas):
         shape = self.alpha_var**-2
         scale = shape / self.alpha_mu
-        alphas = np.random.gamma(self.alpha_mu, self.alpha_var, num_alphas)/2
+        alphas = np.random.gamma(self.alpha_mu, self.alpha_var, num_alphas)/2.5
+#        alphas = np.ones(num_alphas)*0.2
         self.alphas = -1*alphas
+        print(self.alphas)
 
         
     # Generate fataility rates or read from cached 
@@ -82,7 +85,7 @@ class CountyGenerator():
 #        tau = np.random.exponential(0.03, (6)) # Seed the first 6 days
         si = self.si[::-1]
         prediction = np.zeros(rt.shape[0])
-        prediction[0:6] = 200 #np.exp(np.arange(6))*6
+        prediction[0:6] = 100 #np.exp(np.arange(6))*6
 #        print(prediction)
 #        exit()
         for i in range(6, rt.shape[0]):
@@ -130,8 +133,8 @@ def parse_interventions(stan_data, data_dir='data'):
     
     
 if __name__ == '__main__':
-    data_dir = 'simulated'
-    N2 = 150
+    data_dir = sys.argv[1]
+    N2 = 120
 
     alpha_mu = 0.5
     alpha_var = 1
@@ -143,7 +146,7 @@ if __name__ == '__main__':
 
 #    for i in range(len(regions)):
 #        regions[i] = str(regions[i])
-    stan_data, regions, start_date, geocode = get_data(100, data_dir, processing=Processing.REMOVE_NEGATIVE_VALUES, state=False)
+    stan_data, regions, start_date, geocode = get_data(100, 'data', processing=Processing.REMOVE_NEGATIVE_VALUES, state=False)
 
     r0_file_path = join('results', 'real_county', 'summary.csv')
     r0_file = pd.read_csv(r0_file_path)
@@ -153,10 +156,10 @@ if __name__ == '__main__':
     means= means[0:M]
 
     all_r0 = {}
-    for i in range(M):
-        all_r0[str(geocode[i]).zfill(5)] = means[i]
+    for r in range(M):
+        all_r0[str(geocode[r]).zfill(5)] = means[r]
 
-    serial_interval = np.loadtxt(join(data_dir, 'us_data', 'serial_interval.csv'), skiprows=1, delimiter=',')
+    serial_interval = np.loadtxt(join('data', 'us_data', 'serial_interval.csv'), skiprows=1, delimiter=',')
     si = serial_interval[:,1]
 
     generator = CountyGenerator(N2, si, num_alphas, alpha_mu, alpha_var)
@@ -167,7 +170,7 @@ if __name__ == '__main__':
     all_cases = {}
     all_deaths = {}
 
-    for r in range(len(geocode)):
+    for r in range(M):
         region = geocode[r]
         r0 = all_r0[region]
         intervention = interventions[r,:,:]
@@ -198,12 +201,12 @@ if __name__ == '__main__':
     cases_df = real_cases_df.copy()
     deaths_df = real_deaths_df.copy()
 
-    for r in range(len(geocode)):
-        region = str(geocode[i]).zfill(5)
+    for r in range(M):
+        region = str(geocode[r]).zfill(5)
 
         simulated_cases = all_cases[region][0:len(real_cases_df.loc[region, start_date[r]:])]
         cases_df.loc[region, start_date[r]:] = simulated_cases
-
+        
         simulated_deaths = all_deaths[region][0:len(real_deaths_df.loc[region, start_date[r]:])]
         deaths_df.loc[region, start_date[r]:] = simulated_deaths
 
@@ -211,12 +214,3 @@ if __name__ == '__main__':
     deaths_df.to_csv(deaths_path)
     rt_df = pd.DataFrame.from_dict(all_rt)
     rt_df.to_csv(interventions_path)
-
-
-
-
-
-
-
-
-

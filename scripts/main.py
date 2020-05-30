@@ -354,11 +354,10 @@ class MainStanModel():
                           thin=4, control={'adapt_delta': 0.9, 'max_treedepth': self.max_treedepth})
     # fit = sm.sampling(data=stan_data, iter=2000, chains=4, warmup=10, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
 
-        summary_dict = fit.summary()
+        summary_dict = fit.summary(pars={'mu', 'alpha', 'E_deaths', 'prediction', 'Rt_adj'})
         df = pd.DataFrame(summary_dict['summary'],
                           columns=summary_dict['summary_colnames'],
                           index=summary_dict['summary_rownames'])
-
         return df 
 
     @property
@@ -394,6 +393,7 @@ class MainStanModel():
         self.summary_path = join(result_dir, 'summary.csv')
         self.start_dates_path = join(result_dir, 'start_dates.csv')
         self.geocode_path = join(result_dir, 'geocode.csv')
+        print(f'loaded results from {self.summary_path}')
         return pd.read_csv(self.summary_path, index_col=0)
     
     def save_results(self, df, start_date, geocode, validation=False):
@@ -431,9 +431,12 @@ class MainStanModel():
     def make_plots(self, validation=False):
         """ save plots of current run"""
         print(f'Creating figures.')
-        if validation:
-            forecast_plots_path = join(self.unique_results_path, 'val_plots', 'forecast') 
-            rt_plots_path = join(self.unique_results_path, 'val_plots', 'rt')
+        if validation and self.cluster is None:
+            forecast_plots_path = join(self.unique_results_path, f'val_plots', 'forecast') 
+            rt_plots_path = join(self.unique_results_path, f'val_plots', 'rt')
+        elif validation and self.cluster is not None:
+            forecast_plots_path = join(self.unique_results_path, f'val_plots_cluster_{self.cluster}', 'forecast') 
+            rt_plots_path = join(self.unique_results_path, f'val_plots_cluster_{self.cluster}', 'rt')
         else:
             forecast_plots_path = join(self.unique_results_path, 'plots', 'forecast') 
             rt_plots_path = join(self.unique_results_path, 'plots', 'rt')
