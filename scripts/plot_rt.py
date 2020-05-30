@@ -47,8 +47,8 @@ def plot_rt_europe(simulation_file, interventions_file, country_number, country_
 #    interventions.remove('travel_restrictions')
 #    interventions.remove('any government intervention')
 
-    start = 'Rt[1,' + str(country_number) + ']'
-    end = 'Rt[' + str(num_days) + ',' + str(country_number) + ']'
+    start = 'Rt_adj[1,' + str(country_number) + ']'
+    end = 'Rt_adj[' + str(num_days) + ',' + str(country_number) + ']'
     Rt_data = simulation_data.loc[start:end]
 
     plt.figure()
@@ -127,8 +127,8 @@ def plot_rt_US(simulation_file, interventions_file, county_number, fips, start_d
     # remove those interventions, that are not considered in the report
     # interventions.remove('foreign travel ban')
 
-    start = 'Rt[1,' + str(county_number) + ']'
-    end = 'Rt[' + str(num_days) + ',' + str(county_number) + ']'
+    start = 'Rt_adj[1,' + str(county_number) + ']'
+    end = 'Rt_adj[' + str(num_days) + ',' + str(county_number) + ']'
     Rt_data = simulation_data.loc[start:end]
 
     plt.figure()
