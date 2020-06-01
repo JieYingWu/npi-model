@@ -68,7 +68,7 @@ def plot_clustering(state=None):
   )
   fig.update_layout(legend_title_text='Cluster Label',
                     legend=dict(traceorder='normal', orientation='h'),
-                    font=dict(family='Times New Roman'))
+                    font=dict(family='Helvetica'))
   if state is None:
     fig.update_geos(visible=False)
   else:
@@ -105,7 +105,7 @@ def plot_deaths(state=None):
   fig.update_geos(fitbounds="locations", visible=False)
   fig.update_layout(
     coloraxis_showscale=True,
-    font=dict(family='Times New Roman'),
+    font=dict(family='Helvetica'),
     coloraxis_colorbar=dict(
       title='',
       thicknessmode="pixels",
@@ -145,15 +145,15 @@ def plot_supercounties(state=None, num_clusters=5):
       color=y,
       color_discrete_map=color_discrete_map,
     )
-    fig.update_layout(showlegend=False, font=dict(family='Times New Roman'))
+    fig.update_layout(showlegend=False, font=dict(family='Helvetica'))
     fig.update_geos(fitbounds="locations", visible=False)
     fig.write_image(join('visualizations', f'{supercounty}_supercounty.pdf'), scale=3)
 
 
 def make_plots(state=None):
-  # plot_deaths(state)
+  plot_deaths(state)
   plot_clustering(state)
-  # plot_supercounties(state)
+  plot_supercounties(state)
 
 
 if __name__ == '__main__':
