@@ -33,6 +33,7 @@ Use flag `--cluster {0-4}` to model only counties or supercounties that fall int
   - `python3 scripts/forecast_plots.py results/unique_results_folder` 
   - `python3 scripts/plot_rt.py results/unique_results_folder data/us_data/interventions.csv`
     Here unique_results_folder could be: `05_07_20_12_48_58_US_county_validation_iter_200_warmup_100_num_counties_89_processing_Processing.REMOVE_NEGATIVE_VALUES`
+- to create "Relation of Reproductive Rate over Transit score, Density, Median Income" plots navigate to scripts folder and run  `python3 plot_rt_over_density.py`
 
 ## Dependencies
 * pystan (this requires Cython compiler - https://pystan.readthedocs.io/en/latest/installation_beginner.html)
