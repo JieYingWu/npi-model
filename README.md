@@ -11,7 +11,7 @@ We provide...
 
 
 The figures below show our cluster on US counties and how their reproductive rate changes over time. 
-![](https://github.com/JieYingWu/npi-model/blob/master/visualizations/us_clustering_final.pdf)
+![](https://github.com/JieYingWu/npi-model/blob/master/visualizations/us_clustering_final.PNG)
 ![](https://github.com/JieYingWu/npi-model/blob/master/visualizations/transit.png)
 
 
