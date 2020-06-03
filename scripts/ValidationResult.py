@@ -14,7 +14,7 @@ from scipy import stats
 from matplotlib import pyplot as plt
 
 # plt.style.use('seaborn-darkgrid')
-plt.rcParams["font.family"] = "Times New Roman"
+# plt.rcParams["font.family"] = "Helvetica"
 
 
 class ValidationResult():
@@ -126,16 +126,17 @@ class ValidationResult():
 
     def get_validation_days(self, path):
         validation_days_dict = {}
-        validaiton_days_list = []
+        validation_days_list = []
         with open(join(path, 'validation_days.csv'), 'r') as f:
             reader = csv.reader(f, delimiter=',')
             start_date, end_date = next(reader)
             next(reader)
             for row in reader:
                 validation_days_dict[row[0]] = row[1:]
-                validaiton_days_list.append([int(i) for i in row[1:]])
+                validation_days_list.append([int(i) for i in row[1:]])
 
-        return start_date, end_date, validaiton_days_list, validation_days_dict
+
+        return start_date, end_date, validation_days_list, validation_days_dict
 
                     
     def compare_2_daily(self, summary1, summary2):
@@ -343,7 +344,10 @@ class ValidationResult():
                     validation_mean_list.append([])
                     for value_list in [val1, val2]:
                         for j in range(len(value_list)):
-                            if j in validation_days_current:
+                            adjusted_date = dt.datetime.strptime(self.start_dates[idx],'%m/%d/%y').toordinal() - dt.datetime.strptime(self.start_date, '%m/%d/%y').toordinal() + j 
+                            # print(f'county number: {idx} || date {adjusted_date}')
+                            if adjusted_date in validation_days_current:
+                                #print(idx,j,adjusted_date)
                                 if value_list == val1:
                                     regular_list.append(value_list[j])
                                     regular_mean_list[idx].append(value_list[j][0]) # only take the mean (first value)
@@ -361,7 +365,8 @@ class ValidationResult():
         # Prepare arrays 
         regular_arr = np.array(regular_list).astype(np.float)[:,0]
         validation_arr = np.array(validation_list).astype(np.float)[:,0]
-
+        print(regular_arr)
+        print(validation_arr)
         regular_mean_arr = np.array(regular_mean_list)
         validation_mean_arr = np.array(validation_mean_list)
         
@@ -372,37 +377,61 @@ class ValidationResult():
         
         regular_mean_arr = regular_mean_arr[~np.isnan(regular_mean_arr)]
         validation_mean_arr = validation_mean_arr[~np.isnan(validation_mean_arr)]
-
+        # similarity measures
         pearson, _ = stats.pearsonr(regular_arr, validation_arr)
         pearson_aggregated, _ = stats.pearsonr(regular_mean_arr, validation_mean_arr)
+        
+        l1 = np.linalg.norm((regular_arr - validation_arr), ord=1)
+        l1_aggregated = np.linalg.norm((regular_mean_arr - validation_mean_arr), ord=1)
+        print(f'L1: {l1}|| L1_agg: {l1_aggregated}')
+        print(f'R: {pearson}|| R_agg: {pearson_aggregated}')
+        
+
+        with open('pearson.csv', 'w', newline='') as f:
+            writer = csv.writer(f, delimiter=',')
+            writer.writerow(['Pearson R value regular', 'Pearson R value aggregated'])
+
+            writer.writerow(['regular', 'validation', 'regular_aggregated', 'validation aggregated'])
+            
+            for i in range(len(regular_arr)):
+                if i < len(validation_mean_arr):
+                    arr = [regular_arr[i], validation_arr[i], regular_mean_arr[i], validation_mean_arr[i]]
+                else: 
+                    arr = [regular_arr[i], validation_arr[i]]
+                writer.writerow(arr)
+
+
+
         # Plotting of 3 day forecast
         individual_save_path = join(validation_save_path, f'ValidationPlot.png')
         
 
         fig = plt.figure()
-        csfont = {'fontname':'Times New Roman'}
+        csfont = {'fontsize':20}
         #fig.add_axes()
         ax = fig.add_subplot(111)
         #ax2 = fig.add_subplot(122)
         rasterized = False
-        ax.set(xlim=[0.1,450],ylim=[0.1,450])
+        ax.set(xlim=[0.5,500],ylim=[0.5,500])
 
-        max_value = int(max(max(regular_arr), max(validation_arr)))
+        max_value = int(max(max(regular_arr), max(validation_arr))) + 1000
         min_value = int(min(min(regular_arr), min(validation_arr)))
         t = np.linspace(min_value, max_value, max_value)
-        ax.plot(t, t, rasterized=rasterized, label='Optimal Fit',linewidth=2, color='orange')
-        ax.plot(regular_arr, validation_arr, '.', rasterized=rasterized, label='Withheld Days', color='blue')
+        ax.plot(t, t, rasterized=rasterized, label='Optimal Fit',linewidth=2, color='red')
+        ax.plot(regular_arr, validation_arr, '.', rasterized=rasterized, label='Withheld Days', color='black')
 
-        title = 'Validation Plot \n Correlation: {:.3f}'.format(pearson)
+        title = 'Validation Plot'
         ax.set_title(title, fontdict = csfont)
         ax.set_ylabel('Validation Sample', fontdict = csfont)
         ax.set_xlabel('Regular Sample', fontdict=csfont)
+        fig.text(.5, .05, '(a)', ha='center', fontdict=csfont)
         ax.set_yscale('log')
         ax.set_xscale('log')
 
         
         ax.legend(loc='best')
         ax.set_aspect('equal', adjustable='box')
+        fig.set_size_inches(7, 8, forward=True)
 
         plt.savefig(individual_save_path, dpi=1200)
         plt.close(fig)
@@ -411,18 +440,17 @@ class ValidationResult():
         # Plotting of 3 aggregated day forecast
         individual_save_path = join(validation_save_path, f'AggregatedValidationPlot.png')
         fig = plt.figure()
-        csfont = {'fontname':'Times New Roman'}
         ax = fig.add_subplot(111)
         rasterized = False
-        ax.set(xlim=[0.1,200],ylim=[0.1,200])
+        ax.set(xlim=[0.5,200],ylim=[0.5,200])
 
         max_value = int(max(max(regular_arr), max(validation_arr)))
         min_value = int(min(min(regular_arr), min(validation_arr)))
         t = np.linspace(min_value, max_value, max_value)
-        ax.plot(t, t, rasterized=rasterized, label='Optimal Fit',linewidth=2, color='orange')
-        ax.plot(regular_mean_arr, validation_mean_arr, '.', rasterized=rasterized, label='Average of 3 Withheld Days', color='blue')
+        ax.plot(t, t, rasterized=rasterized, label='Optimal Fit',linewidth=2, color='red')
+        ax.plot(regular_mean_arr, validation_mean_arr, '.', rasterized=rasterized, label='Average of 3 Withheld Days', color='black')
 
-        title = 'Aggregated Validation Plot \n Correlation: {:.3f}'.format(pearson_aggregated)
+        title = 'Aggregated Validation Plot' 
         ax.set_title(title, fontdict = csfont)
         ax.set_ylabel('Validation Sample', fontdict = csfont)
         ax.set_xlabel('Regular Sample', fontdict=csfont)
@@ -432,6 +460,8 @@ class ValidationResult():
         ax.legend(loc='best')
         ax.set_aspect('equal', adjustable='box')
 
+        fig.text(.5, .05, '(b)', ha='center', fontdict=csfont)
+        fig.set_size_inches(7, 8, forward=True)
         plt.savefig(individual_save_path, dpi=1200)
         plt.close(fig)
         
