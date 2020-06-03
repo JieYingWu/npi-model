@@ -57,6 +57,7 @@ def create_deaths_dict(path_density, date, selected_dict):
 
     for key in selected_dict.keys():
         for county in selected_dict[key]:
+       
             dict_deaths[county] = df_deaths.at[int(county), date]
     print(dict_deaths)
     return dict_deaths
