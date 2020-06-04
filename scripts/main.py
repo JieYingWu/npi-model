@@ -352,9 +352,13 @@ class MainStanModel():
 
         fit = sm.sampling(data=stan_data, iter=self.iter, chains=4, warmup=self.warmup_iter,
                           thin=4, control={'adapt_delta': 0.9, 'max_treedepth': self.max_treedepth})
-    # fit = sm.sampling(data=stan_data, iter=2000, chains=4, warmup=10, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
+        # fit = sm.sampling(data=stan_data, iter=2000, chains=4, warmup=10, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
 
-        summary_dict = fit.summary(pars={'mu', 'alpha', 'E_deaths', 'prediction', 'Rt_adj'})
+        if validation:
+            summary_dict = fit.summary(pars={'mu', 'E_deaths', 'prediction', 'Rt_adj'})
+        else:
+            summary_dict = fit.summary(pars={'mu', 'alpha', 'E_deaths', 'prediction', 'Rt_adj'})
+            
         df = pd.DataFrame(summary_dict['summary'],
                           columns=summary_dict['summary_colnames'],
                           index=summary_dict['summary_rownames'])
