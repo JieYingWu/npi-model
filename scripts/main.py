@@ -255,13 +255,20 @@ class MainStanModel():
     
     def summarize_regions(self, regions):
         supercounties = self.load_supercounties()
-        count = 0
+        num_counties = 0
+        num_individual_counties = 0
+        num_supercounties = 0
         for region in regions:
             if is_county(region):
-                count += 1
+                num_counties += 1
+                num_individual_counties += 1
             else:
-                count += len(supercounties[region])
-        print(f'running model on {len(regions)} regions (counties + supercounties) with {count} total counties')
+                num_counties += len(supercounties[region])
+                num_supercounties += 1
+        print(f'running model on {len(regions)} regions (counties + supercounties) with {num_counties} total counties.')
+        print(f'  supercounties: {num_supercounties}')
+        print(f'  counties in supercounties: {num_counties - num_individual_counties}')
+        print(f'  counties not in supercounties: {num_individual_counties}')
 
     def run_model(self, stan_data, regions, start_date, geocode, weighted_fatalities, validation=False):
         """Run the model

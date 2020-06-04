@@ -130,7 +130,7 @@ def merge_supercounties(cases, deaths, interventions, population,
         # print('CASES:\n', cases_row)
         # print('INTERVENTIONS:\n', interventions_row)
         
-        county_deaths = deaths_row[2:].to_numpy()
+        county_deaths = deaths_row.iloc[2:].to_numpy()  # :-11 for may; 18 date
         if np.all(county_deaths == 0):
             # county has no data to contribute at all
             continue
