@@ -303,9 +303,9 @@ def make_all_us_plots(summary_path, geocode_path, start_dates_path, intervention
 
     county_numbers = np.arange(1, len(fips_list) + 1)
     
-    for county, fips, date in zip(county_numbers, fips_list, start_dates):
-        print('county, fips, date:', county, fips, date)
-        plot_rt_US(summary_path, interventions_path , county, fips, date, state_level, output_path, save_img=True, show_img=False)
+    # for county, fips, date in zip(county_numbers, fips_list, start_dates):
+    #     print('county, fips, date:', county, fips, date)
+    #     plot_rt_US(summary_path, interventions_path , county, fips, date, state_level, output_path, save_img=True, show_img=False)
 
 
 

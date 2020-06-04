@@ -122,17 +122,20 @@ def plot_daily_infections_num(path, confirmed_cases, county_name, plot_choice, n
         base = datetime.datetime.strptime(str(dict_of_start_dates[num_of_country].values[0]), '%m-%d-%Y')
         days_to_predict = (datetime.datetime.strptime(last_day_to_plot, '%m/%d/%y') - base).days
         df = pd.read_csv(path, delimiter=',', index_col=0)
-
+        
     row_names = list(df.index.tolist())
     list2_5, list25, list50, list75, list97_5 = [], [], [], [], []
     county_number = str(int(num_of_country) + 1) + ']'
     do_plot = False             # the validation counties won't have any data, so don't plot
+    predictions = []
     for name in row_names:
-
+        # print(f'name: {name}')
         if plot_name in name and name.split(",")[1] == county_number:
             do_plot = True
             rowData = df.loc[name, :]
-            
+
+            predictions.append(rowData['mean'])
+            # print(f'rowData: {rowData}')
             list2_5.append(rowData['2.5%'])
             list25.append(rowData['25%'])
             list50.append(rowData['50%'])
@@ -142,6 +145,14 @@ def plot_daily_infections_num(path, confirmed_cases, county_name, plot_choice, n
             # if last day of prediction was saved, exit
             if name.split(",")[0] == (plot_name + str(days_to_predict)):
                 break
+
+    if plot_choice == 1:
+        deaths = np.array(confirmed_cases[:len(predictions)])
+        predictions = np.array(predictions)
+        errors = np.abs(deaths - predictions)
+        print(f'MEAN PREDICTION ERROR for {county_name}: {errors.mean()} ({errors.std()})')
+        # print(f'predictions for {county_name}: {len(predictions)}')
+        # print(f'deaths for {county_name}: {len(confirmed_cases)}')
 
     if do_plot:
         quantiles_dict = {'2.5%': list2_5, '25%': list25, '50%': list50, '75%': list75, '97.5%': list97_5}
@@ -215,7 +226,12 @@ def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of
     # print(forecast_start_date)
     diff = (forecast_start_date - confirmed_start_date).days + 1  # since it also has a name skip it
 
-    confirmed_cases = list(df.loc[fips][diff:])
+    try:
+        confirmed_cases = list(df.loc[fips][diff:])
+    except KeyError:
+        # error
+        return None, None
+        
     #sustracted_confirmed_cases = [confirmed_cases[0]]
     # since us data is cummulative
     #for i in range(1, len(confirmed_cases)):
@@ -236,6 +252,8 @@ def make_all_us_county_plots(start_date_dict_path, geocode_dict_path, summary_pa
         for num_of_country in dict_of_eu_geog.keys():
             confirmed_cases, county_name = read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates,
                                                               dict_of_eu_geog, use_tmp=use_tmp)
+            if confirmed_cases is None:
+                continue
             plot_daily_infections_num(path, confirmed_cases, county_name, plot_choice, num_of_country,
                                       dict_of_start_dates, dict_of_eu_geog, output_path)
     return
