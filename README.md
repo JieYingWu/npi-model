@@ -28,12 +28,8 @@ Use flag `--cluster {0-4}` to model only counties or supercounties that fall int
 
 
 ## How to plot:
-- pass in `--plot` as a parameter when running `main.py`
-- Run these commands form the base directory 
-  - `python3 scripts/forecast_plots.py results/unique_results_folder` 
-  - `python3 scripts/plot_rt.py results/unique_results_folder data/us_data/interventions.csv`
-    Here unique_results_folder could be: `05_07_20_12_48_58_US_county_validation_iter_200_warmup_100_num_counties_89_processing_Processing.REMOVE_NEGATIVE_VALUES`
-- to create "Relation of Reproductive Rate over Transit score, Density, Median Income" plots navigate to scripts folder and run  `python3 plot_rt_over_density.py`
+- To create "Relation of Reproductive Rate over Transit score, Density, Median Income" plots navigate to scripts folder and run  `python3 plot_rt_over_density.py`
+- To create the validation plots (figure 7) run `python3 scripts/ValidationResult.py --results-path results/national_no_supercounty_no_validation results/national_no_supercounty_validation `
 
 ## Dependencies
 * pystan (this requires Cython compiler - https://pystan.readthedocs.io/en/latest/installation_beginner.html)
