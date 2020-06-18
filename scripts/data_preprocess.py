@@ -430,8 +430,12 @@ def get_validation_dict(data_dir, cases, deaths, fips_list, cases_dates):
 
     if FLAG_NEW_DATA_AVAILABLE:
         validation_days_dict = {}
+        print(deaths)
+        print(f' length death: {len(deaths)}')
         for death, fips in zip(deaths.T, fips_list):
             for j in range(len(death)):
+                if j >= 120:
+                    continue
                 if death[j] > 0:
                     validation_days_dict.setdefault(fips, []).append(j)
             validation_days_dict[fips] = get_unique_validation_days(validation_days_dict[fips])
