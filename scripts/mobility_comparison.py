@@ -5,6 +5,7 @@ import csv
 import datetime 
 import pandas as pd
 import numpy as np
+import seaborn as sns
 
 from os.path import join, exists
 from collections import OrderedDict 
@@ -141,7 +142,8 @@ class Comparison():
         self.aligned_timeseries = self.align_timeseries(self.result_parser.startdates, self.mobility_parser.categories)
         
         self.save_path = join(result_dir, 'plots', 'mobility')
-        self.make_plots(self.aligned_timeseries, self.save_path, result_dir)
+        self.save_path_correlations = join(result_dir, 'plots', 'mobility_correlations')
+        self.make_plots(self.aligned_timeseries, self.save_path, result_dir, self.save_path_correlations)
 
 
     def align_timeseries(self, startdates, categories):
@@ -184,12 +186,15 @@ class Comparison():
         return aligned_categories   
 
 
-    def make_plots(self, timeseries_dict, save_path, result_dir):
+    def make_plots(self, timeseries_dict, save_path, result_dir, save_path_correlations):
         """ Makes Plots with the alignes mobility timeseries and the predicted deaths and infections and rt"""
 
 
         if not exists(save_path):
             os.mkdir(save_path)
+
+        if not exists(save_path_correlations):
+            os.mkdir(save_path_correlations)
 
         deaths_correlation_list = []
         infections_correlation_list = []
@@ -243,15 +248,12 @@ class Comparison():
             ax2.set_ylabel('Mobilities')
             
 
-
-
-
             # Mobilities 
             available_categories_dict = {}
             for idx, (category_name, df_mobility) in enumerate(timeseries_dict.items()):
                 if df_mobility.FIPS.eq(fips).any():
                     current_mobility = df_mobility[df_mobility['FIPS'] == fips]
-                    current_mobility = current_mobility.values.tolist()[0][4:]
+                    current_mobility = current_mobility.values.tolist()[0][4:] # first 4 columns are descriptors
                     current_mobility = current_mobility[:timeseries_length]
                     assert (len(x) == len(current_mobility)), f'Length x: {len(x)} || Length deaths: {len(current_deaths)}'
                     available_categories_dict[category_name] = current_mobility
@@ -266,6 +268,7 @@ class Comparison():
             ax.legend(loc='best')
             ax2.legend(loc='best')
             fig.tight_layout()
+            fig.set_size_inches(18.5, 10.5)
             plt.savefig(individual_save_path, dpi=100)
             plt.close(fig)
 
@@ -274,10 +277,13 @@ class Comparison():
             deaths_correlation_list.append([])
             infections_correlation_list.append([])
             rt_correlation_list.append([])
+
             deaths_correlation_list[i].append(fips)
             infections_correlation_list[i].append(fips)
             rt_correlation_list[i].append(fips)
+
             for category_name in self.mobility_parser.category_names:
+                # some categories could be missing, fill those with NANs
                 if category_name in available_categories_dict:
                     r_deaths, p_deaths = stats.pearsonr(current_deaths, available_categories_dict[category_name])
                     r_infections, p_infections = stats.pearsonr(current_infections, available_categories_dict[category_name])
@@ -290,6 +296,7 @@ class Comparison():
                     infections_correlation_list[i].append(np.nan)
                     rt_correlation_list[i].append(np.nan)
 
+
         # save the correlation results
         columns = ['FIPS'] + self.mobility_parser.category_names
         df_deaths_correlation = pd.DataFrame(deaths_correlation_list, columns=columns)
@@ -299,16 +306,29 @@ class Comparison():
         df_deaths_correlation.to_csv(join(result_dir,'deaths_correlation.csv'), index=False)
         df_infections_correlation.to_csv(join(result_dir,'infections_correlation.csv'), index=False)
         df_rt_correlation.to_csv(join(result_dir,'rt_correlation.csv'), index=False)
-        print(df_deaths_correlation)
-        print(df_infections_correlation)
-        print(df_rt_correlation)
+        
+        df_deaths_correlation = df_deaths_correlation.set_index('FIPS')
+        df_infections_correlation = df_infections_correlation.set_index('FIPS')
+        df_rt_correlation = df_rt_correlation.set_index('FIPS')
 
-            
+        # make plots of the pearson r values
+        df_names = ['deaths', 'infections', 'rt']
+        for k, df in enumerate([df_deaths_correlation, df_infections_correlation, df_rt_correlation]):
+            print(f'Making Mobility Plot for {df_names[k]}')
+            fig = plt.figure()
+
+            # ax = df_deaths_correlation.plot.hist(bins=10)
+            ax = sns.violinplot(data=df)
+            ax.set_title(f'Correlation of mobility and {df_names[k]}')
+            ax.set_ylabel('Pearson r')
+            ax.set_xlabel('mobility category')
+            fig.set_size_inches(18.5, 10.5)
+            plt.savefig(join(save_path_correlations, df_names[k]+'.png'), dpi=100)
+            plt.close(fig)
         
 
 
 
-        pass
 
 
 if __name__ == '__main__':
