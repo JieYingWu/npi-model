@@ -29,7 +29,8 @@ class MobilityReportParser():
                 
             # report have many NANs 
             # discard all counties that have nan values
-            df_current = df_current.dropna()
+            # df_current = df_current.dropna()
+            df_current = df_current.fillna(method='backfill')
             df_current = df_current.reset_index()
 
             categories[report_files[idx].name[:-33]] = df_current
@@ -135,7 +136,7 @@ class ResultParser():
 
 
 class Comparison():
-    def __init__(self, result_dir):
+    def __init__(self, result_dir, delta):
         self.mobility_parser = MobilityReportParser()
         self.result_parser = ResultParser(result_dir)
         print(self.mobility_parser.categories)
@@ -143,11 +144,15 @@ class Comparison():
         
         self.save_path = join(result_dir, 'plots', 'mobility')
         self.save_path_correlations = join(result_dir, 'plots', 'mobility_correlations')
-        self.make_plots(self.aligned_timeseries, self.save_path, result_dir, self.save_path_correlations)
+        # self.make_plots(self.aligned_timeseries, self.save_path, result_dir, self.save_path_correlations)
+        self.shift_timeseries(self.save_path_correlations, self.result_parser.startdates, self.mobility_parser.categories, delta)
 
 
-    def align_timeseries(self, startdates, categories):
-
+    def align_timeseries(self, startdates, categories, delta=0):
+        """ delta is the artifical offset between the two timeseries:
+            delta > 0 shift mobility into the future
+            delta < 0 shift mobility into the past
+        """
 
         aligned_categories = categories.copy()
 
@@ -161,7 +166,7 @@ class Comparison():
         # find the difference between mobility start date and result start date
         differences = []
         for j in parsed_start_dates:
-            difference = j - self.mobility_parser.start_date_ordinal
+            difference = j - self.mobility_parser.start_date_ordinal - delta 
             differences.append(difference)
 
         # make dict fips to difference
@@ -181,8 +186,6 @@ class Comparison():
             aligned_categories[mobility_category_name] = df_mobility
             print(f'length of FIPS list: {len(fips_values_list)}')
             # print(df_mobility)
-        
-
         return aligned_categories   
 
 
@@ -295,7 +298,9 @@ class Comparison():
                     deaths_correlation_list[i].append(np.nan)
                     infections_correlation_list[i].append(np.nan)
                     rt_correlation_list[i].append(np.nan)
+            
 
+            
 
         # save the correlation results
         columns = ['FIPS'] + self.mobility_parser.category_names
@@ -327,15 +332,94 @@ class Comparison():
             plt.close(fig)
         
 
+    def shift_timeseries(self, save_path, start_dates, categories, delta=5):
+        """ shift the mobility timeseries -20/+20 around the deaths timeseries and calculate the correlation
+        """
+        assert (isinstance(delta, int))
+        assert (delta < 20)
+
+        final_arr = {}
+        for offset in range(-delta, delta+1):
+            shifted_categories = self.align_timeseries(start_dates, categories, delta=offset)
 
 
+            # calculate the correlation between the shifted mobility timeseries and the deaths timeseries
+            for i, fips in enumerate(self.result_parser.geocode):
+                print(f'Lag analysis for {fips} with offset {offset}')
 
+                # individual_save_path = join(save_path, f'{fips}.png')
+
+                current_start_date = self.result_parser.startdates_dict[fips]
+                current_start_date_ordinal = datetime.datetime.strptime(current_start_date[0], '%m/%d/%y').toordinal()
+                current_end_date = self.result_parser.end_date_ordinal
+                
+                timeseries_length = current_end_date - current_start_date_ordinal
+                # deaths 
+                current_deaths = self.result_parser.deaths
+                current_deaths = current_deaths[current_deaths['FIPS'] == fips]
+                current_deaths = current_deaths.values.tolist()[0][1:]
+                current_deaths = current_deaths[:timeseries_length]
+
+
+                # mobility
+                available_categories_dict = {}
+                for idx, (category_name, df_mobility) in enumerate(shifted_categories.items()):
+                    # make dicts
+
+                    # final_arr[category_name] = {}
+                    if category_name not in final_arr:
+                        final_arr[category_name] = {}
+                    if df_mobility.FIPS.eq(fips).any():
+                        current_mobility = df_mobility[df_mobility['FIPS'] == fips]
+                        current_mobility = current_mobility.values.tolist()[0][4:] # first 4 columns are descriptors
+                        current_mobility = current_mobility[:timeseries_length]
+                        assert (len(current_deaths) == len(current_mobility)), f'Length deaths: {len(current_deaths)} || Length deaths: {len(current_deaths)}'
+                        available_categories_dict[category_name] = current_mobility
+
+
+                for category_name in self.mobility_parser.category_names:
+                    # some categories could be missing, fill those with NANs
+                    if category_name in available_categories_dict:
+                        r_deaths, p_deaths = stats.pearsonr(current_deaths, available_categories_dict[category_name])
+                        final_arr[category_name].setdefault(offset, []).append(r_deaths)
+                    else:
+                        final_arr[category_name].setdefault(offset, []).append(np.nan)
+
+            # columns = ['FIPS'] + self.mobility_parser.category_names
+            # df_deaths_correlation = pd.DataFrame(deaths_correlation_list, columns=columns)
+        # prepare dataframe from dict
+        df_list = []
+        names_list = []
+        for name, dict_ in final_arr.items():
+            print(f'name: {name}: {dict_}')
+            df = pd.DataFrame(dict_)
+            print(df)
+            df_list.append(df)
+            names_list.append(name)
+
+        # make plots
+        # fig =  plt.figure()
+        fig, axes = plt.subplots(3,2)
+        counter = 0
+        for i in range(axes.shape[0]):
+            for j in range(axes.shape[1]):
+                axes[i,j].set_title(names_list[counter])
+                axes[i,j].set_ylabel('Pearson R')
+                axes[i,j].set_ylim([-1,1])
+                sns.violinplot(data=df_list[counter], ax=axes[i,j], palette=sns.color_palette("RdBu", n_colors=(delta*2)+1))
+                counter += 1
+        fig.set_size_inches(18.5, 10.5)
+        # plt.show()
+        print(f'Saving to {join(save_path)}')
+        plt.savefig(join(save_path, 'death_lag_analysis.png'),dpi=500)
+        plt.close(fig)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--dir','-d', type=str, help='Directory of the result')
+    parser.add_argument('--delta', type=int, default= 5, help='offset for Lag analysis')
 
     args = parser.parse_args()
 
-    comparison = Comparison(args.dir)
+    comparison = Comparison(args.dir, args.delta)

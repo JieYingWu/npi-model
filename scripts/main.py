@@ -42,6 +42,9 @@ class MainStanModel():
         if isinstance(self.processing, int):
             self.processing = data_parser.Processing(self.processing)
 
+        if self.model == 'mobility':
+            self.use_mobility = True
+
         self.clustering = data_parser.get_clustering(self.data_dir)
         if self.fips_list is None and self.cluster is not None:
             self.fips_list = data_parser.get_cluster(self.data_dir, self.cluster)
@@ -220,7 +223,7 @@ class MainStanModel():
         elif mode == 'US_county':
             stan_data, regions, start_date, geocode = data_parser.get_data(
                 M, data_dir, processing=self.processing, state=False, fips_list=self.fips_list,
-                validation=self.validation_withholding, supercounties=self.supercounties, clustering=self.clustering)
+                validation=self.validation_withholding, supercounties=self.supercounties, clustering=self.clustering, mobility=self.use_mobility)
             weighted_fatalities = self.get_weighted_fatalities(regions)
             
             # # wf_file = join(self.data_dir, 'us_data', 'weighted_fatality.csv')
@@ -300,6 +303,8 @@ class MainStanModel():
                 sm = pystan.StanModel(file='stan-models/base_us_new_alpha.stan')
             elif self.model == 'pop':
                 sm = pystan.StanModel(file='stan-models/us_new.stan')
+            elif self.model == 'mobility':
+                sm = pystan.StanModel(file='stan-models/base_us_mobility.stan')
             else:
                 raise ValueError
         else:
@@ -478,7 +483,7 @@ if __name__ == '__main__':
     parser.add_argument('-M', default=25, type=int, help='threshold for relevant counties')
     parser.add_argument('-val-1', '--validation-withholding', action='store_true', help='whether to apply validation by withholding days')
     parser.add_argument('-val-2', '--validation-on-county', action='store_true', help='validate the model by withholding the last county (or supercounty) and learning new R_0 values on the withheld county from the alphas learned')
-    parser.add_argument('--model', default='pop', choices=['old_alpha', 'new_alpha', 'pop'], help='which model to use')
+    parser.add_argument('--model', default='pop', choices=['old_alpha', 'new_alpha', 'pop', 'mobility'], help='which model to use')
     parser.add_argument('--plot', action='store_true', help='add for generating plots')
     parser.add_argument('--fips-list', default=None, nargs='+', help='fips codes to run the model on')
     parser.add_argument('--cluster', default=None, type=int, help='cluster label to draw fips-list from')
