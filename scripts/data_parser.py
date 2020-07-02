@@ -95,8 +95,6 @@ def get_regions(data_dir, M, cases, deaths, processing, interventions, populatio
         cases, deaths, interventions, M, population, mobility_dict=mobility_dict, validation=validation, threshold=threshold)
 
     # If mobility model, get the mobility reports
-    if not mobility:
-        mobility_report = None
 
 
     if save_tmp:
@@ -144,6 +142,8 @@ def get_regions(data_dir, M, cases, deaths, processing, interventions, populatio
     mobility_report = np.dstack(tuple(mobility_dict.values()))
         
         
+    if not mobility:
+        mobility_report = None
     
     if validation:
         validation_days_dict = get_validation_dict(data_dir, cases, deaths, fips_list, cases_dates)
