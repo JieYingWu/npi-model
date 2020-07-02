@@ -30,7 +30,7 @@ class MobilityReportParser():
             # report have many NANs 
             # discard all counties that have nan values
             # df_current = df_current.dropna()
-            df_current = df_current.fillna(method='backfill')
+            df_current = df_current.fillna(method='backfill') # same method as IC 
             df_current = df_current.reset_index()
 
             categories[report_files[idx].name[:-33]] = df_current
@@ -89,8 +89,6 @@ class ResultParser():
         df_d = pd.concat(list_of_d_series, axis=0, ignore_index=True)
         df_geocode = pd.DataFrame(self.geocode, columns=['FIPS'])
         df_d = pd.concat([df_geocode, df_d], axis=1)
-        # print(list_of_r_series[0][0])
-        print(df_d)
         # infections dataframe
         df_i = df[df['Unnamed: 0'].str.match('prediction')]
         df_i = df_i.reset_index(drop=True)
@@ -136,6 +134,9 @@ class ResultParser():
 
 
 class Comparison():
+    """ Makes plots of the comparison between mobility reports and our expected results
+    """ 
+
     def __init__(self, result_dir, delta):
         self.mobility_parser = MobilityReportParser()
         self.result_parser = ResultParser(result_dir)
@@ -144,7 +145,7 @@ class Comparison():
         
         self.save_path = join(result_dir, 'plots', 'mobility')
         self.save_path_correlations = join(result_dir, 'plots', 'mobility_correlations')
-        # self.make_plots(self.aligned_timeseries, self.save_path, result_dir, self.save_path_correlations)
+        self.make_plots(self.aligned_timeseries, self.save_path, result_dir, self.save_path_correlations)
         self.shift_timeseries(self.save_path_correlations, self.result_parser.startdates, self.mobility_parser.categories, delta)
 
 
@@ -262,8 +263,6 @@ class Comparison():
                     available_categories_dict[category_name] = current_mobility
                     ax2.plot(x, current_mobility, '--', label=category_name)
 
-            
-
 
             title = f'Mobility Comparison for FIPS: {fips}'
             ax.set_title(title)
@@ -300,8 +299,6 @@ class Comparison():
                     rt_correlation_list[i].append(np.nan)
             
 
-            
-
         # save the correlation results
         columns = ['FIPS'] + self.mobility_parser.category_names
         df_deaths_correlation = pd.DataFrame(deaths_correlation_list, columns=columns)
@@ -333,7 +330,7 @@ class Comparison():
         
 
     def shift_timeseries(self, save_path, start_dates, categories, delta=5):
-        """ shift the mobility timeseries -20/+20 around the deaths timeseries and calculate the correlation
+        """ shift the mobility timeseries -delta/+delta around the deaths timeseries and calculate the correlation
         """
         assert (isinstance(delta, int))
         assert (delta < 20)
@@ -418,7 +415,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--dir','-d', type=str, help='Directory of the result')
-    parser.add_argument('--delta', type=int, default= 5, help='offset for Lag analysis')
+    parser.add_argument('--delta', type=int, default= 5, help='offset for lag analysis')
 
     args = parser.parse_args()
 
