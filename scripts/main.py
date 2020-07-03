@@ -44,6 +44,9 @@ class MainStanModel():
 
         if self.model == 'mobility':
             self.use_mobility = True
+        else:
+            self.use_mobility = False
+
 
         self.clustering = data_parser.get_clustering(self.data_dir)
         if self.fips_list is None and self.cluster is not None:
