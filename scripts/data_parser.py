@@ -158,7 +158,8 @@ def get_regions(data_dir, M, cases, deaths, processing, interventions, populatio
     return final_dict, fips_list, dict_of_start_dates, dict_of_geo
 
 
-def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, population, fips_list, mobility=None, interpolate=True):
+def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, population,
+                         fips_list, mobility=None, interpolate=True):
     """"
     Returns:
         final_dict: Stan_data used to feed main sampler
@@ -180,6 +181,11 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
     covariate6 = []
     covariate7 = []
     covariate8 = []
+    covariate9 = []
+    covariate10 = []
+    covariate11 = []
+    covariate12 = []
+    covariate13 = []
 
     cases = []
     deaths = []
@@ -229,6 +235,11 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
         covariate6.append(covariates2[:, 5])  # entertainment/gym
         covariate7.append(covariates2[:, 6])  # federal guidelines
         covariate8.append(covariates2[:, 7])  # federal guidelines
+        covariate9.append(covariates2[:, 8])  # stay at home rollback
+        covariate10.append(covariates2[:, 9])  # >50 gatherings rollback
+        covariate11.append(covariates2[:, 10])  # >500 gatherings rollback
+        covariate12.append(covariates2[:, 11])  # restaurant dine-in rollback
+        covariate13.append(covariates2[:, 12])  # entertainment/gym rollback
 
         # mobility
         if mobility is not None:
@@ -239,9 +250,6 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
             tmp = np.append(tmp, fill_arr, axis=0)
             mobility_list.append(tmp)
         
-
-
-        
     covariate1 = np.array(covariate1).T
     covariate2 = np.array(covariate2).T
     covariate3 = np.array(covariate3).T
@@ -250,11 +258,17 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
     covariate6 = np.array(covariate6).T
     covariate7 = np.array(covariate7).T
     covariate8 = np.array(covariate8).T
+    covariate9 = np.array(covariate9).T
+    covariate10 = np.array(covariate10).T
+    covariate11 = np.array(covariate11).T
+    covariate12 = np.array(covariate12).T
+    covariate13 = np.array(covariate13).T
     cases = np.array(cases).T
     deaths = np.array(deaths).T
     
     X = np.dstack([covariate1, covariate2, covariate3, covariate4, covariate5, covariate6,
-                   covariate7, covariate8])
+                   covariate7, covariate8, covariate9, covariate10, covariate11, covariate12,
+                   covariate13])
     X = np.moveaxis(X, 1, 0)
 
     if mobility is not None:
@@ -265,7 +279,7 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
     final_dict = {}
     final_dict['M'] = len(fips_list)
     final_dict['N0'] = 6
-    final_dict['P'] = 8 # num of covariates
+    final_dict['P'] = 13 # num of covariates (used to be 8)
     final_dict['N'] = np.asarray(N_arr, dtype=np.int)
     final_dict['N2'] = N2
     final_dict['p'] = covariates.shape[1] - 1
@@ -281,6 +295,11 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
     final_dict['covariate6'] = covariate6
     final_dict['covariate7'] = covariate7
     final_dict['covariate8'] = covariate8
+    final_dict['covariate9'] = covariate9
+    final_dict['covariate10'] = covariate10
+    final_dict['covariate11'] = covariate11
+    final_dict['covariate12'] = covariate12
+    final_dict['covariate13'] = covariate13
     final_dict['pop'] = population.astype(np.float).reshape((len(fips_list)))
     final_dict['X'] = X
     final_dict['X_partial'] = X_partial
