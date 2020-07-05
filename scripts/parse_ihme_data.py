@@ -17,7 +17,7 @@ class IHMEDataParser():
         self.path = join(data_dir, 'us_data', 'IHME', 'Summary_stats_all_locs.csv')
         assert exists(self.path), f'Summary not available'
 
-        self.interventions_path = join(self.data_dir, 'us_data', 'interventions.csv')
+        self.interventions_path = join(self.data_dir, 'us_data', 'interventions_initial_submission.csv')
         self.fips_lookup_path = join(self.data_dir, 'us_data', 'FIPS_lookup.csv')
         self.parse(self.path, self.interventions_path, self.fips_lookup_path)
 
@@ -145,6 +145,8 @@ class IHMEDataParser():
 
     def dirty_helper(self, df, columns_list):
         """ Hardcoded county rollback dates """
+        print(df)
+
         df.set_index('FIPS', inplace=True)
         print('--------------BEFORE--------------')
         #print(df)
