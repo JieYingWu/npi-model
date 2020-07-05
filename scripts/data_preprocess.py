@@ -109,7 +109,8 @@ def select_top_regions(df_cases, df_deaths, interventions, num_counties, populat
 
 
 def merge_supercounties(cases, deaths, interventions, population,
-                        threshold=THRESHOLD, clustering=None, save_supercounties=False):
+                        threshold=THRESHOLD, clustering=None, save_supercounties=False,
+                        load_supercounties=False):
     """Join counties in the same state if they don't have enough deaths.
 
     Checks that the average daily deaths for the past 10 days is more than `threshold`. If the
@@ -122,6 +123,8 @@ def merge_supercounties(cases, deaths, interventions, population,
     :param threshold: 
     :param clustering: dictionary mapping [str] fips to [int] cluster label. 
       If None, supercounties are not limited to a single cluster.
+    :param save_supercounties: save the supercounties.json file
+    :param load_supercounties: load the existing supercounties rather than re-computing them.
     :returns: 
     :rtype: 
 
@@ -135,7 +138,15 @@ def merge_supercounties(cases, deaths, interventions, population,
     supercounty_to_deaths_idx = {}
     supercounty_to_interventions_idx = {}
     supercounty_to_population_idx = {}
-    supercounties = {}  # map STATEFIPS_CLUSTER to list of FIPS for counties in that supercounty
+
+    supercounties_path = join('data', 'us_data', 'supercounties.json')
+    if load_supercounties:
+        with open(supercounties_path, 'r') as file:
+            supercounties = json.load(file)
+        counties_in_supercounties = set(sum(supercounties.values(), []))
+    else:
+        supercounties = {}  # map STATEFIPS_CLUSTER to list of FIPS for counties in that supercounty
+        
     for i, deaths_row in deaths.iterrows():
         fips = deaths_row['FIPS']
         fips_key = str(fips).zfill(5)
@@ -153,8 +164,10 @@ def merge_supercounties(cases, deaths, interventions, population,
         if np.all(county_deaths == 0):
             # county has no data to contribute at all
             continue
-        if county_deaths.sum() >= threshold:
-            # county should have enough data on its own
+
+        if ((load_supercounties and fips not in counties_in_supercounties)
+            or (not load_supercounties and county_deaths.sum() >= threshold)):
+            # county is not in an existing supercounty or county should have enough data on its own
             new_cases.append(cases_row)
             new_deaths.append(deaths_row)
             new_interventions.append(interventions_row)
@@ -162,7 +175,9 @@ def merge_supercounties(cases, deaths, interventions, population,
             continue
 
         supercounty = f'{fips_key[:2]}000_{cluster}'
-        supercounties[supercounty] = supercounties.get(supercounty, []) + [fips_key]
+        if not load_supercounties:
+            supercounties[supercounty] = supercounties.get(supercounty, []) + [fips_key]
+            
         state_name = deaths_row['Combined_Key'].split('-')[1].strip()
         if cluster is None:
             area_name = f'{state_name} Super-county'
@@ -208,7 +223,10 @@ def merge_supercounties(cases, deaths, interventions, population,
                 
         population_idx = supercounty_to_population_idx.get(supercounty)
         new_population[population_idx][1] += population_row[1]
-        print(f'MERGED {fips} with supercounty for {supercounty}')
+        if load_supercounties:
+            print(f'{fips} in loaded supercounty {supercounty}')
+        else:
+            print(f'MERGED {fips} with supercounty for {supercounty}')
 
     cases = pd.DataFrame(new_cases)
     deaths = pd.DataFrame(new_deaths)
@@ -220,15 +238,15 @@ def merge_supercounties(cases, deaths, interventions, population,
     # print('POPULATION', population, sep='\n')
 
     # print('supercounties:', supercounties)
-    if save_supercounties:
-        with open(join('data', 'us_data', 'supercounties.json'), 'w') as file:
+    if not load_supercounties and save_supercounties:
+        with open(supercounties_path, 'w') as file:
             json.dump(supercounties, file)
             print('saved supercounties.json to data/us_data')
     return cases, deaths, interventions, population
     
 
 def select_regions(cases, deaths, interventions, M, population, mobility_dict, fips_list=None,
-                   supercounties=True, clustering=None):
+                   supercounties=True, clustering=None, load_supercounties=False):
     """"
     Returns:
         df_cases: Infections timeseries for given fips
@@ -249,7 +267,8 @@ def select_regions(cases, deaths, interventions, M, population, mobility_dict, f
         # join counties with less than a given threshold of deaths with other counties in the same state.
         # and if their interventions are the same as the other counties
         cases, deaths, interventions, population = merge_supercounties(
-            cases, deaths, interventions, population, clustering=clustering, save_supercounties=(fips_list is None))
+            cases, deaths, interventions, population, clustering=clustering, save_supercounties=(fips_list is None),
+            load_supercounties=load_supercounties)
 
     return cases, deaths, interventions, population, mobility_dict
 

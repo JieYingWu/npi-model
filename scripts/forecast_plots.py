@@ -11,7 +11,7 @@ from data_parser import impute, remove_negative_values
 plot_settings = 'usa'  # choose 'eu' for europe and 'usa' for usa plots
 base_model = True  # True for prediction/E_deaths, False for prediction0/E_deaths0
 # to match with IC paper select base_model==True
-last_day_to_plot = '5/28/20'  # predict to this date
+last_day_to_plot = '7/2/20'  # predict to this date
 
 
 # saving some params for plot settings
