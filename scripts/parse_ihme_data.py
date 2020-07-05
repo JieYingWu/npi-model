@@ -124,7 +124,6 @@ class IHMEDataParser():
                 date_current = date_current_list[0][j]
                 if date_current != [] and type(date_current) != np.float:
                     date_current = date_current
-                    print(date_current)
 
                     # parse date
                     date_current_ordinal = datetime.datetime.strptime(date_current, '%Y-%m-%d').toordinal()
@@ -136,7 +135,7 @@ class IHMEDataParser():
 
 
 
-        int_df = self.dirty_helper(int_df)
+        int_df = self.dirty_helper(int_df, columns_list)
         int_df.to_csv(join(self.data_dir, 'us_data', 'interventions_updated.csv'),index=True)
 
 
@@ -144,23 +143,77 @@ class IHMEDataParser():
 
 
 
-    def dirty_helper(self, df):
+    def dirty_helper(self, df, columns_list):
         """ Hardcoded county rollback dates """
         df.set_index('FIPS', inplace=True)
         print('--------------BEFORE--------------')
-        print(df)
-
+        #print(df)
+        columns_list = ['stay at home rollback',
+                       '>50 gatherings rollback',
+                       '>500 gatherings rollback',
+                       'restaurant dine-in rollback',
+                       'entertainment/gym rollback']
+        c = columns_list
         # Alabama
         # Alaska
         # Arizona
         # Arkansas
         # California
+        # Colorado
+        # Conneticut
+        # Delaware
+        #    restaurant and entertainment open from June 15th on src: https://coronavirus.delaware.gov/reopening/phase2/
+        df.loc[df.STATE=='DE', c[-1]] = datetime.date(2020,6,15).toordinal()
+        df.loc[df.STATE=='DE', c[-2]] = datetime.date(2020,6,15).toordinal()
+
+        # DC 
+        #   stay at home order June 22nd src: https://coronavirus.dc.gov/phasetwo
+        df.loc[df.STATE=='DC', c[-5]] = datetime.date(2020,6,22).toordinal()
+        
+        # FL
+        #   stay at home order May 18 src: https://floridahealthcovid19.gov/plan-for-floridas-recovery/
+        #   reastaurants May 18th 
+        #   entertainment May 18th
+        df.loc[df.STATE=='FL', c[-5]] = datetime.date(2020,6,18).toordinal()
+        df.loc[df.STATE=='FL', c[-2]] = datetime.date(2020,6,18).toordinal()
+        df.loc[df.STATE=='FL', c[-1]] = datetime.date(2020,6,18).toordinal()
+
+
+        # Georgia 
+        # Hawaii
+        # Idaho
+        #   gatherings <50 May 30th src: https://rebound.idaho.gov/stages-of-reopening/
+        #   gatherings <500 June 13th src: https://rebound.idaho.gov/stages-of-reopening/
+        df.loc[df.STATE=='ID', c[-4]] = datetime.date(2020,5,30).toordinal()
+        df.loc[df.STATE=='ID', c[-3]] = datetime.date(2020,6,13).toordinal()
+
+        # Illinois
+        # stay at home order May 30th src:https://www.pantagraph.com/news/state-and-regional/illinois-stay-at-home-order-ends-and-restrictions-lifted-on-churches-as-the-state-advances/article_71393207-40a5-58cf-a658-c580da3d437d.html
+        df.loc[df.STATE=='IL', c[-5]] = datetime.date(2020,5,30).toordinal()
+        
+        # Indiana 
+        # Iowa
+        # Kansas 
+        # Kentucky
+        # Lousiana
+        # indoor limit <250 people not considered: src: https://gov.louisiana.gov/index.cfm/newsroom/detail/2573
+        # Maine
+        # Maryland
+        # Massachusetts
+        #   restaurants: June 22nd src: https://www.mass.gov/info-details/safety-standards-and-checklist-restaurants
+        df.loc[df.STATE=='MA', c[-2]] = datetime.date(2020,6,22).toordinal()
+
+        print(df[df['STATE']=='MA'].iloc[0])
+
+        # print(df.loc['10000',:])
         
         
 
 
         print('--------------AFTER--------------')
-        print(df)
+        #print(df)
+
+        return df
 
 
 
