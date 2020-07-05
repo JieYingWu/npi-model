@@ -39,7 +39,8 @@ def get_clustering(data_dir):
 
     
 def get_data(M, data_dir, processing=None, state=False, fips_list=None, validation=False,
-             clustering=None, supercounties=False, validation_on_county=False, mobility=False, threshold=50):
+             clustering=None, supercounties=False, validation_on_county=False, mobility=False,
+             threshold=50, load_supercounties=False):
     cases, deaths, interventions, population, mobility_dict = preprocessing_us_data(data_dir)
 
     if state:
@@ -51,8 +52,9 @@ def get_data(M, data_dir, processing=None, state=False, fips_list=None, validati
 
     # Not filtering interventions data since we're not selecting counties based on that
     final_dict, fips_list, dict_of_start_dates, dict_of_geo = get_regions(
-        data_dir, M, cases, deaths, processing, interventions, population,mobility_dict=mobility_dict, fips_list=fips_list,
-        validation=validation, supercounties=supercounties, clustering=clustering, mobility=mobility, threshold=threshold)
+        data_dir, M, cases, deaths, processing, interventions, population, mobility_dict=mobility_dict,
+        fips_list=fips_list, validation=validation, supercounties=supercounties, clustering=clustering,
+        mobility=mobility, threshold=threshold, load_supercounties=load_supercounties)
 
     return final_dict, fips_list, dict_of_start_dates, dict_of_geo
 
@@ -71,8 +73,9 @@ def save_interventions(interventions, fname):
     interventions.to_csv(fname)
 
 
-def get_regions(data_dir, M, cases, deaths, processing, interventions, population, mobility_dict, fips_list=None,
-                validation=False, clustering=None, supercounties=False, mobility=False, threshold=50):
+def get_regions(data_dir, M, cases, deaths, processing, interventions, population, mobility_dict,
+                fips_list=None, validation=False, clustering=None, supercounties=False,
+                mobility=False, threshold=50, load_supercounties=False):
     if processing == Processing.INTERPOLATE:
         cases = impute(cases, allow_decrease_towards_end=False)
         deaths = impute(deaths, allow_decrease_towards_end=False)
@@ -90,7 +93,7 @@ def get_regions(data_dir, M, cases, deaths, processing, interventions, populatio
     
     cases, deaths, interventions, population, mobility_dict = select_regions(
         cases, deaths, interventions, M, population, mobility_dict=mobility_dict, fips_list=fips_list,
-        clustering=clustering, supercounties=supercounties)
+        clustering=clustering, supercounties=supercounties, load_supercounties=load_supercounties)
     cases, deaths, interventions, population, mobility_dict, fips_list = select_top_regions(
         cases, deaths, interventions, M, population, mobility_dict=mobility_dict, validation=validation, threshold=threshold)
 
@@ -200,6 +203,7 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
 
         N = len(case)
         N_arr.append(N)
+        # N2 = 120 # initial submission
         N2 = 160
 
         forecast = N2 - N

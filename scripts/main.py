@@ -226,7 +226,8 @@ class MainStanModel():
         elif mode == 'US_county':
             stan_data, regions, start_date, geocode = data_parser.get_data(
                 M, data_dir, processing=self.processing, state=False, fips_list=self.fips_list,
-                validation=self.validation_withholding, supercounties=self.supercounties, clustering=self.clustering, mobility=self.use_mobility)
+                validation=self.validation_withholding, supercounties=self.supercounties,
+                clustering=self.clustering, mobility=self.use_mobility, load_supercounties=self.load_supercounties)
             weighted_fatalities = self.get_weighted_fatalities(regions)
             
             # # wf_file = join(self.data_dir, 'us_data', 'weighted_fatality.csv')
@@ -254,13 +255,13 @@ class MainStanModel():
 
         return stan_data, regions, start_date, geocode, weighted_fatalities
 
-    def load_supercounties(self):
+    def get_supercounties(self):
         with open(join(self.data_dir, 'us_data', 'supercounties.json'), 'r') as file:
             supercounties = json.load(file)
         return supercounties
     
     def summarize_regions(self, regions):
-        supercounties = self.load_supercounties()
+        supercounties = self.get_supercounties()
         count = 0
         for region in regions:
             if is_county(region):
@@ -495,6 +496,7 @@ if __name__ == '__main__':
     parser.add_argument('--warmup-iter', default=150, type=int, help='warmup iterations for the model')
     parser.add_argument('--max-treedepth', default=12, type=int, help='maximum tree depth for the model')
     parser.add_argument('--supercounties', action='store_true', help='merge counties in the same state AND cluster with insufficient cases')
+    parser.add_argument('--load-supercounties', action='store_true', help='load the supercounties file (don\'t overwrite it)')
     args = parser.parse_args()
 
     model = MainStanModel(args)
