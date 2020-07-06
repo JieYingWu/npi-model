@@ -172,7 +172,7 @@ class IHMEDataParser():
         #   stay at home order June 22nd src: https://coronavirus.dc.gov/phasetwo
         df.loc[df.STATE=='DC', c[-5]] = datetime.date(2020,6,22).toordinal()
         
-        # FL - checked for counties: phase 1 (restaurant and gym) all took effect at same time
+        # FL - checked for counties: phase 1 (restaurant and gym) all took effect at same time https://twitter.com/govrondesantis/status/1261369779035623425?lang=en
         #   stay at home order May 18 src: https://floridahealthcovid19.gov/plan-for-floridas-recovery/
         #   reastaurants May 18th 
         #   entertainment May 18th
@@ -196,6 +196,7 @@ class IHMEDataParser():
         # Indiana 
         # Iowa
         # https://wcfcourier.com/news/local/govt-and-politics/update-watch-now-iowa-to-reopen-restaurants-friday/article_7636be19-9dec-5cb9-8344-29c6aafd0196.html
+        df.loc[df.STATE=='IA', c[-1]] = datetime.date(2020,5,11).toordinal() # https://www.thegazette.com/subject/news/business/gyms-working-up-a-sweat-to-reopen-friday-20200514
         df.loc[df.FIPS=='19153', c[-2:]] = datetime.date(2020,5,15).toordinal()
         df.loc[df.FIPS=='19005', c[-2:]] = datetime.date(2020,5,15).toordinal()
         df.loc[df.FIPS=='19011', c[-2:]] = datetime.date(2020,5,15).toordinal()
@@ -258,7 +259,7 @@ class IHMEDataParser():
         df.loc[df.FIPS=='24033', c[-2:]] = datetime.date(2020,6,1).toordinal()
         df.loc[df.FIPS=='24033', c[-1:]] = datetime.date(2020,6,29).toordinal()
         
-        # Massachusetts
+        # Massachusetts - checked, seems to be all counties the same
         #   restaurants: June 22nd src: https://www.mass.gov/info-details/safety-standards-and-checklist-restaurants
         df.loc[df.STATE=='MA', c[-2]] = datetime.date(2020,6,22).toordinal()
         # Michigan MI
@@ -284,8 +285,19 @@ class IHMEDataParser():
         # New Jersey NJ
         #   no indoor dining
         df.loc[df.STATE=='NJ', c[-2]] = np.nan
-        # New Mexico NM
+        # New Mexico NM - apparently not actually what IHME said? https://www.newmexico.gov/2020/05/28/governor-announces-limited-reopening-for-dine-in-restaurants-indoor-malls-gyms-salons-and-more/
         # TODO: county response
+        
+        df.loc[df.STATE=='NM', c[-2]] = datetime.date(2020,5,28)
+        df.loc[df.STATE=='NM', c[-1]] = datetime.date(2020,6,1)
+
+        # Some counties were weird: https://www.usnews.com/news/best-states/new-mexico/articles/2020-05-25/new-mexico-governor-blocks-plans-to-reopen-drive-in-theater
+        df.loc[df.FIPS=='35006', c[-2:]] = datetime.date(2020,6,1).toordinal() # Cibola
+        df.loc[df.FIPS=='35031', c[-2:]] = datetime.date(2020,6,1).toordinal() # McKinley
+        df.loc[df.FIPS=='35045', c[-2:]] = datetime.date(2020,6,1).toordinal() # San Juan
+        
+        
+        
         # New York NY
         # TODO: differntiate NYC from NY
         # North Carolina NC
@@ -302,6 +314,8 @@ class IHMEDataParser():
         # TODO: County response: https://govstatus.egov.com/reopening-oregon#countyStatuses
         # Pennsylvania PA
         # TODO:  county response
+
+        
         # Puerto Rico PR
         # Probably some info here src: https://www.ddec.pr.gov/covid19_informaciongeneral/ (in spanish)
         # Rhode Island RI
