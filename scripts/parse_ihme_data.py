@@ -282,12 +282,14 @@ class IHMEDataParser():
         # New Hampshire NH
         #   stay at home June 15th src: https://www.nytimes.com/interactive/2020/us/states-reopen-map-coronavirus.html
         df.loc[df.STATE=='NH', c[-5]] = datetime.date(2020,6,15).toordinal()
-        # New Jersey NJ
-        #   no indoor dining
-        df.loc[df.STATE=='NJ', c[-2]] = np.nan
-        # New Mexico NM - apparently not actually what IHME said? https://www.newmexico.gov/2020/05/28/governor-announces-limited-reopening-for-dine-in-restaurants-indoor-malls-gyms-salons-and-more/
-        # TODO: county response
+
+        # New Jersey NJ - appears to have opened at once https://www.thegazette.com/subject/news/business/gyms-working-up-a-sweat-to-reopen-friday-20200514
+        #   no indoor dining - but outdoor
+        df.loc[df.STATE=='NJ', c[-2]] = datetime.date(2020,6,15).toordinal() #np.nan
+        df.loc[df.STATE=='NJ', c[-1]] = datetime.date(2020,7,2).toordinal() #np.nan
         
+        # New Mexico NM - apparently not actually what IHME said? https://www.newmexico.gov/2020/05/28/governor-announces-limited-reopening-for-dine-in-restaurants-indoor-malls-gyms-salons-and-more/
+    
         df.loc[df.STATE=='NM', c[-2]] = datetime.date(2020,5,28)
         df.loc[df.STATE=='NM', c[-1]] = datetime.date(2020,6,1)
 
@@ -295,15 +297,173 @@ class IHMEDataParser():
         df.loc[df.FIPS=='35006', c[-2:]] = datetime.date(2020,6,1).toordinal() # Cibola
         df.loc[df.FIPS=='35031', c[-2:]] = datetime.date(2020,6,1).toordinal() # McKinley
         df.loc[df.FIPS=='35045', c[-2:]] = datetime.date(2020,6,1).toordinal() # San Juan
-        
-        
-        
+    
+            
         # New York NY
-        # TODO: differntiate NYC from NY
-        # North Carolina NC
+        # Only using New York County for all 5 boroughs since that's where death is counted
+        # Gyms are not included in reopening plan as of yet - https://nymag.com/intelligencer/2020/07/when-will-new-york-reopen-phases-and-full-plan-explained.html
+        df.loc[df.STATE=='NY', c[-1]] = np.nan
+        
+        # https://www1.nyc.gov/nycbusiness/article/nyc-restaurant-reopening-guide
+        df.loc[df.FIPS=='36061', c[-2:]] = datetime.date(2020,6,22).toordinal() 
+        df.loc[df.FIPS=='36061', c[-2:]] = np.nan
+
+        # Counties https://www.governor.ny.gov/news/governor-cuomo-announces-outdoor-dining-restaurants-will-be-permitted-phase-two-reopening
+        # Capital Region - Albany, Columbia, Greene, Saratoga, Schenectady, Rensselaer, Warren, Washington
+        df.loc[df.FIPS=='36001', c[-2:]] = datetime.date(2020,6,4).toordinal() 
+        df.loc[df.FIPS=='36021', c[-2:]] = datetime.date(2020,6,4).toordinal()
+        df.loc[df.FIPS=='36039', c[-2:]] = datetime.date(2020,6,4).toordinal() 
+        df.loc[df.FIPS=='36091', c[-2:]] = datetime.date(2020,6,4).toordinal() 
+        df.loc[df.FIPS=='36093', c[-2:]] = datetime.date(2020,6,4).toordinal()
+        df.loc[df.FIPS=='36083', c[-2:]] = datetime.date(2020,6,4).toordinal() 
+        df.loc[df.FIPS=='36113', c[-2:]] = datetime.date(2020,6,4).toordinal() 
+        df.loc[df.FIPS=='36115', c[-2:]] = datetime.date(2020,6,4).toordinal()
+        # Central New York - Cayuga, Cortland, Madison, Onondaga, Oswego
+        df.loc[df.FIPS=='36011', c[-2:]] = datetime.date(2020,6,4).toordinal() 
+        df.loc[df.FIPS=='36023', c[-2:]] = datetime.date(2020,6,4).toordinal() 
+        df.loc[df.FIPS=='36053', c[-2:]] = datetime.date(2020,6,4).toordinal()
+        df.loc[df.FIPS=='36067', c[-2:]] = datetime.date(2020,6,4).toordinal() 
+        df.loc[df.FIPS=='36075', c[-2:]] = datetime.date(2020,6,4).toordinal()
+        # the Finger Lakes - Genesee, Livingston, Monroe, Ontario, Orleans, Seneca, Wayne, Wyoming, Yates
+        df.loc[df.FIPS=='36037', c[-2:]] = datetime.date(2020,6,4).toordinal()
+        df.loc[df.FIPS=='36051', c[-2:]] = datetime.date(2020,6,4).toordinal() 
+        df.loc[df.FIPS=='36055', c[-2:]] = datetime.date(2020,6,4).toordinal() 
+        df.loc[df.FIPS=='36069', c[-2:]] = datetime.date(2020,6,4).toordinal()
+        df.loc[df.FIPS=='36073', c[-2:]] = datetime.date(2020,6,4).toordinal() 
+        df.loc[df.FIPS=='36099', c[-2:]] = datetime.date(2020,6,4).toordinal() 
+        df.loc[df.FIPS=='36117', c[-2:]] = datetime.date(2020,6,4).toordinal()
+        df.loc[df.FIPS=='36121', c[-2:]] = datetime.date(2020,6,4).toordinal() 
+        df.loc[df.FIPS=='36123', c[-2:]] = datetime.date(2020,6,4).toordinal()
+        # the Mohawk Valley - Fulton, Herkimer, Montgomery, Oneida, Otsego, Schoharie
+        df.loc[df.FIPS=='36035', c[-2:]] = datetime.date(2020,6,4).toordinal()
+        df.loc[df.FIPS=='36043', c[-2:]] = datetime.date(2020,6,4).toordinal() 
+        df.loc[df.FIPS=='36057', c[-2:]] = datetime.date(2020,6,4).toordinal() 
+        df.loc[df.FIPS=='36065', c[-2:]] = datetime.date(2020,6,4).toordinal()
+        df.loc[df.FIPS=='36077', c[-2:]] = datetime.date(2020,6,4).toordinal() 
+        df.loc[df.FIPS=='36095', c[-2:]] = datetime.date(2020,6,4).toordinal()
+        # the North Country - Clinton, Essex, Franklin, Hamilton, Jefferson, Lewis, St. Lawrence
+        df.loc[df.FIPS=='36019', c[-2:]] = datetime.date(2020,6,4).toordinal() 
+        df.loc[df.FIPS=='36031', c[-2:]] = datetime.date(2020,6,4).toordinal() 
+        df.loc[df.FIPS=='36033', c[-2:]] = datetime.date(2020,6,4).toordinal()
+        df.loc[df.FIPS=='36041', c[-2:]] = datetime.date(2020,6,4).toordinal() 
+        df.loc[df.FIPS=='36045', c[-2:]] = datetime.date(2020,6,4).toordinal()
+        df.loc[df.FIPS=='36049', c[-2:]] = datetime.date(2020,6,4).toordinal() 
+        df.loc[df.FIPS=='36089', c[-2:]] = datetime.date(2020,6,4).toordinal()
+        # the Southern Tier Broome, Chemung, Chenango, Delaware, Schuyler, Steuben, Tioga, Tompkins
+        df.loc[df.FIPS=='36007', c[-2:]] = datetime.date(2020,6,4).toordinal()
+        df.loc[df.FIPS=='36015', c[-2:]] = datetime.date(2020,6,4).toordinal() 
+        df.loc[df.FIPS=='36017', c[-2:]] = datetime.date(2020,6,4).toordinal()
+        df.loc[df.FIPS=='36025', c[-2:]] = datetime.date(2020,6,4).toordinal() 
+        df.loc[df.FIPS=='36097', c[-2:]] = datetime.date(2020,6,4).toordinal() 
+        df.loc[df.FIPS=='36101', c[-2:]] = datetime.date(2020,6,4).toordinal()
+        df.loc[df.FIPS=='36107', c[-2:]] = datetime.date(2020,6,4).toordinal()
+        df.loc[df.FIPS=='36109', c[-2:]] = datetime.date(2020,6,4).toordinal()
+        # Western New York - Allegany, Cattaraugus, Chautauqua, Erie, Niagara
+        df.loc[df.FIPS=='36003', c[-2:]] = datetime.date(2020,6,4).toordinal()
+        df.loc[df.FIPS=='36009', c[-2:]] = datetime.date(2020,6,4).toordinal() 
+        df.loc[df.FIPS=='36013', c[-2:]] = datetime.date(2020,6,4).toordinal()
+        df.loc[df.FIPS=='36029', c[-2:]] = datetime.date(2020,6,4).toordinal() 
+        df.loc[df.FIPS=='36063', c[-2:]] = datetime.date(2020,6,4).toordinal()
+
+        # Long Island - https://www.nbcnewyork.com/news/local/hundreds-of-restaurants-expected-to-reopen-on-long-island-as-phase-ii-begins-cuomo-shifts-metrics-focus/2454500/
+        df.loc[df.FIPS=='36059', c[-2:]] = datetime.date(2020,6,10).toordinal() 
+        df.loc[df.FIPS=='36103', c[-2:]] = datetime.date(2020,6,10).toordinal()
+        
+
+        # Mid-Hudson https://www.dailyfreeman.com/news/local-news/phase-2-starts-tuesday-in-mid-hudson-region-outdoor-dining-at-restaurants-haircuts-in-store/article_afba1bea-a9a4-11ea-bf5a-677d5abe84e2.html
+        # Dutchess, Orange, Putnam, Rockland, Sullivan, Ulster, Westchester
+        df.loc[df.FIPS=='36027', c[-2:]] = datetime.date(2020,6,9).toordinal() 
+        df.loc[df.FIPS=='36071', c[-2:]] = datetime.date(2020,6,9).toordinal()
+        df.loc[df.FIPS=='36079', c[-2:]] = datetime.date(2020,6,9).toordinal() 
+        df.loc[df.FIPS=='36087', c[-2:]] = datetime.date(2020,6,9).toordinal()
+        df.loc[df.FIPS=='36105', c[-2:]] = datetime.date(2020,6,9).toordinal() 
+        df.loc[df.FIPS=='36111', c[-2:]] = datetime.date(2020,6,9).toordinal() 
+        df.loc[df.FIPS=='36119', c[-2:]] = datetime.date(2020,6,9).toordinal()
+        
+
+        # Phase 4 includes gathering of 50 people
+        # Capital Region - https://www.governor.ny.gov/news/governor-cuomo-announces-capital-region-cleared-global-public-health-experts-enter-phase-4
+        df.loc[df.FIPS=='36001', c[-4:]] = datetime.date(2020,7,1).toordinal() 
+        df.loc[df.FIPS=='36021', c[-4:]] = datetime.date(2020,7,1).toordinal()
+        df.loc[df.FIPS=='36039', c[-4:]] = datetime.date(2020,7,1).toordinal() 
+        df.loc[df.FIPS=='36091', c[-4:]] = datetime.date(2020,7,1).toordinal() 
+        df.loc[df.FIPS=='36093', c[-4:]] = datetime.date(2020,7,1).toordinal()
+        df.loc[df.FIPS=='36083', c[-4:]] = datetime.date(2020,7,1).toordinal() 
+        df.loc[df.FIPS=='36113', c[-4:]] = datetime.date(2020,7,1).toordinal() 
+        df.loc[df.FIPS=='36115', c[-4:]] = datetime.date(2020,7,1).toordinal()
+
+        # https://www.governor.ny.gov/news/governor-cuomo-announces-five-regions-track-enter-phase-iv-reopening-friday
+        # Central New York - Cayuga, Cortland, Madison, Onondaga, Oswego
+        df.loc[df.FIPS=='36011', c[-4:]] = datetime.date(2020,6,26).toordinal() 
+        df.loc[df.FIPS=='36023', c[-4:]] = datetime.date(2020,6,26).toordinal() 
+        df.loc[df.FIPS=='36053', c[-4:]] = datetime.date(2020,6,26).toordinal()
+        df.loc[df.FIPS=='36067', c[-4:]] = datetime.date(2020,6,26).toordinal() 
+        df.loc[df.FIPS=='36075', c[-4:]] = datetime.date(2020,6,26).toordinal()
+        # the Finger Lakes - Genesee, Livingston, Monroe, Ontario, Orleans, Seneca, Wayne, Wyoming, Yates
+        df.loc[df.FIPS=='36037', c[-4:]] = datetime.date(2020,6,26).toordinal()
+        df.loc[df.FIPS=='36051', c[-4:]] = datetime.date(2020,6,26).toordinal() 
+        df.loc[df.FIPS=='36055', c[-4:]] = datetime.date(2020,6,26).toordinal() 
+        df.loc[df.FIPS=='36069', c[-4:]] = datetime.date(2020,6,26).toordinal()
+        df.loc[df.FIPS=='36073', c[-4:]] = datetime.date(2020,6,26).toordinal() 
+        df.loc[df.FIPS=='36099', c[-4:]] = datetime.date(2020,6,26).toordinal() 
+        df.loc[df.FIPS=='36117', c[-4:]] = datetime.date(2020,6,26).toordinal()
+        df.loc[df.FIPS=='36121', c[-4:]] = datetime.date(2020,6,26).toordinal() 
+        df.loc[df.FIPS=='36123', c[-4:]] = datetime.date(2020,6,26).toordinal()
+        # the Mohawk Valley - Fulton, Herkimer, Montgomery, Oneida, Otsego, Schoharie
+        df.loc[df.FIPS=='36035', c[-4:]] = datetime.date(2020,6,26).toordinal()
+        df.loc[df.FIPS=='36043', c[-4:]] = datetime.date(2020,6,26).toordinal() 
+        df.loc[df.FIPS=='36057', c[-4:]] = datetime.date(2020,6,26).toordinal() 
+        df.loc[df.FIPS=='36065', c[-4:]] = datetime.date(2020,6,26).toordinal()
+        df.loc[df.FIPS=='36077', c[-4:]] = datetime.date(2020,6,26).toordinal() 
+        df.loc[df.FIPS=='36095', c[-4:]] = datetime.date(2020,6,26).toordinal()
+        # the North Country - Clinton, Essex, Franklin, Hamilton, Jefferson, Lewis, St. Lawrence
+        df.loc[df.FIPS=='36019', c[-4:]] = datetime.date(2020,6,26).toordinal() 
+        df.loc[df.FIPS=='36031', c[-4:]] = datetime.date(2020,6,26).toordinal() 
+        df.loc[df.FIPS=='36033', c[-4:]] = datetime.date(2020,6,26).toordinal()
+        df.loc[df.FIPS=='36041', c[-4:]] = datetime.date(2020,6,26).toordinal() 
+        df.loc[df.FIPS=='36045', c[-4:]] = datetime.date(2020,6,26).toordinal()
+        df.loc[df.FIPS=='36049', c[-4:]] = datetime.date(2020,6,26).toordinal() 
+        df.loc[df.FIPS=='36089', c[-4:]] = datetime.date(2020,6,26).toordinal()
+        # the Southern Tier Broome, Chemung, Chenango, Delaware, Schuyler, Steuben, Tioga, Tompkins
+        df.loc[df.FIPS=='36007', c[-4:]] = datetime.date(2020,6,26).toordinal()
+        df.loc[df.FIPS=='36015', c[-4:]] = datetime.date(2020,6,26).toordinal() 
+        df.loc[df.FIPS=='36017', c[-4:]] = datetime.date(2020,6,26).toordinal()
+        df.loc[df.FIPS=='36025', c[-4:]] = datetime.date(2020,6,26).toordinal() 
+        df.loc[df.FIPS=='36097', c[-4:]] = datetime.date(2020,6,26).toordinal() 
+        df.loc[df.FIPS=='36101', c[-4:]] = datetime.date(2020,6,26).toordinal()
+        df.loc[df.FIPS=='36107', c[-4:]] = datetime.date(2020,6,26).toordinal()
+        df.loc[df.FIPS=='36109', c[-4:]] = datetime.date(2020,6,26).toordinal()
+        # Western New York - https://spectrumlocalnews.com/nys/buffalo/politics/2020/06/29/western-new-york-begins-phase-4-reopening-tuesday-
+        df.loc[df.FIPS=='36003', c[-4:]] = datetime.date(2020,6,30).toordinal()
+        df.loc[df.FIPS=='36009', c[-4:]] = datetime.date(2020,6,30).toordinal() 
+        df.loc[df.FIPS=='36013', c[-4:]] = datetime.date(2020,6,30).toordinal()
+        df.loc[df.FIPS=='36029', c[-4:]] = datetime.date(2020,6,30).toordinal() 
+        df.loc[df.FIPS=='36063', c[-4:]] = datetime.date(2020,6,30).toordinal()
+
+        # https://www.dailyfreeman.com/news/local-news/mid-hudson-region-starts-phase-4-of-reopening-process-on-tuesday/article_bf23d59c-bf9f-11ea-bd04-979c464b1ebc.html
+        # Long Island
+        df.loc[df.FIPS=='36059', c[-4:]] = datetime.date(2020,7,8).toordinal() 
+        df.loc[df.FIPS=='36103', c[-4:]] = datetime.date(2020,7,8).toordinal()
+        
+        # Mid-Hudson 
+        # Dutchess, Orange, Putnam, Rockland, Sullivan, Ulster, Westchester
+        df.loc[df.FIPS=='36027', c[-4:]] = datetime.date(2020,7,8).toordinal() 
+        df.loc[df.FIPS=='36071', c[-4:]] = datetime.date(2020,7,8).toordinal()
+        df.loc[df.FIPS=='36079', c[-4:]] = datetime.date(2020,7,8).toordinal() 
+        df.loc[df.FIPS=='36087', c[-4:]] = datetime.date(2020,7,8).toordinal()
+        df.loc[df.FIPS=='36105', c[-4:]] = datetime.date(2020,7,8).toordinal() 
+        df.loc[df.FIPS=='36111', c[-4:]] = datetime.date(2020,7,8).toordinal() 
+        df.loc[df.FIPS=='36119', c[-4:]] = datetime.date(2020,7,8).toordinal()
+        
+
+        
+        # North Carolina NC 
         #   no gym src: https://www.nytimes.com/interactive/2020/us/states-reopen-map-coronavirus.html
+        # Avoided county-by-county approach - https://www.newsobserver.com/news/coronavirus/article242836711.html
         df.loc[df.STATE=='NC', c[-1]] = np.nan
-        # North Dakota ND
+        
+        # North Dakota ND - seems to reopen at once https://www.usnews.com/news/best-states/north-dakota/articles/2020-05-01/north-dakota-cafes-other-businesses-reopen-under-new-rules
+        
         # Ohio OH
         #   entertainment/gyms June 10th src: https://coronavirus.ohio.gov/wps/portal/gov/covid-19/resources/news-releases-news-you-can-use/governor-reopen-certain-facilities
         #   restaurants dine in May 21st src: https://coronavirus.ohio.gov/wps/portal/gov/covid-19/resources/news-releases-news-you-can-use/reopening-restaurants-bars-personal-care-services
