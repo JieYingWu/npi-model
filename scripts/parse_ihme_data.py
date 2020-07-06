@@ -172,7 +172,7 @@ class IHMEDataParser():
         #   stay at home order June 22nd src: https://coronavirus.dc.gov/phasetwo
         df.loc[df.STATE=='DC', c[-5]] = datetime.date(2020,6,22).toordinal()
         
-        # FL
+        # FL - checked for counties: phase 1 (restaurant and gym) all took effect at same time
         #   stay at home order May 18 src: https://floridahealthcovid19.gov/plan-for-floridas-recovery/
         #   reastaurants May 18th 
         #   entertainment May 18th
@@ -195,12 +195,69 @@ class IHMEDataParser():
         
         # Indiana 
         # Iowa
+        # https://wcfcourier.com/news/local/govt-and-politics/update-watch-now-iowa-to-reopen-restaurants-friday/article_7636be19-9dec-5cb9-8344-29c6aafd0196.html
+        df.loc[df.FIPS=='19153', c[-2:]] = datetime.date(2020,5,15).toordinal()
+        df.loc[df.FIPS=='19005', c[-2:]] = datetime.date(2020,5,15).toordinal()
+        df.loc[df.FIPS=='19011', c[-2:]] = datetime.date(2020,5,15).toordinal()
+        df.loc[df.FIPS=='19013', c[-2:]] = datetime.date(2020,5,15).toordinal()
+        df.loc[df.FIPS=='19017', c[-2:]] = datetime.date(2020,5,15).toordinal()
+        df.loc[df.FIPS=='19049', c[-2:]] = datetime.date(2020,5,15).toordinal()
+        df.loc[df.FIPS=='19057', c[-2:]] = datetime.date(2020,5,15).toordinal()
+        df.loc[df.FIPS=='19061', c[-2:]] = datetime.date(2020,5,15).toordinal()
+        df.loc[df.FIPS=='19065', c[-2:]] = datetime.date(2020,5,15).toordinal()
+        df.loc[df.FIPS=='19087', c[-2:]] = datetime.date(2020,5,15).toordinal()
+        df.loc[df.FIPS=='19095', c[-2:]] = datetime.date(2020,5,15).toordinal()
+        df.loc[df.FIPS=='19099', c[-2:]] = datetime.date(2020,5,15).toordinal()
+        df.loc[df.FIPS=='19103', c[-2:]] = datetime.date(2020,5,15).toordinal()
+        df.loc[df.FIPS=='19113', c[-2:]] = datetime.date(2020,5,15).toordinal()
+        df.loc[df.FIPS=='19115', c[-2:]] = datetime.date(2020,5,15).toordinal()
+        df.loc[df.FIPS=='19127', c[-2:]] = datetime.date(2020,5,15).toordinal()
+        df.loc[df.FIPS=='19139', c[-2:]] = datetime.date(2020,5,15).toordinal()
+        df.loc[df.FIPS=='19157', c[-2:]] = datetime.date(2020,5,15).toordinal()
+        df.loc[df.FIPS=='19163', c[-2:]] = datetime.date(2020,5,15).toordinal()
+        df.loc[df.FIPS=='19171', c[-2:]] = datetime.date(2020,5,15).toordinal()
+        df.loc[df.FIPS=='19183', c[-2:]] = datetime.date(2020,5,15).toordinal()
+        df.loc[df.FIPS=='19193', c[-2:]] = datetime.date(2020,5,15).toordinal()
+                
+        
         # Kansas 
         # Kentucky
         # Lousiana
         # indoor limit <250 people not considered: src: https://gov.louisiana.gov/index.cfm/newsroom/detail/2573
         # Maine
-        # Maryland
+        # Maryland https://conduitstreet.mdcounties.org/2020/05/15/marylands-reopening-status-by-county/
+        # Anne Arundel County https://www.aacounty.org/coronavirus/road-to-recovery/
+        df.loc[df.FIPS=='24003', c[-2:]] = datetime.date(2020,5,29).toordinal() 
+        df.loc[df.FIPS=='24003', c[-1:]] = datetime.date(2020,6,4).toordinal() 
+        
+        # Baltimore https://baltimore.cbslocal.com/reopening-maryland-whats-open-whats-closed-county-by-county/
+        df.loc[df.FIPS=='24510', c[-2:]] = datetime.date(2020,5,29).toordinal() 
+        df.loc[df.FIPS=='24510', c[-1:]] = datetime.date(2020,6,19).toordinal() 
+
+        # Baltimore County https://www.baltimorecountymd.gov/News/BaltimoreCountyNow/baltimore-county-to-fully-enter-stage-one-reopening
+        df.loc[df.FIPS=='24005', c[-2:]] = datetime.date(2020,5,29).toordinal()
+        df.loc[df.FIPS=='24005', c[-1:]] = datetime.date(2020,6,5).toordinal()
+
+        # Charles County https://www.charlescountymd.gov/services/health-and-human-services/covid-19
+        df.loc[df.FIPS=='24005', c[-2:]] = datetime.date(2020,5,29).toordinal()
+        df.loc[df.FIPS=='24005', c[-1:]] = datetime.date(2020,6,19).toordinal()
+
+        # Frederick County https://health.frederickcountymd.gov/621/Recovery
+        df.loc[df.FIPS=='24021', c[-2:]] = datetime.date(2020,5,29).toordinal()
+        df.loc[df.FIPS=='24021', c[-1:]] = datetime.date(2020,6,19).toordinal()
+
+        # Howard County https://www.howardcountymd.gov/News/ArticleID/2007/Coronavirus-Updates-Howard-County-Aligns-with-Governor%E2%80%99s-Phase-2-Reopening-Contact-Tracing-Campaign
+        df.loc[df.FIPS=='24027', c[-2:]] = datetime.date(2020,5,29).toordinal()
+        df.loc[df.FIPS=='24027', c[-1:]] = datetime.date(2020,6,5).toordinal()
+
+        # Montgomery County https://www.montgomerycountymd.gov/covid19/news/index.html
+        df.loc[df.FIPS=='24031', c[-2:]] = datetime.date(2020,6,1).toordinal()
+        df.loc[df.FIPS=='24031', c[-1:]] = datetime.date(2020,6,19).toordinal()
+
+        # Prince George County https://www.princegeorgescountymd.gov/Archive.aspx?AMID=142
+        df.loc[df.FIPS=='24033', c[-2:]] = datetime.date(2020,6,1).toordinal()
+        df.loc[df.FIPS=='24033', c[-1:]] = datetime.date(2020,6,29).toordinal()
+        
         # Massachusetts
         #   restaurants: June 22nd src: https://www.mass.gov/info-details/safety-standards-and-checklist-restaurants
         df.loc[df.STATE=='MA', c[-2]] = datetime.date(2020,6,22).toordinal()
