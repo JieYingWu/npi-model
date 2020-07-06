@@ -157,12 +157,31 @@ class IHMEDataParser():
                        'entertainment/gym rollback']
         c = columns_list
         # Alabama
+	df.loc[df.STATE=='AL', c[-5]] = datetime.date(2020,4,30).toordinal()
+        df.loc[df.STATE=='AL', c[-1]] = datetime.date(2020,5,11).toordinal()
+	df.loc[df.STATE=='AL', c[-2]] = datetime.date(2020,5,11).toordinal()
         # Alaska
+	# https://covid19.alaska.gov/wp-content/uploads/2020/05/05142020-Reopen-Alaska-Plan.pdf
+	df.loc[df.STATE=='AK', c[-5]] = datetime.date(2020,4,24).toordinal()
+	df.loc[df.STATE=='AK', c[-4]] = datetime.date(2020,5,8).toordinal()
+	df.loc[df.STATE=='AK', c[-3:]] = datetime.date(2020,5,22).toordinal()
         # Arizona
+	df.loc[df.STATE=='AZ', c[-5]] = datetime.date(2020,5,15).toordinal()
+	
         # Arkansas
+	df.loc[df.STATE=='AR', c[-1]] = datetime.date(2020,5,11).toordinal()
+	df.loc[df.STATE=='AR', c[-2]] = datetime.date(2020,5,4).toordinal()
+
         # California
         # Colorado
-        # Conneticut
+	df.loc[df.STATE=='CO', c[-5]] = datetime.date(2020,4,26).toordinal() ##but stay at home again at July 1
+	
+
+        # Conneticut : https://portal.ct.gov/-/media/DECD/Covid_Business_Recovery-Phase-2/Amusement_Parks_C3_V1.pdf
+	df.loc[df.STATE=='CT', c[-5]] = datetime.date(2020,5,20).toordinal()
+	df.loc[df.STATE=='CT', c[-2]] = datetime.date(2020,6,17).toordinal()
+	df.loc[df.STATE=='CT', c[-1]] = datetime.date(2020,6,17).toordinal() 
+
         # Delaware
         #    restaurant and entertainment open from June 15th on src: https://coronavirus.delaware.gov/reopening/phase2/
         df.loc[df.STATE=='DE', c[-1]] = datetime.date(2020,6,15).toordinal()
@@ -176,9 +195,9 @@ class IHMEDataParser():
         #   stay at home order May 18 src: https://floridahealthcovid19.gov/plan-for-floridas-recovery/
         #   reastaurants May 18th 
         #   entertainment May 18th
-        df.loc[df.STATE=='FL', c[-5]] = datetime.date(2020,6,18).toordinal()
-        df.loc[df.STATE=='FL', c[-2]] = datetime.date(2020,6,18).toordinal()
-        df.loc[df.STATE=='FL', c[-1]] = datetime.date(2020,6,18).toordinal()
+        df.loc[df.STATE=='FL', c[-5]] = datetime.date(2020,5,18).toordinal()
+        df.loc[df.STATE=='FL', c[-2]] = datetime.date(2020,5,18).toordinal()
+        df.loc[df.STATE=='FL', c[-1]] = datetime.date(2020,5,18).toordinal()
 
 
         # Georgia 
