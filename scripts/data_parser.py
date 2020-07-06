@@ -172,7 +172,6 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
     index2 = index1 - 30
     start_dates = index1 + 1 - index2
     dict_of_start_dates = {}
-    print(index2)
 
     covariate1 = []
     covariate2 = []
@@ -192,7 +191,6 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
     deaths = []
     N_arr = []
     mobility_list = []
-    print(f'fips_list: {fips_list} || length: {len(fips_list)}')
     for i in range(len(fips_list)):
         i2 = index2[i]
         dict_of_start_dates[i] = df_cases_dates[i2]
@@ -227,7 +225,7 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
         death = np.append(death, add_1, axis=0)
         cases.append(case)
         deaths.append(death)
-
+        
         covariates2 = np.append(covariates2, addlst, axis=0)
         covariate1.append(covariates2[:, 0])  # stay at home
         covariate2.append(covariates2[:, 1])  # >50 gatherings
@@ -245,16 +243,11 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
 
         # mobility
         if mobility is not None:
-            # TODO: align timeseries with cases
             # cases begin 1/22
             # mobility begins 2/15 -> difference    
-            #print(f'N: {N} || i2: {i2}')
             tmp = mobility[i,(i2-8):,:]
-            #print(f'Before mobility Arr for {fips_list[i]}: {tmp} with shape: {tmp.shape}')
             fill_arr = np.array(3*[add_1]).T
-            #print(f'Fill Array: {fill_arr} || shape: {fill_arr.shape}')
             tmp = np.append(tmp, fill_arr, axis=0)
-            #print(f'After mobility Arr for {fips_list[i]}: {tmp} with shape: {tmp.shape}')
             mobility_list.append(tmp)
         
     covariate1 = np.array(covariate1).T
