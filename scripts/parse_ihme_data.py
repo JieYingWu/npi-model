@@ -140,7 +140,7 @@ class IHMEDataParser():
 
 
 
-
+        # TODO: Check for 74000 and set the rollback accordingly
 
 
     def dirty_helper(self, df, columns_list):
@@ -204,8 +204,91 @@ class IHMEDataParser():
         # Massachusetts
         #   restaurants: June 22nd src: https://www.mass.gov/info-details/safety-standards-and-checklist-restaurants
         df.loc[df.STATE=='MA', c[-2]] = datetime.date(2020,6,22).toordinal()
+        # Michigan MI
+        # Minnesota MN
+        #   restaurant  & entertainment June 10th src: https://mn.gov/covid19/for-minnesotans/stay-safe-mn/stay-safe-plan.jsp
+        df.loc[df.STATE=='MN', c[-2]] = datetime.date(2020,6,10).toordinal()
+        df.loc[df.STATE=='MN', c[-1]] = datetime.date(2020,6,10).toordinal()
+        # Mississippi MS
+        # Missouri MO # state wide lifted on June 16th, but local gov can impose rules src: https://governor.mo.gov/show-me-strong-recovery-plan-guidance-and-frequently-asked-questions
+        #   stay at home ended May 4th: https://www.nytimes.com/interactive/2020/us/states-reopen-map-coronavirus.html
+        #   all other June 15th src: https://www.sos.mo.gov/library/reference/orders/2020/eo12
+        df.loc[df.STATE=='MO', c[-5]] = datetime.date(2020,5,4).toordinal()
+        for i in range(1,5):
+            df.loc[df.STATE=='MO', c[-i]] = datetime.date(2020,6,15).toordinal()
+        # Montana MT
+        # Nebraska NA  
+        # No stay at home order imposed, remove rollback src: https://www.nytimes.com/interactive/2020/us/states-reopen-map-coronavirus.html
+        df.loc[df.STATE=='NE', c[-5]] = np.nan
+        # Nevada NV
+        # New Hampshire NH
+        #   stay at home June 15th src: https://www.nytimes.com/interactive/2020/us/states-reopen-map-coronavirus.html
+        df.loc[df.STATE=='NH', c[-5]] = datetime.date(2020,6,15).toordinal()
+        # New Jersey NJ
+        #   no indoor dining
+        df.loc[df.STATE=='NJ', c[-2]] = np.nan
+        # New Mexico NM
+        # TODO: county response
+        # New York NY
+        # TODO: differntiate NYC from NY
+        # North Carolina NC
+        #   no gym src: https://www.nytimes.com/interactive/2020/us/states-reopen-map-coronavirus.html
+        df.loc[df.STATE=='NC', c[-1]] = np.nan
+        # North Dakota ND
+        # Ohio OH
+        #   entertainment/gyms June 10th src: https://coronavirus.ohio.gov/wps/portal/gov/covid-19/resources/news-releases-news-you-can-use/governor-reopen-certain-facilities
+        #   restaurants dine in May 21st src: https://coronavirus.ohio.gov/wps/portal/gov/covid-19/resources/news-releases-news-you-can-use/reopening-restaurants-bars-personal-care-services
+        df.loc[df.STATE=='OH', c[-4]] = datetime.date(2020,5,21).toordinal()
+        df.loc[df.STATE=='OH', c[-5]] = datetime.date(2020,6,10).toordinal()
+        # Oklahoma OK
+        # Oregon OR
+        # TODO: County response: https://govstatus.egov.com/reopening-oregon#countyStatuses
+        # Pennsylvania PA
+        # TODO:  county response
+        # Puerto Rico PR
+        # Probably some info here src: https://www.ddec.pr.gov/covid19_informaciongeneral/ (in spanish)
+        # Rhode Island RI
+        # South Carolina SC
+        #   restaurant dine in : May 11th: src: https://governor.sc.gov/news/2020-05/gov-henry-mcmaster-restaurants-are-able-open-limited-dine-services-monday-may-11
+        #   entertainment/gym: May 18th src: https://governor.sc.gov/news/2020-05/gov-henry-mcmaster-announces-additional-businesses-gyms-pools-are-able-open-monday-may
+        df.loc[df.STATE=='SC', c[-2]] = datetime.date(2020,5,11).toordinal()
+        df.loc[df.STATE=='SC', c[-1]] = datetime.date(2020,5,18).toordinal()
+        # Tennessee TN
+        # TODO: County response
+        # Texas TX
+        # Utah UT
+        #   restaurant dine in & entertainment/gym :May 1st src: https://coronavirus-download.utah.gov/Governor/Utah_Leads_Together_3.0_May2020_v20.pdf
+        df.loc[df.STATE=='UT', c[-2]] = datetime.date(2020,5,1).toordinal()
+        df.loc[df.STATE=='UT', c[-1]] = datetime.date(2020,5,1).toordinal()
+        # Vermont VT 
+        # Virginia VA
+        # soon: consider phase three starting JUly 1st: src: https://www.governor.virginia.gov/media/governorvirginiagov/governor-of-virginia/pdf/Forward-Virginia-Phase-Three-Guidelines.pdf
+        # Washington WA
+        # TODO: County response src: https://www.governor.wa.gov/sites/default/files/SafeStartPhasedReopening.pdf
+        # West Virginia WV
+        #   restaurant Dine in May 4th: src: https://governor.wv.gov/Pages/The-Comeback.aspx
+        #   gatherin > 50 June 5th    : src: https://governor.wv.gov/Pages/The-Comeback.aspx
+        #   entertainment/gym May 21st: src: https://governor.wv.gov/Pages/The-Comeback.aspx
+        #   stay at home order May 3rd: https://www.nytimes.com/interactive/2020/us/states-reopen-map-coronavirus.html
+        df.loc[df.STATE=='WV', c[-5]] = datetime.date(2020,5,3).toordinal()
+        df.loc[df.STATE=='WV', c[-4]] = datetime.date(2020,6,5).toordinal()
+        df.loc[df.STATE=='WV', c[-2]] = datetime.date(2020,5,4).toordinal()
+        df.loc[df.STATE=='WV', c[-1]] = datetime.date(2020,5,21).toordinal()
+        # Wisconsin WI
+        # TODO: county response: src: https://www.wisbank.com/articles/2020/05/wisconsin-county-list-of-safer-at-home-orders/
+        #   stay at home May 13th src: https://www.nytimes.com/interactive/2020/us/states-reopen-map-coronavirus.html
+        df.loc[df.STATE=='WI', c[-5]] = datetime.date(2020,5,13).toordinal()
+        # Wyoming WY 
+        # County Responses: https://www.wyo-wcca.org/index.php/covid-19-resources/emergency-declarations-and-public-building-access/
+        # Restaurant order in place from July 1st on src: https://drive.google.com/file/d/1yP1IHC60t9pHQMeenAEzyAuVZJSNAvH2/view
+        df.loc[df.STATE=='WY', c[-2]] = datetime.date(2020,7,1).toordinal()
+        
 
-        print(df[df['STATE']=='MA'].iloc[0])
+
+
+
+        print(df[df['STATE']=='WY'].iloc[0])
+
 
         # print(df.loc['10000',:])
         
