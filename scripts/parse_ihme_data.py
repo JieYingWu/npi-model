@@ -172,7 +172,7 @@ class IHMEDataParser():
         #   stay at home order June 22nd src: https://coronavirus.dc.gov/phasetwo
         df.loc[df.STATE=='DC', c[-5]] = datetime.date(2020,6,22).toordinal()
         
-        # FL - checked for counties: phase 1 (restaurant and gym) all took effect at same time
+        # FL - checked for counties: phase 1 (restaurant and gym) all took effect at same time https://twitter.com/govrondesantis/status/1261369779035623425?lang=en
         #   stay at home order May 18 src: https://floridahealthcovid19.gov/plan-for-floridas-recovery/
         #   reastaurants May 18th 
         #   entertainment May 18th
