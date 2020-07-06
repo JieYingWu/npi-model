@@ -282,12 +282,14 @@ class IHMEDataParser():
         # New Hampshire NH
         #   stay at home June 15th src: https://www.nytimes.com/interactive/2020/us/states-reopen-map-coronavirus.html
         df.loc[df.STATE=='NH', c[-5]] = datetime.date(2020,6,15).toordinal()
-        # New Jersey NJ
-        #   no indoor dining
-        df.loc[df.STATE=='NJ', c[-2]] = np.nan
-        # New Mexico NM - apparently not actually what IHME said? https://www.newmexico.gov/2020/05/28/governor-announces-limited-reopening-for-dine-in-restaurants-indoor-malls-gyms-salons-and-more/
-        # TODO: county response
+
+        # New Jersey NJ - appears to have opened at once https://www.thegazette.com/subject/news/business/gyms-working-up-a-sweat-to-reopen-friday-20200514
+        #   no indoor dining - but outdoor
+        df.loc[df.STATE=='NJ', c[-2]] = datetime.date(2020,6,15).toordinal() #np.nan
+        df.loc[df.STATE=='NJ', c[-1]] = datetime.date(2020,7,2).toordinal() #np.nan
         
+        # New Mexico NM - apparently not actually what IHME said? https://www.newmexico.gov/2020/05/28/governor-announces-limited-reopening-for-dine-in-restaurants-indoor-malls-gyms-salons-and-more/
+    
         df.loc[df.STATE=='NM', c[-2]] = datetime.date(2020,5,28)
         df.loc[df.STATE=='NM', c[-1]] = datetime.date(2020,6,1)
 
@@ -295,15 +297,22 @@ class IHMEDataParser():
         df.loc[df.FIPS=='35006', c[-2:]] = datetime.date(2020,6,1).toordinal() # Cibola
         df.loc[df.FIPS=='35031', c[-2:]] = datetime.date(2020,6,1).toordinal() # McKinley
         df.loc[df.FIPS=='35045', c[-2:]] = datetime.date(2020,6,1).toordinal() # San Juan
-        
-        
-        
+    
+            
         # New York NY
-        # TODO: differntiate NYC from NY
-        # North Carolina NC
+        # Only using New York County for all 5 boroughs since that's where death is counted
+        # https://www1.nyc.gov/nycbusiness/article/nyc-restaurant-reopening-guide
+        df.loc[df.FIPS=='36061', c[-2:]] = datetime.date(2020,6,22).toordinal() 
+        df.loc[df.FIPS=='36061', c[-2:]] = np.nan
+        
+
+        # North Carolina NC 
         #   no gym src: https://www.nytimes.com/interactive/2020/us/states-reopen-map-coronavirus.html
+        # Avoided county-by-county approach - https://www.newsobserver.com/news/coronavirus/article242836711.html
         df.loc[df.STATE=='NC', c[-1]] = np.nan
-        # North Dakota ND
+        
+        # North Dakota ND - seems to reopen at once https://www.usnews.com/news/best-states/north-dakota/articles/2020-05-01/north-dakota-cafes-other-businesses-reopen-under-new-rules
+        
         # Ohio OH
         #   entertainment/gyms June 10th src: https://coronavirus.ohio.gov/wps/portal/gov/covid-19/resources/news-releases-news-you-can-use/governor-reopen-certain-facilities
         #   restaurants dine in May 21st src: https://coronavirus.ohio.gov/wps/portal/gov/covid-19/resources/news-releases-news-you-can-use/reopening-restaurants-bars-personal-care-services
