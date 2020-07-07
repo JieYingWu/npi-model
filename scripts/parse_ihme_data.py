@@ -200,11 +200,17 @@ class IHMEDataParser():
         df.loc[df.STATE=='FL', c[-1]] = datetime.date(2020,5,18).toordinal()
 
 
-        # Georgia 
+        # Georgia : https://www.11alive.com/article/news/health/coronavirus/georgia-reopening-dates-plan-kemp/85-1df2aa97-48fd-4cf8-a9fd-afbd8c73dfcf
+        df.loc[df.STATE=='GA', c[-5]] = datetime.date(2020,4,30).toordinal()
+        df.loc[df.STATE=='GA', c[-2]] = datetime.date(2020,4,27).toordinal()
+        df.loc[df.STATE=='GA', c[-1]] = datetime.date(2020,4,24).toordinal()
         # Hawaii
+        df.loc[df.STATE=='HI', c[-5]] = datetime.date(2020,5,31).toordinal()
+
         # Idaho
         #   gatherings <50 May 30th src: https://rebound.idaho.gov/stages-of-reopening/
         #   gatherings <500 June 13th src: https://rebound.idaho.gov/stages-of-reopening/
+	df.loc[df.STATE=='ID', c[-5]] = datetime.date(2020,5,1).toordinal()
         df.loc[df.STATE=='ID', c[-4]] = datetime.date(2020,5,30).toordinal()
         df.loc[df.STATE=='ID', c[-3]] = datetime.date(2020,6,13).toordinal()
 
@@ -213,6 +219,7 @@ class IHMEDataParser():
         df.loc[df.STATE=='IL', c[-5]] = datetime.date(2020,5,30).toordinal()
         
         # Indiana 
+        df.loc[df.STATE=='IN', c[-5]] = datetime.date(2020,5,4).toordinal()
         # Iowa
         # https://wcfcourier.com/news/local/govt-and-politics/update-watch-now-iowa-to-reopen-restaurants-friday/article_7636be19-9dec-5cb9-8344-29c6aafd0196.html
         df.loc[df.STATE=='IA', c[-1]] = datetime.date(2020,5,11).toordinal() # https://www.thegazette.com/subject/news/business/gyms-working-up-a-sweat-to-reopen-friday-20200514
