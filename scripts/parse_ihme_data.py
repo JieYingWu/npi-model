@@ -741,7 +741,7 @@ class IHMEDataParser():
     df.loc[df.FIPS == '42131', c[-4:]] = dt.date(2020, 6, 12).toordinal()#wyoming
     df.loc[df.FIPS == '42133', c[-4:]] = dt.date(2020, 6, 12).toordinal() #york
 
-    # Puerto Rico PR
+    # Puerto Rico PR - We haven't really been including PR I think?
     # Probably some info here src: https://www.ddec.pr.gov/covid19_informaciongeneral/ (in spanish)
 
     # Rhode Island RI
@@ -775,6 +775,12 @@ class IHMEDataParser():
     # TODO: county response: src: https://www.wisbank.com/articles/2020/05/wisconsin-county-list-of-safer-at-home-orders/
     #   stay at home May 13th src: https://www.nytimes.com/interactive/2020/us/states-reopen-map-coronavirus.html
     df.loc[df.STATE == 'WI', c[-5]] = dt.date(2020, 5, 13).toordinal()
+
+    # Dane County - https://www.cityofmadison.com/news/phase-one-reopening-begins-today-in-madison
+    df.loc[df.FIPS == '55025', c[-2:]] = dt.date(2020, 5, 26).toordinal() 
+    df.loc[df.FIPS == '55025', c[-1:]] = dt.date(2020, 5, 26).toordinal()
+
+    
     # Wyoming WY 
     # County Responses: https://www.wyo-wcca.org/index.php/covid-19-resources/emergency-declarations-and-public-building-access/
     # Restaurant order in place from July 1st on src: https://drive.google.com/file/d/1yP1IHC60t9pHQMeenAEzyAuVZJSNAvH2/view
