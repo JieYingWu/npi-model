@@ -7,6 +7,7 @@ import pandas as pd
 
 from os.path import join, exists
 
+
 class IHMEDataParser():
   """ Parses the rollback dates of the summary provided by IHME 
   """
@@ -144,32 +145,28 @@ class IHMEDataParser():
                     'entertainment/gym rollback']
     c = columns_list
     # Alabama
-    df.loc[df.STATE=='AL', c[-5]] = datetime.date(2020,4,30).toordinal()
-    df.loc[df.STATE=='AL', c[-1]] = datetime.date(2020,5,11).toordinal()
-    df.loc[df.STATE=='AL', c[-2]] = datetime.date(2020,5,11).toordinal()
+    df.loc[df.STATE == 'AL', c[-5]] = dt.date(2020, 4, 30).toordinal()
+    df.loc[df.STATE == 'AL', c[-1]] = dt.date(2020, 5, 11).toordinal()
+    df.loc[df.STATE == 'AL', c[-2]] = dt.date(2020, 5, 11).toordinal()
     # Alaska
     # https://covid19.alaska.gov/wp-content/uploads/2020/05/05142020-Reopen-Alaska-Plan.pdf
-    df.loc[df.STATE=='AK', c[-5]] = datetime.date(2020,4,24).toordinal()
-    df.loc[df.STATE=='AK', c[-4]] = datetime.date(2020,5,8).toordinal()
-    df.loc[df.STATE=='AK', c[-3:]] = datetime.date(2020,5,22).toordinal()
+    df.loc[df.STATE == 'AK', c[-5]] = dt.date(2020, 4, 24).toordinal()
+    df.loc[df.STATE == 'AK', c[-4]] = dt.date(2020, 5, 8).toordinal()
+    df.loc[df.STATE == 'AK', c[-3:]] = dt.date(2020, 5, 22).toordinal()
     # Arizona
-    df.loc[df.STATE=='AZ', c[-5]] = datetime.date(2020,5,15).toordinal()
+    df.loc[df.STATE == 'AZ', c[-5]] = dt.date(2020, 5, 15).toordinal()
 
     # Arkansas
-    df.loc[df.STATE=='AR', c[-1]] = datetime.date(2020,5,11).toordinal()
-    df.loc[df.STATE=='AR', c[-2]] = datetime.date(2020,5,4).toordinal()
+    df.loc[df.STATE == 'AR', c[-1]] = dt.date(2020, 5, 11).toordinal()
+    df.loc[df.STATE == 'AR', c[-2]] = dt.date(2020, 5, 4).toordinal()
 
     # California
-    # https://www.cdph.ca.gov/Programs/CID/DCDC/Pages/COVID-19/County_Variance_Attestation_Form.aspx
-    # On May 18, CA allowed counties to reopen most of the NPIs if they had reached certain
-    # thresholds. The counties below had reached these thresholds. Most of them will have reopened
-    # on that date, but still need to verify.
+    # https://abc7news.com/sonoma-county-restaurants-napa-newsoms-plan-to-reopen-california-when/6178845/
     df.loc[['06003',  # Alpine
             '06005',  # Amador
             '06007',  # Butte
-            '06009',  # Calaveras
+            '06009',  # Calaveras http://www.calaverasenterprise.com/news/coronavirus_information/article_da41af68-9577-11ea-affd-fb8bc483a30b.html
             '06011',  # Colusa
-            '06013',  # Contra Costa
             '06015',  # Del Norte
             '06017',  # El Dorado
             '06019',  # Fresno
@@ -180,15 +177,12 @@ class IHMEDataParser():
             '06031',  # Kings
             '06033',  # Lake
             '06035',  # Lassen
-            '06037',  # Los Angeles
             '06039',  # Madera
-            '06041',  # Marin
             '06043',  # Mariposa
             '06045',  # Mendocino
             '06047',  # Merced
             '06049',  # Modoc
             '06051',  # Mono
-            '06053',  # Monterey
             '06055',  # Napa
             '06057',  # Nevada
             '06059',  # Orange
@@ -199,12 +193,9 @@ class IHMEDataParser():
             '06069',  # San Benito
             '06071',  # San Bernardino
             '06073',  # San Diego
-            '06075',  # San Francisco
             '06077',  # San Joaquin
             '06079',  # San Luis Obispo
-            '06081',  # San Mateo
             '06083',  # Santa Barbara
-            '06087',  # Santa Cruz
             '06089',  # Shasta
             '06091',  # Sierra
             '06093',  # Siskiyou
@@ -213,28 +204,43 @@ class IHMEDataParser():
             '06099',  # Stanislaus
             '06103',  # Tehama
             '06105',  # Trinity
-            '06107',  # Tulare
             '06109',  # Tuolumne
             '06111',  # Ventura
             '06113',  # Yolo
             '06115'   # Yuba
-            ], [c[0], c[1], c[3], c[4]]] = dt.date(2020, 5, 18)  # stay-at-home, <50 gatherings, restaurants, gyms
+            ], [c[0], c[1], c[3], c[4]]] = dt.date(2020, 5, 13).toordinal()
 
-    # df.loc[df.STATE == 'CA', c[3:]] = dt.date(2020, 6, 12).toordinal()  # https://sanfrancisco.cbslocal.com/2020/06/05/reopening-california-schools-gyms-bars-sports-with-modifications-coronavirus-covid-19/
-    df.loc['06037', c[4]] = dt.date(2020, 6, 18).toordinal()  # https://covid19.lacounty.gov/covid19-news/nail-salons-spas-tattoo-shops-casinos-bars-and-wineries-reopening-with-safeguards/
+    df.loc['06001', c[3]] = dt.date(2020, 6, 18).toordinal()  # Alameda http://www.acphd.org/2019-ncov/shelter-in-place.aspx
+    df.loc['06053', [c[2], c[3], c[4]]] = dt.date(2020, 60, 12).toordinal()  # Monterey https://abc7news.com/reopening-california-monterey-tourism-shelter-in-place-carmel-by-the-sea/6257886/
+    # LA county still in lockdown, reopening pushed back https://www.latimes.com/california/story/2020-05-12/coronavirus-beaches-reopen-los-angeles-county-move-toward-new-normal
+    df.loc['06037', [c[3], c[4]]] = dt.date(2020, 6, 18).toordinal()  # https://covid19.lacounty.gov/covid19-news/nail-salons-spas-tattoo-shops-casinos-bars-and-wineries-reopening-with-safeguards/
+
+    # https://sf.gov/step-by-step/reopening-san-francisco
+    df.loc['06075', [c[0], c[3]]] = dt.date(2020, 6, 12).toordinal()  # other rollbacks have been pushed
+
+    # San Mateo: https://www.smcgov.org/smc-reopening
+    df.loc['06081', c[0]] = dt.date(2020, 5, 13).toordinal()
+    df.loc['06081', [c[1], c[3], c[4]]] = dt.date(2020, 6, 17).toordinal()
+
+    # Santa Cruz https://abc7news.com/santa-cruz-beaches-reopen-covid-is-open-coronavirus/6243867/
+    df.loc['06087', [c[0], c[1], c[3], c[4]]] = dt.date(2020, 6, 12).toordinal()
+
+    # Tulare https://www.visaliatimesdelta.com/story/news/2020/05/27/tulare-county-meets-readiness-criteria-can-reopen-pending-state-approval/5263823002/
+    df.loc['06107', [c[0], c[1], c[3], c[4]]] = dt.date(2020, 5, 18).toordinal()
+
+    # ====== end California =======
 
     # Colorado
-    df.loc[df.STATE == 'CO', c[-5]] = datetime.date(2020, 4, 26).toordinal()  ##but stay at home again at July 1
+    df.loc[df.STATE == 'CO', c[-5]] = dt.date(2020, 4, 26).toordinal()  # but stay at home again at July 1
     # Conneticut : https://portal.ct.gov/-/media/DECD/Covid_Business_Recovery-Phase-2/Amusement_Parks_C3_V1.pdf
-    df.loc[df.STATE == 'CT', c[-5]] = datetime.date(2020, 5, 20).toordinal()
-    df.loc[df.STATE == 'CT', c[-2]] = datetime.date(2020, 6, 17).toordinal()
-    df.loc[df.STATE == 'CT', c[-1]] = datetime.date(2020, 6, 17).toordinal()
+    df.loc[df.STATE == 'CT', c[-5]] = dt.date(2020, 5, 20).toordinal()
+    df.loc[df.STATE == 'CT', c[-2]] = dt.date(2020, 6, 17).toordinal()
+    df.loc[df.STATE == 'CT', c[-1]] = dt.date(2020, 6, 17).toordinal()
 
     # Delaware
     #    restaurant and entertainment open from June 15th on src: https://coronavirus.delaware.gov/reopening/phase2/
-    df.loc[df.STATE == 'DE', c[-1]] = datetime.date(2020, 6, 15).toordinal()
-    df.loc[df.STATE == 'DE', c[-2]] = datetime.date(2020, 6, 15).toordinal()
-
+    df.loc[df.STATE == 'DE', c[-1]] = dt.date(2020, 6, 15).toordinal()
+    df.loc[df.STATE == 'DE', c[-2]] = dt.date(2020, 6, 15).toordinal()
 
     # DC 
     #   stay at home order June 22nd src: https://coronavirus.dc.gov/phasetwo
@@ -249,24 +255,23 @@ class IHMEDataParser():
     df.loc[df.STATE == 'FL', c[-1]] = dt.date(2020, 6, 18).toordinal()
 
     # Georgia : https://www.11alive.com/article/news/health/coronavirus/georgia-reopening-dates-plan-kemp/85-1df2aa97-48fd-4cf8-a9fd-afbd8c73dfcf
-    df.loc[df.STATE == 'GA', c[-5]] = datetime.date(2020, 4, 30).toordinal()
-    df.loc[df.STATE == 'GA', c[-2]] = datetime.date(2020, 4, 27).toordinal()
-    df.loc[df.STATE == 'GA', c[-1]] = datetime.date(2020, 4, 24).toordinal()
+    df.loc[df.STATE == 'GA', c[-5]] = dt.date(2020, 4, 30).toordinal()
+    df.loc[df.STATE == 'GA', c[-2]] = dt.date(2020, 4, 27).toordinal()
+    df.loc[df.STATE == 'GA', c[-1]] = dt.date(2020, 4, 24).toordinal()
     # Hawaii
-    df.loc[df.STATE == 'HI', c[-5]] = datetime.date(2020, 5, 31).toordinal()
+    df.loc[df.STATE == 'HI', c[-5]] = dt.date(2020, 5, 31).toordinal()
 
     # Idaho
     #   gatherings <50 May 30th src: https://rebound.idaho.gov/stages-of-reopening/
     #   gatherings <500 June 13th src: https://rebound.idaho.gov/stages-of-reopening/
 
-    df.loc[df.STATE == 'ID', c[-5]] = datetime.date(2020, 5, 1).toordinal()
-    df.loc[df.STATE == 'ID', c[-4]] = datetime.date(2020, 5, 30).toordinal()
-    df.loc[df.STATE == 'ID', c[-3]] = datetime.date(2020, 6, 13).toordinal()
+    df.loc[df.STATE == 'ID', c[-5]] = dt.date(2020, 5, 1).toordinal()
+    df.loc[df.STATE == 'ID', c[-4]] = dt.date(2020, 5, 30).toordinal()
+    df.loc[df.STATE == 'ID', c[-3]] = dt.date(2020, 6, 13).toordinal()
 
     # Illinois
     # stay at home order May 30th src:https://www.pantagraph.com/news/state-and-regional/illinois-stay-at-home-order-ends-and-restrictions-lifted-on-churches-as-the-state-advances/article_71393207-40a5-58cf-a658-c580da3d437d.html
     df.loc[df.STATE == 'IL', c[-5]] = dt.date(2020, 5, 30).toordinal()
-
     # Indiana 
     # Iowa
     # https://wcfcourier.com/news/local/govt-and-politics/update-watch-now-iowa-to-reopen-restaurants-friday/article_7636be19-9dec-5cb9-8344-29c6aafd0196.html
@@ -341,12 +346,17 @@ class IHMEDataParser():
     df.loc[df.STATE == 'MN', c[-2]] = dt.date(2020, 6, 10).toordinal()
     df.loc[df.STATE == 'MN', c[-1]] = dt.date(2020, 6, 10).toordinal()
     # Mississippi MS
+
     # Missouri MO # state wide lifted on June 16th, but local gov can impose rules src: https://governor.mo.gov/show-me-strong-recovery-plan-guidance-and-frequently-asked-questions
     #   stay at home ended May 4th: https://www.nytimes.com/interactive/2020/us/states-reopen-map-coronavirus.html
     #   all other June 15th src: https://www.sos.mo.gov/library/reference/orders/2020/eo12
     df.loc[df.STATE == 'MO', c[-5]] = dt.date(2020, 5, 4).toordinal()
     for i in range(1, 5):
       df.loc[df.STATE == 'MO', c[-i]] = dt.date(2020, 6, 15).toordinal()
+
+    df.loc['29189', [c[1], c[2]]] = dt.date(2020, 6, 29).toordinal()  # st louis county https://stlpartnership.com/details-on-state-stl-county-and-city-of-stl-reopening/
+    
+
     # Montana MT
     # Nebraska NA  
     # No stay at home order imposed, remove rollback src: https://www.nytimes.com/interactive/2020/us/states-reopen-map-coronavirus.html
@@ -541,19 +551,19 @@ class IHMEDataParser():
     # Oregon OR
     # County response: https://govstatus.egov.com/reopening-oregon#countyStatuses
     df.loc[df.STATE == 'Or', c[-5]] = dt.date(2020, 7, 6).toordinal() 
-    #Phase 1: Clackamas County, Lincoln County, Multnomah County, Washington County
-    
-    df.loc[df.FIPS == '41005', c[-2:]] = dt.date(2020, 5, 23).toordinal() #clackamas https://www.clackamas.us/coronavirus/updates
-    df.loc[df.FIPS == '41041', c[-2:]] = dt.date(2020, 5, 15).toordinal() #lincoln
-    df.loc[df.FIPS == '41051', c[-2:]] = dt.date(2020, 6, 19).toordinal() #multnomah
-    df.loc[df.FIPS == '41067', c[-2:]] = dt.date(2020, 6, 1).toordinal() #washington
+    # Phase 1: Clackamas County, Lincoln County, Multnomah County, Washington County
 
-    df.loc[df.FIPS == '41047', c[-2:]] = dt.date(2020, 5, 22).toordinal() #marion county https://www.co.marion.or.us/HLT/COVID-19/Pages/Reopening.aspx
-    df.loc[df.FIPS == '41053', c[-2:]] = dt.date(2020, 5, 22).toordinal() #polk https://www.co.polk.or.us/ph/covid-19-news
+    df.loc[df.FIPS == '41005', c[-2:]] = dt.date(2020, 5, 23).toordinal()  # clackamas https://www.clackamas.us/coronavirus/updates
+    df.loc[df.FIPS == '41041', c[-2:]] = dt.date(2020, 5, 15).toordinal()  # lincoln
+    df.loc[df.FIPS == '41051', c[-2:]] = dt.date(2020, 6, 19).toordinal()  # multnomah
+    df.loc[df.FIPS == '41067', c[-2:]] = dt.date(2020, 6, 1).toordinal()  # washington
 
-    #Phase 2: Rest
+    df.loc[df.FIPS == '41047', c[-2:]] = dt.date(2020, 5, 22).toordinal()  # marion county https://www.co.marion.or.us/HLT/COVID-19/Pages/Reopening.aspx
+    df.loc[df.FIPS == '41053', c[-2:]] = dt.date(2020, 5, 22).toordinal()  # polk https://www.co.polk.or.us/ph/covid-19-news
+
+    # Phase 2: Rest
     # https://www.oregon.gov/newsroom/Pages/NewsDetail.aspx?newsid=36806
-    #https://www.kgw.com/article/news/health/coronavirus/these-oregon-counties-have-been-approved-for-phase-1-of-reopening/283-b24c4243-bb25-43e7-bafa-75e5126a71a0
+    # https://www.kgw.com/article/news/health/coronavirus/these-oregon-counties-have-been-approved-for-phase-1-of-reopening/283-b24c4243-bb25-43e7-bafa-75e5126a71a0
 
     df.loc[df.FIPS == '41001', c[-2:]] = dt.date(2020, 5, 15).toordinal() 
     df.loc[df.FIPS == '41003', c[-2:]] = dt.date(2020, 5, 15).toordinal() 
@@ -586,7 +596,6 @@ class IHMEDataParser():
     df.loc[df.FIPS == '41069', c[-2:]] = dt.date(2020, 5, 15).toordinal() 
     df.loc[df.FIPS == '41071', c[-2:]] = dt.date(2020, 5, 15).toordinal()
 
-
     # Pennsylvania PA
     # county response :
     # yellow phase: https://www.wgal.com/article/pennsylvania-counties-reopening-coronavirus/32343176#
@@ -594,75 +603,74 @@ class IHMEDataParser():
     # https://www.pahomepage.com/news/wolf-announces-next-counties-to-move-to-yellow-phase/: As of today, the following counties are expected to ease restrictions on the ‘stay at home’ order on May 15, moving them from the ‘red phase’ to the yellow phase.’ Those counties include Allegheny, Armstrong, Bedford, Blair, Butler, Cambria, Fayette, Fulton, Greene, Indiana, Somerset, Washington and Westmoreland.
     # Additionally, eight counties will be able to move to yellow on May 29: Dauphin, Franklin, Huntingdon, Lebanon, Luzerne, Monroe, Pike, and Schuylkill.
     # The last to go will be Berks, Bucks, Chester, Delaware, Lackawanna, Lancaster, Lehigh, Northampton, Montgomery, and Philadelphia - June 5
-    df.loc[df.FIPS == '42001', c[-5]] = dt.date(2020, 5, 22).toordinal() #adams
-    df.loc[df.FIPS == '42003', c[-5]] = dt.date(2020, 5, 15).toordinal() #allegheny
-    df.loc[df.FIPS == '42005', c[-5]] = dt.date(2020, 5, 15).toordinal() #armstrong
-    df.loc[df.FIPS == '42007', c[-5]] = dt.date(2020, 5, 22).toordinal() #beaver
-    df.loc[df.FIPS == '42009', c[-5]] = dt.date(2020, 5, 15).toordinal() #bedford
-    df.loc[df.FIPS == '42011', c[-5]] = dt.date(2020, 6, 5).toordinal() #berks
-    df.loc[df.FIPS == '42013', c[-5]] = dt.date(2020, 5, 15).toordinal() #blair
-    df.loc[df.FIPS == '42015', c[-5]] = dt.date(2020, 5, 8).toordinal() #bradford
-    df.loc[df.FIPS == '42017', c[-5]] = dt.date(2020, 6, 5).toordinal() #bucks
-    df.loc[df.FIPS == '42019', c[-5]] = dt.date(2020, 5, 15).toordinal() #butler
-    df.loc[df.FIPS == '42021', c[-5]] = dt.date(2020, 5, 15).toordinal() #cambria
-    df.loc[df.FIPS == '42023', c[-5]] = dt.date(2020, 5, 8).toordinal() #cameron
-    df.loc[df.FIPS == '42025', c[-5]] = dt.date(2020, 5, 22).toordinal() # carbon
-    df.loc[df.FIPS == '42027', c[-5]] = dt.date(2020, 5, 8).toordinal() #centre
-    df.loc[df.FIPS == '42029', c[-5]] = dt.date(2020, 6, 5).toordinal() #chester
-    df.loc[df.FIPS == '42031', c[-5]] = dt.date(2020, 5, 8).toordinal() #clarion
-    df.loc[df.FIPS == '42033', c[-5]] = dt.date(2020, 5, 8).toordinal() #clearfied
-    df.loc[df.FIPS == '42035', c[-5]] = dt.date(2020, 5, 8).toordinal() #clinton
-    df.loc[df.FIPS == '42037', c[-5]] = dt.date(2020, 5, 22).toordinal() #columbia
-    df.loc[df.FIPS == '42039', c[-5]] = dt.date(2020, 5, 8).toordinal() #crawford
-    df.loc[df.FIPS == '42041', c[-5]] = dt.date(2020, 5, 22).toordinal() #cumberland
-    df.loc[df.FIPS == '42043', c[-5]] = dt.date(2020, 5, 29).toordinal() #dauphin
-    df.loc[df.FIPS == '42045', c[-5]] = dt.date(2020, 6, 5).toordinal() #delaware
-    df.loc[df.FIPS == '42047', c[-5]] = dt.date(2020, 5, 8).toordinal() #elk
-    df.loc[df.FIPS == '42049', c[-5]] = dt.date(2020, 5, 8).toordinal() #erie
-    df.loc[df.FIPS == '42051', c[-5]] = dt.date(2020, 5, 15).toordinal() #fayette
-    df.loc[df.FIPS == '42053', c[-5]] = dt.date(2020, 5, 8).toordinal() #forest
-    df.loc[df.FIPS == '42055', c[-5]] = dt.date(2020, 5, 29).toordinal() #franklin
-    df.loc[df.FIPS == '42057', c[-5]] = dt.date(2020, 5, 15).toordinal() #fulton
-    df.loc[df.FIPS == '42059', c[-5]] = dt.date(2020, 5, 15).toordinal() #greene
-    df.loc[df.FIPS == '42061', c[-5]] = dt.date(2020, 5, 29).toordinal() #huntingdon
-    df.loc[df.FIPS == '42063', c[-5]] = dt.date(2020, 5, 15).toordinal() #indiana
-    df.loc[df.FIPS == '42065', c[-5]] = dt.date(2020, 5, 8).toordinal() #jefferson
-    df.loc[df.FIPS == '42067', c[-5]] = dt.date(2020, 5, 22).toordinal()  #juniata
-    df.loc[df.FIPS == '42069', c[-5]] = dt.date(2020, 6, 5).toordinal()#lackawannaa
-    df.loc[df.FIPS == '42071', c[-5]] = dt.date(2020, 6, 5).toordinal() #lancaster
-    df.loc[df.FIPS == '42073', c[-5]] = dt.date(2020, 5, 8).toordinal()#lawrence
-    df.loc[df.FIPS == '42075', c[-5]] = dt.date(2020, 5, 29).toordinal() #lebanon####
-    df.loc[df.FIPS == '42077', c[-5]] = dt.date(2020, 6, 5).toordinal() #lehigh
-    df.loc[df.FIPS == '42079', c[-5]] = dt.date(2020, 5, 29).toordinal()#luzerne
-    df.loc[df.FIPS == '42081', c[-5]] = dt.date(2020, 5, 8).toordinal() #lycoming
-    df.loc[df.FIPS == '42083', c[-5]] = dt.date(2020, 5, 8).toordinal()#mckean
-    df.loc[df.FIPS == '42085', c[-5]] = dt.date(2020, 5, 8).toordinal()#mercer
-    df.loc[df.FIPS == '42087', c[-5]] = dt.date(2020, 5, 22).toordinal()#mifflin
-    df.loc[df.FIPS == '42089', c[-5]] = dt.date(2020, 5, 29).toordinal()  #monroe
-    df.loc[df.FIPS == '42091', c[-5]] = dt.date(2020, 6, 5).toordinal() #montgomery
-    df.loc[df.FIPS == '42093', c[-5]] = dt.date(2020, 5, 8).toordinal()#montour
-    df.loc[df.FIPS == '42095', c[-5]] = dt.date(2020, 6, 5).toordinal() #northampton
-    df.loc[df.FIPS == '42097', c[-5]] = dt.date(2020, 5, 8).toordinal() #northumberland
-    df.loc[df.FIPS == '42099', c[-5]] = dt.date(2020, 5, 22).toordinal()#perry
-    df.loc[df.FIPS == '42101', c[-5]] = dt.date(2020, 6, 5).toordinal() #philadelphia
-    df.loc[df.FIPS == '42103', c[-5]] = dt.date(2020, 5, 29).toordinal()#pike
-    df.loc[df.FIPS == '42105', c[-5]] = dt.date(2020, 5, 8).toordinal()#potter
-    df.loc[df.FIPS == '42107', c[-5]] = dt.date(2020, 5, 29).toordinal() #schuylkill
-    df.loc[df.FIPS == '42109', c[-5]] = dt.date(2020, 5, 8).toordinal() #snyder
-    df.loc[df.FIPS == '42111', c[-5]] = dt.date(2020, 5, 15).toordinal() #somerset
-    df.loc[df.FIPS == '42113', c[-5]] = dt.date(2020, 5, 8).toordinal()#sullivan
-    df.loc[df.FIPS == '42115', c[-5]] = dt.date(2020, 5, 22).toordinal()#susquehanna
-    df.loc[df.FIPS == '42117', c[-5]] = dt.date(2020, 5, 8).toordinal() #tioga
-    df.loc[df.FIPS == '42119', c[-5]] = dt.date(2020, 5, 8).toordinal() #union
-    df.loc[df.FIPS == '42121', c[-5]] = dt.date(2020, 5, 8).toordinal() #venango
-    df.loc[df.FIPS == '42123', c[-5]] = dt.date(2020, 5, 8).toordinal() #warren
-    df.loc[df.FIPS == '42125', c[-5]] = dt.date(2020, 5, 15).toordinal()#washington
-    df.loc[df.FIPS == '42127', c[-5]] = dt.date(2020, 5, 22).toordinal()#wayne  
-    df.loc[df.FIPS == '42129', c[-5]] = dt.date(2020, 5, 15).toordinal() #westmoreland
-    df.loc[df.FIPS == '42131', c[-5]] = dt.date(2020, 5, 22).toordinal()#wyoming
-    df.loc[df.FIPS == '42133', c[-5]] = dt.date(2020, 5, 22).toordinal() #york
+    df.loc[df.FIPS == '42001', c[-5]] = dt.date(2020, 5, 22).toordinal()  # adams
+    df.loc[df.FIPS == '42003', c[-5]] = dt.date(2020, 5, 15).toordinal()  # allegheny
+    df.loc[df.FIPS == '42005', c[-5]] = dt.date(2020, 5, 15).toordinal()  # armstrong
+    df.loc[df.FIPS == '42007', c[-5]] = dt.date(2020, 5, 22).toordinal()  # beaver
+    df.loc[df.FIPS == '42009', c[-5]] = dt.date(2020, 5, 15).toordinal()  # bedford
+    df.loc[df.FIPS == '42011', c[-5]] = dt.date(2020, 6, 5).toordinal()  # berks
+    df.loc[df.FIPS == '42013', c[-5]] = dt.date(2020, 5, 15).toordinal()  # blair
+    df.loc[df.FIPS == '42015', c[-5]] = dt.date(2020, 5, 8).toordinal()  # bradford
+    df.loc[df.FIPS == '42017', c[-5]] = dt.date(2020, 6, 5).toordinal()  # bucks
+    df.loc[df.FIPS == '42019', c[-5]] = dt.date(2020, 5, 15).toordinal()  # butler
+    df.loc[df.FIPS == '42021', c[-5]] = dt.date(2020, 5, 15).toordinal()  # cambria
+    df.loc[df.FIPS == '42023', c[-5]] = dt.date(2020, 5, 8).toordinal()  # cameron
+    df.loc[df.FIPS == '42025', c[-5]] = dt.date(2020, 5, 22).toordinal()  # carbon
+    df.loc[df.FIPS == '42027', c[-5]] = dt.date(2020, 5, 8).toordinal()  # centre
+    df.loc[df.FIPS == '42029', c[-5]] = dt.date(2020, 6, 5).toordinal()  # chester
+    df.loc[df.FIPS == '42031', c[-5]] = dt.date(2020, 5, 8).toordinal()  # clarion
+    df.loc[df.FIPS == '42033', c[-5]] = dt.date(2020, 5, 8).toordinal()  # clearfied
+    df.loc[df.FIPS == '42035', c[-5]] = dt.date(2020, 5, 8).toordinal()  # clinton
+    df.loc[df.FIPS == '42037', c[-5]] = dt.date(2020, 5, 22).toordinal()  # columbia
+    df.loc[df.FIPS == '42039', c[-5]] = dt.date(2020, 5, 8).toordinal()  # crawford
+    df.loc[df.FIPS == '42041', c[-5]] = dt.date(2020, 5, 22).toordinal()  # cumberland
+    df.loc[df.FIPS == '42043', c[-5]] = dt.date(2020, 5, 29).toordinal()  # dauphin
+    df.loc[df.FIPS == '42045', c[-5]] = dt.date(2020, 6, 5).toordinal()  # delaware
+    df.loc[df.FIPS == '42047', c[-5]] = dt.date(2020, 5, 8).toordinal()  # elk
+    df.loc[df.FIPS == '42049', c[-5]] = dt.date(2020, 5, 8).toordinal()  # erie
+    df.loc[df.FIPS == '42051', c[-5]] = dt.date(2020, 5, 15).toordinal()  # fayette
+    df.loc[df.FIPS == '42053', c[-5]] = dt.date(2020, 5, 8).toordinal()  # forest
+    df.loc[df.FIPS == '42055', c[-5]] = dt.date(2020, 5, 29).toordinal()  # franklin
+    df.loc[df.FIPS == '42057', c[-5]] = dt.date(2020, 5, 15).toordinal()  # fulton
+    df.loc[df.FIPS == '42059', c[-5]] = dt.date(2020, 5, 15).toordinal()  # greene
+    df.loc[df.FIPS == '42061', c[-5]] = dt.date(2020, 5, 29).toordinal()  # huntingdon
+    df.loc[df.FIPS == '42063', c[-5]] = dt.date(2020, 5, 15).toordinal()  # indiana
+    df.loc[df.FIPS == '42065', c[-5]] = dt.date(2020, 5, 8).toordinal()  # jefferson
+    df.loc[df.FIPS == '42067', c[-5]] = dt.date(2020, 5, 22).toordinal()  # juniata
+    df.loc[df.FIPS == '42069', c[-5]] = dt.date(2020, 6, 5).toordinal()  # lackawannaa
+    df.loc[df.FIPS == '42071', c[-5]] = dt.date(2020, 6, 5).toordinal()  # lancaster
+    df.loc[df.FIPS == '42073', c[-5]] = dt.date(2020, 5, 8).toordinal()  # lawrence
+    df.loc[df.FIPS == '42075', c[-5]] = dt.date(2020, 5, 29).toordinal()  # lebanon####
+    df.loc[df.FIPS == '42077', c[-5]] = dt.date(2020, 6, 5).toordinal()  # lehigh
+    df.loc[df.FIPS == '42079', c[-5]] = dt.date(2020, 5, 29).toordinal()  # luzerne
+    df.loc[df.FIPS == '42081', c[-5]] = dt.date(2020, 5, 8).toordinal()  # lycoming
+    df.loc[df.FIPS == '42083', c[-5]] = dt.date(2020, 5, 8).toordinal()  # mckean
+    df.loc[df.FIPS == '42085', c[-5]] = dt.date(2020, 5, 8).toordinal()  # mercer
+    df.loc[df.FIPS == '42087', c[-5]] = dt.date(2020, 5, 22).toordinal()  # mifflin
+    df.loc[df.FIPS == '42089', c[-5]] = dt.date(2020, 5, 29).toordinal()  # monroe
+    df.loc[df.FIPS == '42091', c[-5]] = dt.date(2020, 6, 5).toordinal()  # montgomery
+    df.loc[df.FIPS == '42093', c[-5]] = dt.date(2020, 5, 8).toordinal()  # montour
+    df.loc[df.FIPS == '42095', c[-5]] = dt.date(2020, 6, 5).toordinal()  # northampton
+    df.loc[df.FIPS == '42097', c[-5]] = dt.date(2020, 5, 8).toordinal()  # northumberland
+    df.loc[df.FIPS == '42099', c[-5]] = dt.date(2020, 5, 22).toordinal()  # perry
+    df.loc[df.FIPS == '42101', c[-5]] = dt.date(2020, 6, 5).toordinal()  # philadelphia
+    df.loc[df.FIPS == '42103', c[-5]] = dt.date(2020, 5, 29).toordinal()  # pike
+    df.loc[df.FIPS == '42105', c[-5]] = dt.date(2020, 5, 8).toordinal()  # potter
+    df.loc[df.FIPS == '42107', c[-5]] = dt.date(2020, 5, 29).toordinal()  # schuylkill
+    df.loc[df.FIPS == '42109', c[-5]] = dt.date(2020, 5, 8).toordinal()  # snyder
+    df.loc[df.FIPS == '42111', c[-5]] = dt.date(2020, 5, 15).toordinal()  # somerset
+    df.loc[df.FIPS == '42113', c[-5]] = dt.date(2020, 5, 8).toordinal()  # sullivan
+    df.loc[df.FIPS == '42115', c[-5]] = dt.date(2020, 5, 22).toordinal()  # susquehanna
+    df.loc[df.FIPS == '42117', c[-5]] = dt.date(2020, 5, 8).toordinal()  # tioga
+    df.loc[df.FIPS == '42119', c[-5]] = dt.date(2020, 5, 8).toordinal()  # union
+    df.loc[df.FIPS == '42121', c[-5]] = dt.date(2020, 5, 8).toordinal()  # venango
+    df.loc[df.FIPS == '42123', c[-5]] = dt.date(2020, 5, 8).toordinal()  # warren
+    df.loc[df.FIPS == '42125', c[-5]] = dt.date(2020, 5, 15).toordinal()  # washington
+    df.loc[df.FIPS == '42127', c[-5]] = dt.date(2020, 5, 22).toordinal()  # wayne  
+    df.loc[df.FIPS == '42129', c[-5]] = dt.date(2020, 5, 15).toordinal()  # westmoreland
+    df.loc[df.FIPS == '42131', c[-5]] = dt.date(2020, 5, 22).toordinal()  # wyoming
+    df.loc[df.FIPS == '42133', c[-5]] = dt.date(2020, 5, 22).toordinal()  # york
 
- 
     # green phase:	https://www.mcall.com/coronavirus/mc-nws-coronavirus-pa-counties-reopening-20200509-hqwbnzot5bb6tlw3g3j7qalxhq-story.html
     #   June 26: Berks, Bucks, Chester, Delaware, Erie, Lackawanna, Lancaster, Lehigh, Montgomery, Northampton, Philadelphia, Susquehanna;
     #	June 19: Dauphin, Franklin, Huntingdon, Luzerne, Monroe, Perry, Pike and Schuylkill.
@@ -673,73 +681,73 @@ class IHMEDataParser():
 
     #	May 29: These 18 counties became the first to move to the green phase, the third and final stage of the reopening plan: Bradford, Cameron, Centre, Clarion, Clearfield, Crawford, Elk, Forest, Jefferson, Lawrence, McKean, Montour, Potter, Snyder, Sullivan, Tioga, Venango and Warren counties.
 
-    df.loc[df.FIPS == '42001', c[-4:]] = dt.date(2020, 6, 12).toordinal() #adams
-    df.loc[df.FIPS == '42003', c[-4:]] = dt.date(2020, 6, 5).toordinal() #allegheny
-    df.loc[df.FIPS == '42005', c[-4:]] = dt.date(2020, 6, 5).toordinal() #armstrong
-    df.loc[df.FIPS == '42007', c[-4:]] = dt.date(2020, 6, 12).toordinal() #beaver
-    df.loc[df.FIPS == '42009', c[-4:]] = dt.date(2020, 6, 5).toordinal() #bedford
-    df.loc[df.FIPS == '42011', c[-4:]] = dt.date(2020, 6, 26).toordinal() #berks
-    df.loc[df.FIPS == '42013', c[-4:]] = dt.date(2020, 6, 5).toordinal() #blair
-    df.loc[df.FIPS == '42015', c[-4:]] = dt.date(2020, 5, 29).toordinal() #bradford
-    df.loc[df.FIPS == '42017', c[-4:]] = dt.date(2020, 6, 26).toordinal() #bucks
-    df.loc[df.FIPS == '42019', c[-4:]] = dt.date(2020, 6, 5).toordinal() #butler
-    df.loc[df.FIPS == '42021', c[-4:]] = dt.date(2020, 6, 5).toordinal() #cambria
-    df.loc[df.FIPS == '42023', c[-4:]] = dt.date(2020, 5, 29).toordinal() #cameron
-    df.loc[df.FIPS == '42025', c[-4:]] = dt.date(2020, 6, 12).toordinal() # carbon
-    df.loc[df.FIPS == '42027', c[-4:]] = dt.date(2020, 5, 29).toordinal() #centre
-    df.loc[df.FIPS == '42029', c[-4:]] = dt.date(2020, 6, 26).toordinal() #chester
-    df.loc[df.FIPS == '42031', c[-4:]] = dt.date(2020, 5, 29).toordinal() #clarion
-    df.loc[df.FIPS == '42033', c[-4:]] = dt.date(2020, 5, 29).toordinal() #clearfied
-    df.loc[df.FIPS == '42035', c[-4:]] = dt.date(2020, 6, 5).toordinal() #clinton
-    df.loc[df.FIPS == '42037', c[-4:]] = dt.date(2020, 6, 12).toordinal() #columbia
-    df.loc[df.FIPS == '42039', c[-4:]] = dt.date(2020, 5, 29).toordinal() #crawford
-    df.loc[df.FIPS == '42041', c[-4:]] = dt.date(2020, 6, 12).toordinal() #cumberland
-    df.loc[df.FIPS == '42043', c[-4:]] = dt.date(2020, 6, 19).toordinal() #dauphin
-    df.loc[df.FIPS == '42045', c[-4:]] = dt.date(2020, 6, 26).toordinal() #delaware
-    df.loc[df.FIPS == '42047', c[-4:]] = dt.date(2020, 5, 29).toordinal() #elk
-    df.loc[df.FIPS == '42049', c[-4:]] = dt.date(2020, 6, 26).toordinal() #erie
-    df.loc[df.FIPS == '42051', c[-4:]] = dt.date(2020, 6, 5).toordinal() #fayette
-    df.loc[df.FIPS == '42053', c[-4:]] = dt.date(2020, 5, 29).toordinal() #forest
-    df.loc[df.FIPS == '42055', c[-4:]] = dt.date(2020, 6, 19).toordinal() #franklin
-    df.loc[df.FIPS == '42057', c[-4:]] = dt.date(2020, 6, 5).toordinal() #fulton
-    df.loc[df.FIPS == '42059', c[-4:]] = dt.date(2020, 6, 5).toordinal() #greene
-    df.loc[df.FIPS == '42061', c[-4:]] = dt.date(2020, 6, 19).toordinal() #huntingdon
-    df.loc[df.FIPS == '42063', c[-4:]] = dt.date(2020, 6, 5).toordinal() #indiana
-    df.loc[df.FIPS == '42065', c[-4:]] = dt.date(2020, 5, 29).toordinal() #jefferson
-    df.loc[df.FIPS == '42067', c[-4:]] = dt.date(2020, 6, 12).toordinal()  #juniata
-    df.loc[df.FIPS == '42069', c[-4:]] = dt.date(2020, 6, 26).toordinal()#lackawannaa
-    df.loc[df.FIPS == '42071', c[-4:]] = dt.date(2020, 6, 26).toordinal() #lancaster
-    df.loc[df.FIPS == '42073', c[-4:]] = dt.date(2020, 5, 29).toordinal()#lawrence
-    df.loc[df.FIPS == '42075', c[-4:]] = dt.date(2020, 7, 3).toordinal() #lebanon####
-    df.loc[df.FIPS == '42077', c[-4:]] = dt.date(2020, 6, 26).toordinal() #lehigh
-    df.loc[df.FIPS == '42079', c[-4:]] = dt.date(2020, 6, 19).toordinal()#lezerne
-    df.loc[df.FIPS == '42081', c[-4:]] = dt.date(2020, 6, 5).toordinal() #lycoming
-    df.loc[df.FIPS == '42083', c[-4:]] = dt.date(2020, 5, 29).toordinal()#mckean
-    df.loc[df.FIPS == '42085', c[-4:]] = dt.date(2020, 6, 5).toordinal()#mercer
-    df.loc[df.FIPS == '42087', c[-4:]] = dt.date(2020, 6, 12).toordinal()#mifflin
-    df.loc[df.FIPS == '42089', c[-4:]] = dt.date(2020, 6, 19).toordinal()  #monroe
-    df.loc[df.FIPS == '42091', c[-4:]] = dt.date(2020, 6, 26).toordinal() #montgomery
-    df.loc[df.FIPS == '42093', c[-4:]] = dt.date(2020, 5, 29).toordinal()#montour
-    df.loc[df.FIPS == '42095', c[-4:]] = dt.date(2020, 6, 26).toordinal() #northampton
-    df.loc[df.FIPS == '42097', c[-4:]] = dt.date(2020, 6, 12).toordinal() #northumberland
-    df.loc[df.FIPS == '42099', c[-4:]] = dt.date(2020, 6, 19).toordinal()#perry
-    df.loc[df.FIPS == '42101', c[-4:]] = dt.date(2020, 6, 26).toordinal() #philadelphia
-    df.loc[df.FIPS == '42103', c[-4:]] = dt.date(2020, 6, 19).toordinal()#pike
-    df.loc[df.FIPS == '42105', c[-4:]] = dt.date(2020, 5, 29).toordinal()#potter
-    df.loc[df.FIPS == '42107', c[-4:]] = dt.date(2020, 6, 19).toordinal() #schuylkill
-    df.loc[df.FIPS == '42109', c[-4:]] = dt.date(2020, 5, 29).toordinal() #snyder
-    df.loc[df.FIPS == '42111', c[-4:]] = dt.date(2020, 6, 5).toordinal() #somerset
-    df.loc[df.FIPS == '42113', c[-4:]] = dt.date(2020, 5, 29).toordinal()#sullivan
-    df.loc[df.FIPS == '42115', c[-4:]] = dt.date(2020, 6, 26).toordinal()#susquehanna
-    df.loc[df.FIPS == '42117', c[-4:]] = dt.date(2020, 5, 29).toordinal() #tioga
-    df.loc[df.FIPS == '42119', c[-4:]] = dt.date(2020, 6, 12).toordinal() #union
-    df.loc[df.FIPS == '42121', c[-4:]] = dt.date(2020, 5, 29).toordinal() #venango
-    df.loc[df.FIPS == '42123', c[-4:]] = dt.date(2020, 5, 29).toordinal() #warren
-    df.loc[df.FIPS == '42125', c[-4:]] = dt.date(2020, 6, 5).toordinal()#washington
-    df.loc[df.FIPS == '42127', c[-4:]] = dt.date(2020, 6, 12).toordinal()#wayne  
-    df.loc[df.FIPS == '42129', c[-4:]] = dt.date(2020, 6, 5).toordinal() #westmoreland
-    df.loc[df.FIPS == '42131', c[-4:]] = dt.date(2020, 6, 12).toordinal()#wyoming
-    df.loc[df.FIPS == '42133', c[-4:]] = dt.date(2020, 6, 12).toordinal() #york
+    df.loc[df.FIPS == '42001', c[-4:]] = dt.date(2020, 6, 12).toordinal()  # adams
+    df.loc[df.FIPS == '42003', c[-4:]] = dt.date(2020, 6, 5).toordinal()  # allegheny
+    df.loc[df.FIPS == '42005', c[-4:]] = dt.date(2020, 6, 5).toordinal()  # armstrong
+    df.loc[df.FIPS == '42007', c[-4:]] = dt.date(2020, 6, 12).toordinal()  # beaver
+    df.loc[df.FIPS == '42009', c[-4:]] = dt.date(2020, 6, 5).toordinal()  # bedford
+    df.loc[df.FIPS == '42011', c[-4:]] = dt.date(2020, 6, 26).toordinal()  # berks
+    df.loc[df.FIPS == '42013', c[-4:]] = dt.date(2020, 6, 5).toordinal()  # blair
+    df.loc[df.FIPS == '42015', c[-4:]] = dt.date(2020, 5, 29).toordinal()  # bradford
+    df.loc[df.FIPS == '42017', c[-4:]] = dt.date(2020, 6, 26).toordinal()  # bucks
+    df.loc[df.FIPS == '42019', c[-4:]] = dt.date(2020, 6, 5).toordinal()  # butler
+    df.loc[df.FIPS == '42021', c[-4:]] = dt.date(2020, 6, 5).toordinal()  # cambria
+    df.loc[df.FIPS == '42023', c[-4:]] = dt.date(2020, 5, 29).toordinal()  # cameron
+    df.loc[df.FIPS == '42025', c[-4:]] = dt.date(2020, 6, 12).toordinal()  # carbon
+    df.loc[df.FIPS == '42027', c[-4:]] = dt.date(2020, 5, 29).toordinal()  # centre
+    df.loc[df.FIPS == '42029', c[-4:]] = dt.date(2020, 6, 26).toordinal()  # chester
+    df.loc[df.FIPS == '42031', c[-4:]] = dt.date(2020, 5, 29).toordinal()  # clarion
+    df.loc[df.FIPS == '42033', c[-4:]] = dt.date(2020, 5, 29).toordinal()  # clearfied
+    df.loc[df.FIPS == '42035', c[-4:]] = dt.date(2020, 6, 5).toordinal()  # clinton
+    df.loc[df.FIPS == '42037', c[-4:]] = dt.date(2020, 6, 12).toordinal()  # columbia
+    df.loc[df.FIPS == '42039', c[-4:]] = dt.date(2020, 5, 29).toordinal()  # crawford
+    df.loc[df.FIPS == '42041', c[-4:]] = dt.date(2020, 6, 12).toordinal()  # cumberland
+    df.loc[df.FIPS == '42043', c[-4:]] = dt.date(2020, 6, 19).toordinal()  # dauphin
+    df.loc[df.FIPS == '42045', c[-4:]] = dt.date(2020, 6, 26).toordinal()  # delaware
+    df.loc[df.FIPS == '42047', c[-4:]] = dt.date(2020, 5, 29).toordinal()  # elk
+    df.loc[df.FIPS == '42049', c[-4:]] = dt.date(2020, 6, 26).toordinal()  # erie
+    df.loc[df.FIPS == '42051', c[-4:]] = dt.date(2020, 6, 5).toordinal()  # fayette
+    df.loc[df.FIPS == '42053', c[-4:]] = dt.date(2020, 5, 29).toordinal()  # forest
+    df.loc[df.FIPS == '42055', c[-4:]] = dt.date(2020, 6, 19).toordinal()  # franklin
+    df.loc[df.FIPS == '42057', c[-4:]] = dt.date(2020, 6, 5).toordinal()  # fulton
+    df.loc[df.FIPS == '42059', c[-4:]] = dt.date(2020, 6, 5).toordinal()  # greene
+    df.loc[df.FIPS == '42061', c[-4:]] = dt.date(2020, 6, 19).toordinal()  # huntingdon
+    df.loc[df.FIPS == '42063', c[-4:]] = dt.date(2020, 6, 5).toordinal()  # indiana
+    df.loc[df.FIPS == '42065', c[-4:]] = dt.date(2020, 5, 29).toordinal()  # jefferson
+    df.loc[df.FIPS == '42067', c[-4:]] = dt.date(2020, 6, 12).toordinal()  # juniata
+    df.loc[df.FIPS == '42069', c[-4:]] = dt.date(2020, 6, 26).toordinal()  # lackawannaa
+    df.loc[df.FIPS == '42071', c[-4:]] = dt.date(2020, 6, 26).toordinal()  # lancaster
+    df.loc[df.FIPS == '42073', c[-4:]] = dt.date(2020, 5, 29).toordinal()  # lawrence
+    df.loc[df.FIPS == '42075', c[-4:]] = dt.date(2020, 7, 3).toordinal()  # lebanon####
+    df.loc[df.FIPS == '42077', c[-4:]] = dt.date(2020, 6, 26).toordinal()  # lehigh
+    df.loc[df.FIPS == '42079', c[-4:]] = dt.date(2020, 6, 19).toordinal()  # lezerne
+    df.loc[df.FIPS == '42081', c[-4:]] = dt.date(2020, 6, 5).toordinal()  # lycoming
+    df.loc[df.FIPS == '42083', c[-4:]] = dt.date(2020, 5, 29).toordinal()  # mckean
+    df.loc[df.FIPS == '42085', c[-4:]] = dt.date(2020, 6, 5).toordinal()  # mercer
+    df.loc[df.FIPS == '42087', c[-4:]] = dt.date(2020, 6, 12).toordinal()  # mifflin
+    df.loc[df.FIPS == '42089', c[-4:]] = dt.date(2020, 6, 19).toordinal()  # monroe
+    df.loc[df.FIPS == '42091', c[-4:]] = dt.date(2020, 6, 26).toordinal()  # montgomery
+    df.loc[df.FIPS == '42093', c[-4:]] = dt.date(2020, 5, 29).toordinal()  # montour
+    df.loc[df.FIPS == '42095', c[-4:]] = dt.date(2020, 6, 26).toordinal()  # northampton
+    df.loc[df.FIPS == '42097', c[-4:]] = dt.date(2020, 6, 12).toordinal()  # northumberland
+    df.loc[df.FIPS == '42099', c[-4:]] = dt.date(2020, 6, 19).toordinal()  # perry
+    df.loc[df.FIPS == '42101', c[-4:]] = dt.date(2020, 6, 26).toordinal()  # philadelphia
+    df.loc[df.FIPS == '42103', c[-4:]] = dt.date(2020, 6, 19).toordinal()  # pike
+    df.loc[df.FIPS == '42105', c[-4:]] = dt.date(2020, 5, 29).toordinal()  # potter
+    df.loc[df.FIPS == '42107', c[-4:]] = dt.date(2020, 6, 19).toordinal()  # schuylkill
+    df.loc[df.FIPS == '42109', c[-4:]] = dt.date(2020, 5, 29).toordinal()  # snyder
+    df.loc[df.FIPS == '42111', c[-4:]] = dt.date(2020, 6, 5).toordinal()  # somerset
+    df.loc[df.FIPS == '42113', c[-4:]] = dt.date(2020, 5, 29).toordinal()  # sullivan
+    df.loc[df.FIPS == '42115', c[-4:]] = dt.date(2020, 6, 26).toordinal()  # susquehanna
+    df.loc[df.FIPS == '42117', c[-4:]] = dt.date(2020, 5, 29).toordinal()  # tioga
+    df.loc[df.FIPS == '42119', c[-4:]] = dt.date(2020, 6, 12).toordinal()  # union
+    df.loc[df.FIPS == '42121', c[-4:]] = dt.date(2020, 5, 29).toordinal()  # venango
+    df.loc[df.FIPS == '42123', c[-4:]] = dt.date(2020, 5, 29).toordinal()  # warren
+    df.loc[df.FIPS == '42125', c[-4:]] = dt.date(2020, 6, 5).toordinal()  # washington
+    df.loc[df.FIPS == '42127', c[-4:]] = dt.date(2020, 6, 12).toordinal()  # wayne  
+    df.loc[df.FIPS == '42129', c[-4:]] = dt.date(2020, 6, 5).toordinal()  # westmoreland
+    df.loc[df.FIPS == '42131', c[-4:]] = dt.date(2020, 6, 12).toordinal()  # wyoming
+    df.loc[df.FIPS == '42133', c[-4:]] = dt.date(2020, 6, 12).toordinal()  # york
 
     # Puerto Rico PR - We haven't really been including PR I think?
     # Probably some info here src: https://www.ddec.pr.gov/covid19_informaciongeneral/ (in spanish)
@@ -750,8 +758,109 @@ class IHMEDataParser():
     #   entertainment/gym: May 18th src: https://governor.sc.gov/news/2020-05/gov-henry-mcmaster-announces-additional-businesses-gyms-pools-are-able-open-monday-may
     df.loc[df.STATE == 'SC', c[-2]] = dt.date(2020, 5, 11).toordinal()
     df.loc[df.STATE == 'SC', c[-1]] = dt.date(2020, 5, 18).toordinal()
+
     # Tennessee TN
-    # TODO: County response
+    # https://www.wsmv.com/news/tennessee-releases-new-guidelines-for-reopening-restaurants-retail-and-large-attractions/article_0f74cd22-9ad3-11ea-9f03-e3784e1e4029.html
+    df.loc[[
+      '47001', # Anderson
+      '47003', # Bedford
+      '47005', # Benton
+      '47007', # Bledsoe
+      '47009', # Blount
+      '47011', # Bradley
+      '47013', # Campbell
+      '47015', # Cannon
+      '47017', # Carroll
+      '47019', # Carter
+      '47021', # Cheatham
+      '47023', # Chester
+      '47025', # Claiborne
+      '47027', # Clay
+      '47029', # Cocke
+      '47031', # Coffee
+      '47033', # Crockett
+      '47035', # Cumberland
+      '47039', # Decatur
+      '47041', # De Kalb
+      '47043', # Dickson
+      '47045', # Dyer
+      '47047', # Fayette
+      '47049', # Fentress
+      '47051', # Franklin
+      '47053', # Gibson
+      '47055', # Giles
+      '47057', # Grainger
+      '47059', # Greene
+      '47061', # Grundy
+      '47063', # Hamblen
+      '47067', # Hancock
+      '47069', # Hardeman
+      '47071', # Hardin
+      '47073', # Hawkins
+      '47075', # Haywood
+      '47077', # Henderson
+      '47079', # Henry
+      '47081', # Hickman
+      '47083', # Houston
+      '47085', # Humphreys
+      '47087', # Jackson
+      '47089', # Jefferson
+      '47091', # Johnson
+      '47095', # Lake
+      '47097', # Lauderdale
+      '47099', # Lawrence
+      '47101', # Lewis
+      '47103', # Lincoln
+      '47105', # Loudon
+      '47107', # McMinn
+      '47109', # McNairy
+      '47111', # Macon
+      '47115', # Marion
+      '47117', # Marshall
+      '47119', # Maury
+      '47121', # Meigs
+      '47123', # Monroe
+      '47125', # Montgomery
+      '47127', # Moore
+      '47129', # Morgan
+      '47131', # Obion
+      '47133', # Overton
+      '47135', # Perry
+      '47137', # Pickett
+      '47139', # Polk
+      '47141', # Putnam
+      '47143', # Rhea
+      '47145', # Roane
+      '47147', # Robertson
+      '47149', # Rutherford
+      '47151', # Scott
+      '47153', # Sequatchie
+      '47155', # Sevier
+      '47159', # Smith
+      '47161', # Stewart
+      '47165', # Sumner
+      '47167', # Tipton
+      '47169', # Trousdale
+      '47171', # Unicoi
+      '47173', # Union
+      '47175', # Van Buren
+      '47177', # Warren
+      '47179', # Washington
+      '47181', # Wayne
+      '47183', # Weakley
+      '47185', # White
+      '47187', # Williamson
+      '47189', # Wilson
+      '47093'  # Knox https://www.knoxnews.com/story/news/health/2020/06/17/knox-county-moves-align-state-coronavirus-reopening-plan/3205652001/
+      #      '47113', # Madison mirrored governor's plan
+      #      '47163', # Sullivan mirrored governor's plan https://www.wjhl.com/local-coronavirus-coverage/sullivan-county-health-officials-mirroring-gov-lees-plan-to-reopen-businesses/
+    ], [c[3]], c[4]] = dt.date(2020, 5, 22).toordinal()
+    df.loc['47157', [c[3], c[4]]] = dt.date(2020, 6, 15).toordinal() # Shelby https://www.wmcactionnews5.com/2020/06/14/shelby-county-begin-phase-reopening-monday/
+    
+    df.loc['47037', [c[4]]]] = dt.date(2020, 7, 3).toordinal()  # Davidson https://www.asafenashville.org/roadmap-for-reopening-nashville/
+    df.loc['47065', [c[3]]]] = dt.date(2020, 5, 22).toordinal()
+    
+
     # Texas TX
     # Utah UT
     #   restaurant dine in & entertainment/gym :May 1st src: https://coronavirus-download.utah.gov/Governor/Utah_Leads_Together_3.0_May2020_v20.pdf
@@ -761,7 +870,51 @@ class IHMEDataParser():
     # Virginia VA
     # soon: consider phase three starting JUly 1st: src: https://www.governor.virginia.gov/media/governorvirginiagov/governor-of-virginia/pdf/Forward-Virginia-Phase-Three-Guidelines.pdf
     # Washington WA
-    # TODO: County response src: https://www.governor.wa.gov/sites/default/files/SafeStartPhasedReopening.pdf
+    df.loc[df.STATE == 'WA', c[0]] = dt.date(2020, 5, 31).toordinal()
+    # phase 2: restaurants ; phase 3: >50, gym
+    # County response src: https://www.governor.wa.gov/sites/default/files/SafeStartPhasedReopening.pdf
+    # https://mynorthwest.com/1872686/phases-counties-washington-reopen-inslee/?
+    df.loc[df.FIPS == '53001', c[3]] = dt.date(2020, 5, 22).toordinal() #adams
+    df.loc[df.FIPS == '53003', [c[1], c[4]]] = dt.date(2020, 6, 5).toordinal() #asotin
+    df.loc[df.FIPS == '53005', c[3]] = dt.date(2020, ).toordinal() #benton
+    #df.loc[df.FIPS == '53007', c[-4:]] = dt.date(2020, ).toordinal() #chelan
+    df.loc[df.FIPS == '53009', c[3]] = dt.date(2020, 5, 28).toordinal() #clallam
+    #df.loc[df.FIPS == '53011', c[-4:]] = dt.date(2020, ).toordinal() #clark
+    df.loc[df.FIPS == '53013', [c[1], c[4]]] = dt.date(2020, 6, 5).toordinal() #columbia
+    #df.loc[df.FIPS == '53015', c[-4:]] = dt.date(2020, 5, 29).toordinal() #cowlitz
+    #df.loc[df.FIPS == '53017', c[-4:]] = dt.date(2020, 6, 26).toordinal() #douglas
+    df.loc[df.FIPS == '53019', [c[1], c[4]]] = dt.date(2020, 6, 5).toordinal() #ferry
+    #df.loc[df.FIPS == '53021', c[-4:]] = dt.date(2020, 6, 5).toordinal() #franklin
+    df.loc[df.FIPS == '53023', [c[1], c[4]]] = dt.date(2020, 6, 5).toordinal() #garfield
+    df.loc[df.FIPS == '53025', c[3]] = dt.date(2020, 5, 23).toordinal() # grant
+    df.loc[df.FIPS == '53027', [c[1], c[4]]] = dt.date(2020, 6, 19).toordinal() #grays harbor
+    df.loc[df.FIPS == '53029', [c[1], c[4]]] = dt.date(2020, 6, 19).toordinal() #island
+    #df.loc[df.FIPS == '53031', c[-4:]] = dt.date(2020, 5, 29).toordinal() #jefferson
+    df.loc[df.FIPS == '53033', c[3]] = dt.date(2020, 5, 19).toordinal() #king
+    #df.loc[df.FIPS == '53035', c[-4:]] = dt.date(2020, 6, 5).toordinal() #kitsap
+    df.loc[df.FIPS == '53037', [c[1], c[4]]] = dt.date(2020, 6, 23).toordinal() #kittitas 
+    #df.loc[df.FIPS == '53039', c[-4:]] = dt.date(2020, 5, 29).toordinal() #klickitat
+    df.loc[df.FIPS == '53041', [c[1], c[4]]] = dt.date(2020, 6, 19).toordinal() #lewis
+    df.loc[df.FIPS == '53043', [c[1], c[4]]] = dt.date(2020, 6, 5).toordinal() #lincoln
+    df.loc[df.FIPS == '53045', [c[1], c[4]]] = dt.date(2020, 6, 19).toordinal() #mason
+    df.loc[df.FIPS == '53047', c[3]] = dt.date(2020, 6, 5).toordinal() #okanogan
+    df.loc[df.FIPS == '53049', [c[1], c[4]]] = dt.date(2020, 6, 16).toordinal() #pacific
+    df.loc[df.FIPS == '53051', [c[1], c[4]]] = dt.date(2020, 6, 5).toordinal() #pend oreille
+    df.loc[df.FIPS == '53053', c[3]] = dt.date(2020, 6, 5).toordinal() #pierce
+    df.loc[df.FIPS == '53055', c[3]] = dt.date(2020, 5, 27).toordinal() #san juan
+    df.loc[df.FIPS == '53057', c[3]] = dt.date(2020, 6, 5).toordinal() #skagit
+    df.loc[df.FIPS == '53059', [c[1], c[4]]] = dt.date(2020, 6, 11).toordinal() #skamania
+    df.loc[df.FIPS == '53061', c[3]] = dt.date(2020, 6, 5).toordinal() #snohomish
+    df.loc[df.FIPS == '53063', c[3]] = dt.date(2020, 5, 22).toordinal() #spokane
+    df.loc[df.FIPS == '53065', [c[1], c[4]]] = dt.date(2020, 6, 5).toordinal() #stevens
+    df.loc[df.FIPS == '53067', [c[1], c[4]]] = dt.date(2020, 6, 24).toordinal()  #thurston
+    df.loc[df.FIPS == '53069', [c[1], c[4]]] = dt.date(2020, 6, 5).toordinal()#wahkiakum
+    #df.loc[df.FIPS == '53071', c[-4:]] = dt.date(2020, 6, 26).toordinal() #walla walla
+    df.loc[df.FIPS == '53073', c[3]] = dt.date(2020, 6, 5).toordinal()#whatcom
+    df.loc[df.FIPS == '53075', [c[1], c[4]]] = dt.date(2020, 6, 5).toordinal() #whitman
+    #df.loc[df.FIPS == '53077', c[-4:]] = dt.date(2020, 6, 26).toordinal() #yakima
+
+
     # West Virginia WV
     #   restaurant Dine in May 4th: src: https://governor.wv.gov/Pages/The-Comeback.aspx
     #   gatherin > 50 June 5th    : src: https://governor.wv.gov/Pages/The-Comeback.aspx
@@ -780,7 +933,7 @@ class IHMEDataParser():
     df.loc[df.FIPS == '55025', c[-2:]] = dt.date(2020, 5, 26).toordinal() 
     df.loc[df.FIPS == '55025', c[-1:]] = dt.date(2020, 5, 26).toordinal()
 
-    
+
     # Wyoming WY 
     # County Responses: https://www.wyo-wcca.org/index.php/covid-19-resources/emergency-declarations-and-public-building-access/
     # Restaurant order in place from July 1st on src: https://drive.google.com/file/d/1yP1IHC60t9pHQMeenAEzyAuVZJSNAvH2/view
