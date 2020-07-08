@@ -159,7 +159,7 @@ def plot_scatter_r0(path, plot_variable):
     pos = 0
     path_density = "../data/us_data"
     ax[pos].set_title("R0", pad=15)
-    colors = ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00']
+    colors = ['#D55E00', '#CC79A7','#0072B2','#F0E442','#009E73']
     x_array = []
 
     for cluster_n in range(0, 5):
@@ -210,7 +210,7 @@ def plot_scatter_r0(path, plot_variable):
         ax3.tick_params(labelright=False)
         ax3.tick_params(labeltop=False)
         ax[pos].tick_params(axis='x', labelrotation=45)
-        ax[pos].set_ylabel('Reproductive Rate')
+        ax[pos].set_ylabel('Reproductive Ratio')
         x_array.append(x_list)
 
         # set different ranges for different features
@@ -230,7 +230,7 @@ def plot_scatter_r0(path, plot_variable):
 def plot_scatter_radj(path, date_plot, pos, plot_variable,x_array):
     path_density = "../data/us_data"
     ax[pos].set_title(date_plot, pad=17)
-    colors = ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00']
+    colors = ['#D55E00', '#CC79A7','#0072B2','#F0E442','#009E73']
 
     for cluster_n in range(0, 5):
         print("Retrieving information for cluster number ...", cluster_n)
@@ -285,7 +285,7 @@ def plot_scatter_radj(path, date_plot, pos, plot_variable,x_array):
         if idx == 0:
             ax3.set_ylim(0, 1e-8)  # transit
             ax[pos].set_xlim(0, 1e10)  # transit
-        elif idx == 1:
+        if idx == 1:
             ax3.set_ylim(0, 5e-4)  # income
             ax[pos].set_xlim(0, 1e5)  # income
         elif idx == 2:
@@ -313,9 +313,9 @@ if __name__ == '__main__':
     plot_variable = ['transit_scores - population weighted averages aggregated from town/city level to county',
                      'Median_Household_Income_2018',
                      'Density per square mile of land area - Housing units']
-    pretty_titles = ['Relating Public Transit with Reproductive Number over Time',
-                     'Relating Median Household Income with Reproductive Number over Time',
-                     'Relating Density per Square Mile of Land Area with Reproductive Number over Time']
+    pretty_titles = ['Relating Public Transit with Reproductive Ratio over Time',
+                     'Relating Median Household Income with Reproductive Ratio over Time',
+                     'Relating Density per Square Mile of Land Area with Reproductive Ratio over Time']
 
     path = "../results/no_validation_clusters/cluster_"
     plot_supercounties = True  # if set to False then plot on the scatter all the counties
@@ -324,9 +324,17 @@ if __name__ == '__main__':
     set_transparency = 0.5  # transparency of scatter circles
 
     fig, ax = plt.subplots(1, len(dates) + 1, sharex=True, sharey=True)
-    for idx in range(0, len(plot_variable)):
-        make_all_plots(path, plot_variable[idx])
-        fig.suptitle(pretty_titles[idx])
-        # plt.savefig("../results/plots/"+plot_variable[i]+'.pdf')
-        fig.tight_layout()
-        plt.show()
+    #for idx in range(0, len(plot_variable)):
+    idx = 2
+    make_all_plots(path, plot_variable[idx])
+    fig.suptitle(pretty_titles[idx])
+        #plt.savefig("../results/plots/"+plot_variable[idx]+'.pdf')
+        #plt.savefig("../results/plots/"+plot_variable[idx]+'.png')
+        #fig.tight_layout()
+    plt.show()
+    #    plt.draw()
+    #    plt.pause(0.0001)
+    #    plt.waitforbuttonpress()
+    #    plt.close()
+        #plt.cla()
+
