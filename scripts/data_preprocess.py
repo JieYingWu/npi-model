@@ -1,3 +1,4 @@
+import os
 import csv
 import numpy as np
 import pandas as pd
@@ -30,8 +31,7 @@ def remove_negative_regions(df_cases, df_deaths, idx):
 
     return df_cases, df_deaths
 
-def select_top_regions(df_cases, df_deaths, interventions, num_counties, population,
-                       validation=False, supercounties=False, threshold=THRESHOLD):
+def select_top_regions(df_cases, df_deaths, interventions, num_counties, population, mobility_dict, validation=False, supercounties=False, threshold=THRESHOLD):
     """"
     Returns:
         df_cases: Infections timeseries for top N places
@@ -73,6 +73,25 @@ def select_top_regions(df_cases, df_deaths, interventions, num_counties, populat
     population = population.loc[population['FIPS'].isin(fips_list)]
     population = pd.merge(merge_df, population, left_on='merge', right_on='FIPS', how='outer')
     population = population.reset_index(drop=True)
+
+    
+    print(f'fips_list: {fips_list} || length: {len(fips_list)}')
+
+    # mobility 
+    for name, df in mobility_dict.items():
+        df = df.loc[df['FIPS'].isin(fips_list)]
+        df = pd.merge(merge_df, df, left_on='merge', right_on='FIPS', how='outer')
+        df = df.reset_index(drop=True)
+        df.drop(['merge'], axis=1, inplace=True)
+        df = df.dropna()
+        mobility_dict[name] = df
+        # fips = df['FIPS']
+        # print(f'{name} fips: {fips} length: {len(fips)}')
+        # duplicates = df[fips.duplicated()]
+        # print(f'any duplicates: {any(fips.duplicated())}')
+        # # print duplicates
+        # print(duplicates)
+        
     
     df_cases.drop(['merge'], axis=1, inplace=True)
     interventions.drop(['merge'], axis=1, inplace=True)
@@ -86,11 +105,12 @@ def select_top_regions(df_cases, df_deaths, interventions, num_counties, populat
      #   df_deaths_val = df_deaths.iloc[:,-(validation+1):]
 
       #  return df_cases, df_deaths, interventions, population, fips_list
-    return df_cases, df_deaths, interventions, population, fips_list
+    return df_cases, df_deaths, interventions, population, mobility_dict, fips_list
 
 
 def merge_supercounties(cases, deaths, interventions, population,
-                        threshold=THRESHOLD, clustering=None, save_supercounties=False):
+                        threshold=THRESHOLD, clustering=None, save_supercounties=False,
+                        load_supercounties=False):
     """Join counties in the same state if they don't have enough deaths.
 
     Checks that the average daily deaths for the past 10 days is more than `threshold`. If the
@@ -103,6 +123,8 @@ def merge_supercounties(cases, deaths, interventions, population,
     :param threshold: 
     :param clustering: dictionary mapping [str] fips to [int] cluster label. 
       If None, supercounties are not limited to a single cluster.
+    :param save_supercounties: save the supercounties.json file
+    :param load_supercounties: load the existing supercounties rather than re-computing them.
     :returns: 
     :rtype: 
 
@@ -116,7 +138,15 @@ def merge_supercounties(cases, deaths, interventions, population,
     supercounty_to_deaths_idx = {}
     supercounty_to_interventions_idx = {}
     supercounty_to_population_idx = {}
-    supercounties = {}  # map STATEFIPS_CLUSTER to list of FIPS for counties in that supercounty
+
+    supercounties_path = join('data', 'us_data', 'supercounties.json')
+    if load_supercounties:
+        with open(supercounties_path, 'r') as file:
+            supercounties = json.load(file)
+        counties_in_supercounties = set(sum(supercounties.values(), []))
+    else:
+        supercounties = {}  # map STATEFIPS_CLUSTER to list of FIPS for counties in that supercounty
+        
     for i, deaths_row in deaths.iterrows():
         fips = deaths_row['FIPS']
         fips_key = str(fips).zfill(5)
@@ -134,8 +164,10 @@ def merge_supercounties(cases, deaths, interventions, population,
         if np.all(county_deaths == 0):
             # county has no data to contribute at all
             continue
-        if county_deaths.sum() >= threshold:
-            # county should have enough data on its own
+
+        if ((load_supercounties and fips not in counties_in_supercounties)
+            or (not load_supercounties and county_deaths.sum() >= threshold)):
+            # county is not in an existing supercounty or county should have enough data on its own
             new_cases.append(cases_row)
             new_deaths.append(deaths_row)
             new_interventions.append(interventions_row)
@@ -143,7 +175,9 @@ def merge_supercounties(cases, deaths, interventions, population,
             continue
 
         supercounty = f'{fips_key[:2]}000_{cluster}'
-        supercounties[supercounty] = supercounties.get(supercounty, []) + [fips_key]
+        if not load_supercounties:
+            supercounties[supercounty] = supercounties.get(supercounty, []) + [fips_key]
+            
         state_name = deaths_row['Combined_Key'].split('-')[1].strip()
         if cluster is None:
             area_name = f'{state_name} Super-county'
@@ -189,7 +223,10 @@ def merge_supercounties(cases, deaths, interventions, population,
                 
         population_idx = supercounty_to_population_idx.get(supercounty)
         new_population[population_idx][1] += population_row[1]
-        print(f'MERGED {fips} with supercounty for {supercounty}')
+        if load_supercounties:
+            print(f'{fips} in loaded supercounty {supercounty}')
+        else:
+            print(f'MERGED {fips} with supercounty for {supercounty}')
 
     cases = pd.DataFrame(new_cases)
     deaths = pd.DataFrame(new_deaths)
@@ -201,15 +238,15 @@ def merge_supercounties(cases, deaths, interventions, population,
     # print('POPULATION', population, sep='\n')
 
     # print('supercounties:', supercounties)
-    if save_supercounties:
-        with open(join('data', 'us_data', 'supercounties.json'), 'w') as file:
+    if not load_supercounties and save_supercounties:
+        with open(supercounties_path, 'w') as file:
             json.dump(supercounties, file)
             print('saved supercounties.json to data/us_data')
     return cases, deaths, interventions, population
     
 
-def select_regions(cases, deaths, interventions, M, population, fips_list=None,
-                   supercounties=True, clustering=None):
+def select_regions(cases, deaths, interventions, M, population, mobility_dict, fips_list=None,
+                   supercounties=True, clustering=None, load_supercounties=False):
     """"
     Returns:
         df_cases: Infections timeseries for given fips
@@ -223,13 +260,17 @@ def select_regions(cases, deaths, interventions, M, population, fips_list=None,
         interventions = interventions.loc[interventions['FIPS'].isin(fips_list)]
         population = population.loc[population['FIPS'].isin(fips_list)]
 
+        for category_name, df in mobility_dict.items():
+            mobility_dict[category_name] = df[df['FIPS'].isin(fips_list)]
+
     if supercounties:
         # join counties with less than a given threshold of deaths with other counties in the same state.
         # and if their interventions are the same as the other counties
         cases, deaths, interventions, population = merge_supercounties(
-            cases, deaths, interventions, population, clustering=clustering, save_supercounties=(fips_list is None))
+            cases, deaths, interventions, population, clustering=clustering, save_supercounties=(fips_list is None),
+            load_supercounties=load_supercounties)
 
-    return cases, deaths, interventions, population
+    return cases, deaths, interventions, population, mobility_dict
 
 
 def impute(df, allow_decrease_towards_end=True):
@@ -326,6 +367,8 @@ def preprocessing_us_data(data_dir, mode='county'):
         df_cases: Infections timeseries based on daily count
         df_deaths: Deaths timeseries based on daily count
         interventions: Interventions data with dates converted to date format
+        population:
+        mobility:
     """
     assert mode in ['county', 'state'], ValueError()
     cases_path = join(data_dir, 'us_data/infections_timeseries_w_states.csv')
@@ -378,8 +421,13 @@ def preprocessing_us_data(data_dir, mode='county'):
     #### get daily counts instead of cumulative
     df_cases.iloc[:, 2:] = df_cases.iloc[:, 2:].apply(get_daily_counts, axis=1)
     df_deaths.iloc[:, 2:] = df_deaths.iloc[:, 2:].apply(get_daily_counts, axis=1)
+    
 
-    return df_cases, df_deaths, interventions, population
+
+    # get the mobility dict
+    mobility = preprocess_mobility_reports(data_dir) 
+
+    return df_cases, df_deaths, interventions, population, mobility
 
 def remove_negative_values(df):
     """ replaces all negative values with 0"""
@@ -430,8 +478,12 @@ def get_validation_dict(data_dir, cases, deaths, fips_list, cases_dates):
 
     if FLAG_NEW_DATA_AVAILABLE:
         validation_days_dict = {}
+        print(deaths)
+        print(f' length death: {len(deaths)}')
         for death, fips in zip(deaths.T, fips_list):
             for j in range(len(death)):
+                if j >= 120:
+                    continue
                 if death[j] > 0:
                     validation_days_dict.setdefault(fips, []).append(j)
             validation_days_dict[fips] = get_unique_validation_days(validation_days_dict[fips])
@@ -494,3 +546,37 @@ def apply_validation(deaths, fips_list, validation_days_dict):
       #j if len(validation_days_dict[fips]:   
         deaths[np.array(validation_days_dict[fips], dtype=np.int) , i] = 0
     return deaths
+
+
+def preprocess_mobility_reports(data_dir):
+    """ Turn mobility reports into stan_data compatible array
+    residential, transit_stations & averageMobility"""
+
+    path = join(data_dir,'us_data', 'google_reports')
+
+    report_files = [f for f in os.scandir(path) if f.name.endswith('.csv') and len(f.name) > 25]
+    category_names = [f.name[:-33] for f in report_files]
+    print(f'Category names: {category_names}')
+    categories = {}
+    for idx, report in enumerate(report_files):
+        df_current = pd.read_csv(report.path, dtype={'FIPS':str})
+            
+        # report have many NAs 
+        # discard all counties that have nan values
+        # df_current = df_current.dropna()
+        df_current = df_current.fillna(method='backfill') # fill NAs like IC
+        df_current = df_current.reset_index()
+
+        categories[category_names[idx]] = df_current
+    
+    return_categories = {}
+    return_categories['residential'] = categories['residential']
+    return_categories['transit'] = categories['transit_stations']
+    
+    # take the average of retail & recreation, grocery & pharmacy, workplaces
+    tmp_df = pd.concat([categories['retail_and_recreation'], categories['grocery_and_pharmacy'], categories['workplaces']], axis=0)
+    df_mean = tmp_df.groupby(level=0).mean()
+    df_mean = pd.concat([df_current['FIPS'], df_mean], axis=1)
+    return_categories['averageMobility'] = df_mean
+
+    return return_categories

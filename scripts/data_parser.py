@@ -39,8 +39,9 @@ def get_clustering(data_dir):
 
     
 def get_data(M, data_dir, processing=None, state=False, fips_list=None, validation=False,
-             clustering=None, supercounties=False, validation_on_county=False, threshold=50):
-    cases, deaths, interventions, population = preprocessing_us_data(data_dir)
+             clustering=None, supercounties=False, validation_on_county=False, mobility=False,
+             threshold=50, load_supercounties=False):
+    cases, deaths, interventions, population, mobility_dict = preprocessing_us_data(data_dir)
 
     if state:
         cases = cases[cases['FIPS'].astype(int) % 1000 == 0]
@@ -51,8 +52,9 @@ def get_data(M, data_dir, processing=None, state=False, fips_list=None, validati
 
     # Not filtering interventions data since we're not selecting counties based on that
     final_dict, fips_list, dict_of_start_dates, dict_of_geo = get_regions(
-        data_dir, M, cases, deaths, processing, interventions, population, fips_list,
-        validation=validation, supercounties=supercounties, clustering=clustering, threshold=threshold)
+        data_dir, M, cases, deaths, processing, interventions, population, mobility_dict=mobility_dict,
+        fips_list=fips_list, validation=validation, supercounties=supercounties, clustering=clustering,
+        mobility=mobility, threshold=threshold, load_supercounties=load_supercounties)
 
     return final_dict, fips_list, dict_of_start_dates, dict_of_geo
 
@@ -71,8 +73,9 @@ def save_interventions(interventions, fname):
     interventions.to_csv(fname)
 
 
-def get_regions(data_dir, M, cases, deaths, processing, interventions, population, fips_list=None,
-                validation=False, clustering=None, supercounties=False, threshold=50):
+def get_regions(data_dir, M, cases, deaths, processing, interventions, population, mobility_dict,
+                fips_list=None, validation=False, clustering=None, supercounties=False,
+                mobility=False, threshold=50, load_supercounties=False):
     if processing == Processing.INTERPOLATE:
         cases = impute(cases, allow_decrease_towards_end=False)
         deaths = impute(deaths, allow_decrease_towards_end=False)
@@ -85,12 +88,17 @@ def get_regions(data_dir, M, cases, deaths, processing, interventions, populatio
         cases, deaths = remove_negative_regions(cases, deaths, idx=2)
 
     save_tmp = fips_list is None
+
+    print(f'mobility_dict: {mobility_dict} in get_regions')
     
-    cases, deaths, interventions, population = select_regions(
-        cases, deaths, interventions, M, population, fips_list=fips_list,
-        clustering=clustering, supercounties=supercounties)
-    cases, deaths, interventions, population, fips_list = select_top_regions(
-        cases, deaths, interventions, M, population, validation=validation, threshold=threshold)
+    cases, deaths, interventions, population, mobility_dict = select_regions(
+        cases, deaths, interventions, M, population, mobility_dict=mobility_dict, fips_list=fips_list,
+        clustering=clustering, supercounties=supercounties, load_supercounties=load_supercounties)
+    cases, deaths, interventions, population, mobility_dict, fips_list = select_top_regions(
+        cases, deaths, interventions, M, population, mobility_dict=mobility_dict, validation=validation, threshold=threshold)
+
+    # If mobility model, get the mobility reports
+
 
     if save_tmp:
         print('saving tmp data')
@@ -101,6 +109,7 @@ def get_regions(data_dir, M, cases, deaths, processing, interventions, populatio
     print('DEATHS', deaths, sep='\n')
     print('INTERVENTIONS', interventions, sep='\n')
     print('POPULATION', population, sep='\n')
+    print('MOBILITY', mobility_dict, sep='\n')
     
     dict_of_geo = {}            # map geocode
     for i in range(len(fips_list)):
@@ -122,20 +131,35 @@ def get_regions(data_dir, M, cases, deaths, processing, interventions, populatio
     
     population = population.drop(['FIPS'], axis=1)
     population = population.to_numpy()
+
+    # create mobility array
+    for name, df in mobility_dict.items():
+        try:
+            df.drop(['FIPS', 'State', 'County'], axis=1, inplace=True)
+        except KeyError:
+            df.drop(['FIPS'], axis=1, inplace=True)
+        df.T # dates are row-wisw
+        arr = df.to_numpy()
+        mobility_dict[name] = arr
+
+    mobility_report = np.dstack(tuple(mobility_dict.values()))
         
         
+    if not mobility:
+        mobility_report = None
     
     if validation:
         validation_days_dict = get_validation_dict(data_dir, cases, deaths, fips_list, cases_dates)
         deaths = apply_validation(deaths, fips_list, validation_days_dict)
     
     dict_of_start_dates, final_dict = primary_calculations(
-        cases, deaths, covariates, cases_dates, population, fips_list)
+        cases, deaths, covariates, cases_dates, population, fips_list, mobility=mobility_report)
 
     return final_dict, fips_list, dict_of_start_dates, dict_of_geo
 
 
-def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, population, fips_list, interpolate=True):
+def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, population,
+                         fips_list, mobility=None, interpolate=True):
     """"
     Returns:
         final_dict: Stan_data used to feed main sampler
@@ -157,11 +181,16 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
     covariate6 = []
     covariate7 = []
     covariate8 = []
+    covariate9 = []
+    covariate10 = []
+    covariate11 = []
+    covariate12 = []
+    covariate13 = []
 
     cases = []
     deaths = []
     N_arr = []
-
+    mobility_list = []
     for i in range(len(fips_list)):
         i2 = index2[i]
         dict_of_start_dates[i] = df_cases_dates[i2]
@@ -180,7 +209,8 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
 
         N = len(case)
         N_arr.append(N)
-        N2 = 120
+        # N2 = 120 # initial submission
+        N2 = 160
 
         forecast = N2 - N
 
@@ -195,7 +225,7 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
         death = np.append(death, add_1, axis=0)
         cases.append(case)
         deaths.append(death)
-
+        
         covariates2 = np.append(covariates2, addlst, axis=0)
         covariate1.append(covariates2[:, 0])  # stay at home
         covariate2.append(covariates2[:, 1])  # >50 gatherings
@@ -205,6 +235,20 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
         covariate6.append(covariates2[:, 5])  # entertainment/gym
         covariate7.append(covariates2[:, 6])  # federal guidelines
         covariate8.append(covariates2[:, 7])  # federal guidelines
+        covariate9.append(covariates2[:, 8])  # stay at home rollback
+        covariate10.append(covariates2[:, 9])  # >50 gatherings rollback
+        covariate11.append(covariates2[:, 10])  # >500 gatherings rollback
+        covariate12.append(covariates2[:, 11])  # restaurant dine-in rollback
+        covariate13.append(covariates2[:, 12])  # entertainment/gym rollback
+
+        # mobility
+        if mobility is not None:
+            # cases begin 1/22
+            # mobility begins 2/15 -> difference    
+            tmp = mobility[i,(i2-8):,:]
+            fill_arr = np.array(3*[add_1]).T
+            tmp = np.append(tmp, fill_arr, axis=0)
+            mobility_list.append(tmp)
         
     covariate1 = np.array(covariate1).T
     covariate2 = np.array(covariate2).T
@@ -214,17 +258,28 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
     covariate6 = np.array(covariate6).T
     covariate7 = np.array(covariate7).T
     covariate8 = np.array(covariate8).T
+    covariate9 = np.array(covariate9).T
+    covariate10 = np.array(covariate10).T
+    covariate11 = np.array(covariate11).T
+    covariate12 = np.array(covariate12).T
+    covariate13 = np.array(covariate13).T
     cases = np.array(cases).T
     deaths = np.array(deaths).T
     
     X = np.dstack([covariate1, covariate2, covariate3, covariate4, covariate5, covariate6,
-                   covariate7, covariate8])
+                   covariate7, covariate8, covariate9, covariate10, covariate11, covariate12,
+                   covariate13])
     X = np.moveaxis(X, 1, 0)
+
+    if mobility is not None:
+        X = np.dstack(mobility_list)
+        X = np.moveaxis(X, 2, 0)
+    X_partial = X
         
     final_dict = {}
     final_dict['M'] = len(fips_list)
     final_dict['N0'] = 6
-    final_dict['P'] = 8 # num of covariates
+    final_dict['P'] = 13 # num of covariates (used to be 8)
     final_dict['N'] = np.asarray(N_arr, dtype=np.int)
     final_dict['N2'] = N2
     final_dict['p'] = covariates.shape[1] - 1
@@ -240,9 +295,18 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
     final_dict['covariate6'] = covariate6
     final_dict['covariate7'] = covariate7
     final_dict['covariate8'] = covariate8
+    final_dict['covariate9'] = covariate9
+    final_dict['covariate10'] = covariate10
+    final_dict['covariate11'] = covariate11
+    final_dict['covariate12'] = covariate12
+    final_dict['covariate13'] = covariate13
     final_dict['pop'] = population.astype(np.float).reshape((len(fips_list)))
     final_dict['X'] = X
+    final_dict['X_partial'] = X_partial
     ## New covariate for foot traffic data
+    if mobility is not None:
+        final_dict['P'] = 3
+        final_dict['P_partial'] = 3
     
     return dict_of_start_dates, final_dict
 
