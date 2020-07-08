@@ -761,7 +761,51 @@ class IHMEDataParser():
     # Virginia VA
     # soon: consider phase three starting JUly 1st: src: https://www.governor.virginia.gov/media/governorvirginiagov/governor-of-virginia/pdf/Forward-Virginia-Phase-Three-Guidelines.pdf
     # Washington WA
-    # TODO: County response src: https://www.governor.wa.gov/sites/default/files/SafeStartPhasedReopening.pdf
+    df.loc[df.STATE == 'WA', c[0]] = dt.date(2020, 5, 31).toordinal()
+    # phase 2: restaurants ; phase 3: >50, gym
+    # County response src: https://www.governor.wa.gov/sites/default/files/SafeStartPhasedReopening.pdf
+    # https://mynorthwest.com/1872686/phases-counties-washington-reopen-inslee/?
+    df.loc[df.FIPS == '53001', c[3]] = dt.date(2020, 5, 22).toordinal() #adams
+    df.loc[df.FIPS == '53003', [c[1], c[4]]] = dt.date(2020, 6, 5).toordinal() #asotin
+    df.loc[df.FIPS == '53005', c[3]] = dt.date(2020, ).toordinal() #benton
+    #df.loc[df.FIPS == '53007', c[-4:]] = dt.date(2020, ).toordinal() #chelan
+    df.loc[df.FIPS == '53009', c[3]] = dt.date(2020, 5, 28).toordinal() #clallam
+    #df.loc[df.FIPS == '53011', c[-4:]] = dt.date(2020, ).toordinal() #clark
+    df.loc[df.FIPS == '53013', [c[1], c[4]]] = dt.date(2020, 6, 5).toordinal() #columbia
+    #df.loc[df.FIPS == '53015', c[-4:]] = dt.date(2020, 5, 29).toordinal() #cowlitz
+    #df.loc[df.FIPS == '53017', c[-4:]] = dt.date(2020, 6, 26).toordinal() #douglas
+    df.loc[df.FIPS == '53019', [c[1], c[4]]] = dt.date(2020, 6, 5).toordinal() #ferry
+    #df.loc[df.FIPS == '53021', c[-4:]] = dt.date(2020, 6, 5).toordinal() #franklin
+    df.loc[df.FIPS == '53023', [c[1], c[4]]] = dt.date(2020, 6, 5).toordinal() #garfield
+    df.loc[df.FIPS == '53025', c[3]] = dt.date(2020, 5, 23).toordinal() # grant
+    df.loc[df.FIPS == '53027', [c[1], c[4]]] = dt.date(2020, 6, 19).toordinal() #grays harbor
+    df.loc[df.FIPS == '53029', [c[1], c[4]]] = dt.date(2020, 6, 19).toordinal() #island
+    #df.loc[df.FIPS == '53031', c[-4:]] = dt.date(2020, 5, 29).toordinal() #jefferson
+    df.loc[df.FIPS == '53033', c[3]] = dt.date(2020, 5, 19).toordinal() #king
+    #df.loc[df.FIPS == '53035', c[-4:]] = dt.date(2020, 6, 5).toordinal() #kitsap
+    df.loc[df.FIPS == '53037', [c[1], c[4]]] = dt.date(2020, 6, 23).toordinal() #kittitas 
+    #df.loc[df.FIPS == '53039', c[-4:]] = dt.date(2020, 5, 29).toordinal() #klickitat
+    df.loc[df.FIPS == '53041', [c[1], c[4]]] = dt.date(2020, 6, 19).toordinal() #lewis
+    df.loc[df.FIPS == '53043', [c[1], c[4]]] = dt.date(2020, 6, 5).toordinal() #lincoln
+    df.loc[df.FIPS == '53045', [c[1], c[4]]] = dt.date(2020, 6, 19).toordinal() #mason
+    df.loc[df.FIPS == '53047', c[3]] = dt.date(2020, 6, 5).toordinal() #okanogan
+    df.loc[df.FIPS == '53049', [c[1], c[4]]] = dt.date(2020, 6, 16).toordinal() #pacific
+    df.loc[df.FIPS == '53051', [c[1], c[4]]] = dt.date(2020, 6, 5).toordinal() #pend oreille
+    df.loc[df.FIPS == '53053', c[3]] = dt.date(2020, 6, 5).toordinal() #pierce
+    df.loc[df.FIPS == '53055', c[3]] = dt.date(2020, 5, 27).toordinal() #san juan
+    df.loc[df.FIPS == '53057', c[3]] = dt.date(2020, 6, 5).toordinal() #skagit
+    df.loc[df.FIPS == '53059', [c[1], c[4]]] = dt.date(2020, 6, 11).toordinal() #skamania
+    df.loc[df.FIPS == '53061', c[3]] = dt.date(2020, 6, 5).toordinal() #snohomish
+    df.loc[df.FIPS == '53063', c[3]] = dt.date(2020, 5, 22).toordinal() #spokane
+    df.loc[df.FIPS == '53065', [c[1], c[4]]] = dt.date(2020, 6, 5).toordinal() #stevens
+    df.loc[df.FIPS == '53067', [c[1], c[4]]] = dt.date(2020, 6, 24).toordinal()  #thurston
+    df.loc[df.FIPS == '53069', [c[1], c[4]]] = dt.date(2020, 6, 5).toordinal()#wahkiakum
+    #df.loc[df.FIPS == '53071', c[-4:]] = dt.date(2020, 6, 26).toordinal() #walla walla
+    df.loc[df.FIPS == '53073', c[3]] = dt.date(2020, 6, 5).toordinal()#whatcom
+    df.loc[df.FIPS == '53075', [c[1], c[4]]] = dt.date(2020, 6, 5).toordinal() #whitman
+    #df.loc[df.FIPS == '53077', c[-4:]] = dt.date(2020, 6, 26).toordinal() #yakima
+
+
     # West Virginia WV
     #   restaurant Dine in May 4th: src: https://governor.wv.gov/Pages/The-Comeback.aspx
     #   gatherin > 50 June 5th    : src: https://governor.wv.gov/Pages/The-Comeback.aspx
