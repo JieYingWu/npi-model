@@ -758,8 +758,109 @@ class IHMEDataParser():
     #   entertainment/gym: May 18th src: https://governor.sc.gov/news/2020-05/gov-henry-mcmaster-announces-additional-businesses-gyms-pools-are-able-open-monday-may
     df.loc[df.STATE == 'SC', c[-2]] = dt.date(2020, 5, 11).toordinal()
     df.loc[df.STATE == 'SC', c[-1]] = dt.date(2020, 5, 18).toordinal()
+
     # Tennessee TN
-    # TODO: County response
+    # https://www.wsmv.com/news/tennessee-releases-new-guidelines-for-reopening-restaurants-retail-and-large-attractions/article_0f74cd22-9ad3-11ea-9f03-e3784e1e4029.html
+    df.loc[[
+      '47001', # Anderson
+      '47003', # Bedford
+      '47005', # Benton
+      '47007', # Bledsoe
+      '47009', # Blount
+      '47011', # Bradley
+      '47013', # Campbell
+      '47015', # Cannon
+      '47017', # Carroll
+      '47019', # Carter
+      '47021', # Cheatham
+      '47023', # Chester
+      '47025', # Claiborne
+      '47027', # Clay
+      '47029', # Cocke
+      '47031', # Coffee
+      '47033', # Crockett
+      '47035', # Cumberland
+      '47039', # Decatur
+      '47041', # De Kalb
+      '47043', # Dickson
+      '47045', # Dyer
+      '47047', # Fayette
+      '47049', # Fentress
+      '47051', # Franklin
+      '47053', # Gibson
+      '47055', # Giles
+      '47057', # Grainger
+      '47059', # Greene
+      '47061', # Grundy
+      '47063', # Hamblen
+      '47067', # Hancock
+      '47069', # Hardeman
+      '47071', # Hardin
+      '47073', # Hawkins
+      '47075', # Haywood
+      '47077', # Henderson
+      '47079', # Henry
+      '47081', # Hickman
+      '47083', # Houston
+      '47085', # Humphreys
+      '47087', # Jackson
+      '47089', # Jefferson
+      '47091', # Johnson
+      '47095', # Lake
+      '47097', # Lauderdale
+      '47099', # Lawrence
+      '47101', # Lewis
+      '47103', # Lincoln
+      '47105', # Loudon
+      '47107', # McMinn
+      '47109', # McNairy
+      '47111', # Macon
+      '47115', # Marion
+      '47117', # Marshall
+      '47119', # Maury
+      '47121', # Meigs
+      '47123', # Monroe
+      '47125', # Montgomery
+      '47127', # Moore
+      '47129', # Morgan
+      '47131', # Obion
+      '47133', # Overton
+      '47135', # Perry
+      '47137', # Pickett
+      '47139', # Polk
+      '47141', # Putnam
+      '47143', # Rhea
+      '47145', # Roane
+      '47147', # Robertson
+      '47149', # Rutherford
+      '47151', # Scott
+      '47153', # Sequatchie
+      '47155', # Sevier
+      '47159', # Smith
+      '47161', # Stewart
+      '47165', # Sumner
+      '47167', # Tipton
+      '47169', # Trousdale
+      '47171', # Unicoi
+      '47173', # Union
+      '47175', # Van Buren
+      '47177', # Warren
+      '47179', # Washington
+      '47181', # Wayne
+      '47183', # Weakley
+      '47185', # White
+      '47187', # Williamson
+      '47189', # Wilson
+      '47093'  # Knox https://www.knoxnews.com/story/news/health/2020/06/17/knox-county-moves-align-state-coronavirus-reopening-plan/3205652001/
+      #      '47113', # Madison mirrored governor's plan
+      #      '47163', # Sullivan mirrored governor's plan https://www.wjhl.com/local-coronavirus-coverage/sullivan-county-health-officials-mirroring-gov-lees-plan-to-reopen-businesses/
+    ], [c[3]], c[4]] = dt.date(2020, 5, 22).toordinal()
+    df.loc['47157', [c[3], c[4]]] = dt.date(2020, 6, 15).toordinal() # Shelby https://www.wmcactionnews5.com/2020/06/14/shelby-county-begin-phase-reopening-monday/
+    
+    df.loc['47037', [c[4]]]] = dt.date(2020, 7, 3).toordinal()  # Davidson https://www.asafenashville.org/roadmap-for-reopening-nashville/
+    df.loc['47065', [c[3]]]] = dt.date(2020, 5, 22).toordinal()
+    
+
     # Texas TX
     # Utah UT
     #   restaurant dine in & entertainment/gym :May 1st src: https://coronavirus-download.utah.gov/Governor/Utah_Leads_Together_3.0_May2020_v20.pdf
