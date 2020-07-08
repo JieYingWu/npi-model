@@ -354,7 +354,8 @@ class IHMEDataParser():
     for i in range(1, 5):
       df.loc[df.STATE == 'MO', c[-i]] = dt.date(2020, 6, 15).toordinal()
 
-    df.loc['29189', [c[1], c[2]]] = dt.date(2020, 6, 29)
+    df.loc['29189', [c[1], c[2]]] = dt.date(2020, 6, 29).toordinal()  # st louis county https://stlpartnership.com/details-on-state-stl-county-and-city-of-stl-reopening/
+    
 
     # Montana MT
     # Nebraska NA  
@@ -782,6 +783,8 @@ class IHMEDataParser():
     # TODO: county response: src: https://www.wisbank.com/articles/2020/05/wisconsin-county-list-of-safer-at-home-orders/
     #   stay at home May 13th src: https://www.nytimes.com/interactive/2020/us/states-reopen-map-coronavirus.html
     df.loc[df.STATE == 'WI', c[-5]] = dt.date(2020, 5, 13).toordinal()
+    
+    
     # Wyoming WY 
     # County Responses: https://www.wyo-wcca.org/index.php/covid-19-resources/emergency-declarations-and-public-building-access/
     # Restaurant order in place from July 1st on src: https://drive.google.com/file/d/1yP1IHC60t9pHQMeenAEzyAuVZJSNAvH2/view
