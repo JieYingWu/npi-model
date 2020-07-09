@@ -17,7 +17,7 @@ import plot_rt
 
 
 def get_alpha_from_summary(df):
-    """result_df or summary from running the model. Return array of alphas
+    """ result_df or summary from running the model. Return array of alphas
 
     :param df: 
     :returns: 
@@ -29,6 +29,9 @@ def get_alpha_from_summary(df):
 
 
 def is_county(fips):
+    """
+    check if FIPS is valid
+    """
     fips = str(fips).zfill(5)
     return len(fips) == 5
 
@@ -42,7 +45,7 @@ class MainStanModel():
         if isinstance(self.processing, int):
             self.processing = data_parser.Processing(self.processing)
 
-        if self.model == 'mobility':
+        if self.model == 'mobility': ## to include foot traffic data
             self.use_mobility = True
         else:
             self.use_mobility = False
@@ -102,7 +105,6 @@ class MainStanModel():
         
     def get_cluster(self, region):
         """
-
         :param region: Either an FIPS or FIPS_CLUSTER string.
         :returns: cluster the region belongs to.
         :rtype: 
@@ -218,6 +220,9 @@ class MainStanModel():
         return np.stack(weighted_fatalities)
             
     def preprocess_data(self, M, mode, data_dir):
+	"""
+	Function for preprocessing data 
+	"""
         if mode == 'europe':
             stan_data, regions, start_date, geocode = data_parser.get_data_europe(data_dir, show=False)
             weighted_fatalities = np.loadtxt(join(data_dir, 'europe_data', 'weighted_fatality.csv'),
