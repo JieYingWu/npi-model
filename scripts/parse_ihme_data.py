@@ -360,7 +360,7 @@ class IHMEDataParser():
     # Montana MT
     # Nebraska NA  
     # No stay at home order imposed, remove rollback src: https://www.nytimes.com/interactive/2020/us/states-reopen-map-coronavirus.html
-    df.loc[df.STATE == 'NE', c[-5]] = np.nan
+    df.loc[df.STATE == 'NE', c[-5]] = 740000
     # Nevada NV
     # New Hampshire NH
     #   stay at home June 15th src: https://www.nytimes.com/interactive/2020/us/states-reopen-map-coronavirus.html
@@ -373,8 +373,8 @@ class IHMEDataParser():
 
     # New Mexico NM - apparently not actually what IHME said? https://www.newmexico.gov/2020/05/28/governor-announces-limited-reopening-for-dine-in-restaurants-indoor-malls-gyms-salons-and-more/
 
-    df.loc[df.STATE == 'NM', c[-2]] = dt.date(2020, 5, 28)
-    df.loc[df.STATE == 'NM', c[-1]] = dt.date(2020, 6, 1)
+    df.loc[df.STATE == 'NM', c[-2]] = dt.date(2020, 5, 28).toordinal() 
+    df.loc[df.STATE == 'NM', c[-1]] = dt.date(2020, 6, 1).toordinal() 
 
     # Some counties were weird: https://www.usnews.com/news/best-states/new-mexico/articles/2020-05-25/new-mexico-governor-blocks-plans-to-reopen-drive-in-theater
     df.loc['35006', c[-2:]] = dt.date(2020, 6, 1).toordinal()  # Cibola
@@ -384,11 +384,11 @@ class IHMEDataParser():
     # New York NY
     # Only using New York County for all 5 boroughs since that's where death is counted
     # Gyms are not included in reopening plan as of yet - https://nymag.com/intelligencer/2020/07/when-will-new-york-reopen-phases-and-full-plan-explained.html
-    df.loc[df.STATE == 'NY', c[-1]] = np.nan
+    df.loc[df.STATE == 'NY', c[-1]] = 740000
 
     # https://www1.nyc.gov/nycbusiness/article/nyc-restaurant-reopening-guide
     df.loc['36061', c[-2:]] = dt.date(2020, 6, 22).toordinal() 
-    df.loc['36061', c[-2:]] = np.nan
+    df.loc['36061', c[-2:]] = 740000
 
     # Counties https://www.governor.ny.gov/news/governor-cuomo-announces-outdoor-dining-restaurants-will-be-permitted-phase-two-reopening
     # Capital Region - Albany, Columbia, Greene, Saratoga, Schenectady, Rensselaer, Warren, Washington
@@ -538,7 +538,7 @@ class IHMEDataParser():
     # North Carolina NC 
     #   no gym src: https://www.nytimes.com/interactive/2020/us/states-reopen-map-coronavirus.html
     # Avoided county-by-county approach - https://www.newsobserver.com/news/coronavirus/article242836711.html
-    df.loc[df.STATE == 'NC', c[-1]] = np.nan
+    df.loc[df.STATE == 'NC', c[-1]] = 740000
 
     # North Dakota ND - seems to reopen at once https://www.usnews.com/news/best-states/north-dakota/articles/2020-05-01/north-dakota-cafes-other-businesses-reopen-under-new-rules
 

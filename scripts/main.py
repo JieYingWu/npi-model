@@ -220,9 +220,9 @@ class MainStanModel():
         return np.stack(weighted_fatalities)
             
     def preprocess_data(self, M, mode, data_dir):
-	"""
-	Function for preprocessing data 
-	"""
+        """
+        Function for preprocessing data 
+        """
         if mode == 'europe':
             stan_data, regions, start_date, geocode = data_parser.get_data_europe(data_dir, show=False)
             weighted_fatalities = np.loadtxt(join(data_dir, 'europe_data', 'weighted_fatality.csv'),
