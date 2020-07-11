@@ -6,20 +6,33 @@ import argparse
 import re
 import datetime as dt
 
-def main(result_dir=None, end_date='5/28'):
-  counties_path = join('data', 'us_data', 'counties.csv')
-  clustering_path = join('data', 'us_data', 'clustering.csv')
+def main(result_dir=None, end_date='5/28', data_dir='data/us_data'):
+  counties_path = join(data_dir, 'counties.csv')
+  clustering_path = join(data_dir, 'clustering.csv')
+  cases_path = join(data_dir, 'infections_timeseries.csv')
+  deaths_path = join(data_dir, 'deaths_timeseries.csv')  
   start_dates_path = join(result_dir, 'start_dates.csv')
   geocode_path = join(result_dir, 'geocode.csv')
   summary_path = join(result_dir, 'summary.csv')
-  for path in [summary_path, geocode_path, start_dates_path]:
+  for path in [counties_path, clustering_path, cases_path, deaths_path,
+               start_dates_path, geocode_path, summary_path]:
     if not exists(path):
       raise FileNotFoundError(f'not found: {path}')
 
-  counties = pd.read_csv(counties_path, dtype={'FIPS': str}, delimiter=',')
+  dtype = {'FIPS': str}
+  counties = pd.read_csv(counties_path, dtype=dtype, delimiter=',')
   counties = counties.set_index('FIPS')
+  
   populations = dict(zip(counties.index, counties['POP_ESTIMATE_2018']))
-  clustering = pd.read_csv(clustering_path, dtype={'FIPS': str})
+
+  converters = {'FIPS': lambda x : str(x).zfill(5)}
+  cases = pd.read_csv(cases_path, converters=converters)
+  cases = cases.set_index('FIPS')
+  deaths = pd.read_csv(deaths_path, converters=converters)
+  deaths = deaths.set_index('FIPS')
+  print(cases)
+
+  clustering = pd.read_csv(clustering_path, dtype=dtype)
   clustering = dict(zip(clustering['FIPS'], clustering['cluster']))
   start_dates = list(pd.read_csv(start_dates_path, index_col=0).iloc[0])
   geocodes = list(pd.read_csv(geocode_path, index_col=0, dtype=str).iloc[0])
@@ -50,7 +63,8 @@ def main(result_dir=None, end_date='5/28'):
   print(*map(int, end_date.split('/')))
   for i, fips in enumerate(geocodes):
     row = {}
-    if re.match(r'\d{5}_\d', fips) is None:
+    is_county = re.match(r'\d{5}_\d', fips) is None
+    if is_county:
       cluster = clustering[fips]
       row['County'] = '{fips}\n{Area_Name}, {State}'.format(fips=fips, **counties.loc[fips])
     else:
@@ -68,6 +82,15 @@ def main(result_dir=None, end_date='5/28'):
     pred_cases = sum(list(summary.loc[prediction_indices, 'mean'])[:end_date_idx + 1])
     row['# (%) infected as predicted'] = '{:d} ({:.01f})'.format(int(pred_cases), 999999999 if fips not in populations else pred_cases / populations[fips] * 100)
 
+    if is_county and fips in cases.index:
+      num_cases = sum(cases.loc[fips][1:])
+      row['Measured cases'] = num_cases
+      row['Fatality rate (measured death/cases)'] = f'{sum(deaths.loc[fips][1:]) / num_cases}%'
+    else:
+      row['Measured cases'] = 99999999
+      row['Fatality rate (measured death/cases)'] = 99999999
+      
+  
     # TODO: measured cases and fatality rate
     # row['Measured cases'] = 
     # row['R_0 (std)'] = summary.loc[f'Rt_adj[0, {i + 1}]']

@@ -437,6 +437,11 @@ class MainStanModel():
 
         df.to_csv(self.summary_path, sep=',')
 
+        if self.supercounties:
+            # save a copy of the supercounties for this run
+            with open(join(self.unique_results_path, 'supercounties.json'), 'w') as file:
+                json.dump(self.get_supercounties(), file) 
+
         df_sd = pd.DataFrame(start_date, index=[0])
         df_geo = pd.DataFrame(geocode, index=[0])
         df_sd.to_csv(self.start_dates_path, sep=',')
