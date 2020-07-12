@@ -16,7 +16,7 @@ class Processing(Enum):
 
 
 def get_cluster(data_dir, cluster):
-    """Get the fips codes for the 
+    """ Get FIPS codes of counties in a particular cluster
 
     :param data_dir: dir where data is
     :param cluster: integer cluster label.
@@ -32,6 +32,13 @@ def get_cluster(data_dir, cluster):
 
 
 def get_clustering(data_dir):
+    """ Get cluster labels for all counties
+
+    :param data_dir: dir where data is
+    :returns: dict with key : FIPS code, value: cluster it belongs to
+    :rtype: list
+
+    """
     dtype = dict(FIPS=str, cluster=int)
     clustering = pd.read_csv(join(data_dir, 'us_data', 'clustering.csv'), dtype=dtype)
     clustering = dict(zip(clustering['FIPS'], clustering['cluster']))
@@ -148,7 +155,7 @@ def get_regions(data_dir, M, cases, deaths, processing, interventions, populatio
     if not mobility:
         mobility_report = None
     
-    if validation:
+    if validation: ### to validate model
         validation_days_dict = get_validation_dict(data_dir, cases, deaths, fips_list, cases_dates)
         deaths = apply_validation(deaths, fips_list, validation_days_dict)
     
@@ -166,8 +173,8 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
         dict_of_start_dates: Starting dates considered for calculations for the top N places
     """
     
-    index = np.argmax(df_cases > 0)
-    cum_sum = np.cumsum(df_deaths, axis=0) >= 10
+    index = np.argmax(df_cases > 0) ## make sure number of cases is greater than 0
+    cum_sum = np.cumsum(df_deaths, axis=0) >= 10 ## consider only after the cumulative deaths exceed 10
     index1 = np.where(np.argmax(cum_sum, axis=0) != 0, np.argmax(cum_sum, axis=0), cum_sum.shape[0])
     index2 = index1 - 30
     start_dates = index1 + 1 - index2
@@ -210,16 +217,16 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
         N = len(case)
         N_arr.append(N)
         # N2 = 120 # initial submission
-        N2 = 160
+        N2 = 160 ## decides number of days we are forecasting for
 
         forecast = N2 - N
 
         if forecast < 0:
             print("FIPS: ", fips_list[i], " N: ", N)
-            print("Error!!!! N is greater than N2!")
+            print("Error!!!! Number of days from data is greater than number of days for prediction!")
             N2 = N
         addlst = [covariates2[N - 1]] * (forecast)
-        add_1 = [-1] * forecast ### padding
+        add_1 = [-1] * forecast ### padding for extra days
 
         case = np.append(case, add_1, axis=0)
         death = np.append(death, add_1, axis=0)
@@ -276,6 +283,7 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
         X = np.moveaxis(X, 2, 0)
     X_partial = X
         
+    ## populate for stan parameters
     final_dict = {}
     final_dict['M'] = len(fips_list)
     final_dict['N0'] = 6
@@ -303,6 +311,7 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
     final_dict['pop'] = population.astype(np.float).reshape((len(fips_list)))
     final_dict['X'] = X
     final_dict['X_partial'] = X_partial
+    
     ## New covariate for foot traffic data
     if mobility is not None:
         final_dict['P'] = 3

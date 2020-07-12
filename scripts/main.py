@@ -17,7 +17,7 @@ import plot_rt
 
 
 def get_alpha_from_summary(df):
-    """result_df or summary from running the model. Return array of alphas
+    """ result_df or summary from running the model. Return array of alphas
 
     :param df: 
     :returns: 
@@ -29,6 +29,9 @@ def get_alpha_from_summary(df):
 
 
 def is_county(fips):
+    """
+    check if FIPS is valid
+    """
     fips = str(fips).zfill(5)
     return len(fips) == 5
 
@@ -42,7 +45,7 @@ class MainStanModel():
         if isinstance(self.processing, int):
             self.processing = data_parser.Processing(self.processing)
 
-        if self.model == 'mobility':
+        if self.model == 'mobility': ## to include foot traffic data
             self.use_mobility = True
         else:
             self.use_mobility = False
@@ -102,7 +105,6 @@ class MainStanModel():
         
     def get_cluster(self, region):
         """
-
         :param region: Either an FIPS or FIPS_CLUSTER string.
         :returns: cluster the region belongs to.
         :rtype: 
@@ -218,6 +220,9 @@ class MainStanModel():
         return np.stack(weighted_fatalities)
             
     def preprocess_data(self, M, mode, data_dir):
+        """
+        Function for preprocessing data 
+        """
         if mode == 'europe':
             stan_data, regions, start_date, geocode = data_parser.get_data_europe(data_dir, show=False)
             weighted_fatalities = np.loadtxt(join(data_dir, 'europe_data', 'weighted_fatality.csv'),
@@ -359,7 +364,7 @@ class MainStanModel():
 
         stan_data['f'] = all_f
 
-        fit = sm.sampling(data=stan_data, iter=self.iter, chains=5, warmup=self.warmup_iter,
+        fit = sm.sampling(data=stan_data, iter=self.iter, chains=4, warmup=self.warmup_iter,
                           thin=4, control={'adapt_delta': 0.99, 'max_treedepth': self.max_treedepth})
         # fit = sm.sampling(data=stan_data, iter=2000, chains=4, warmup=10, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
 
@@ -432,6 +437,11 @@ class MainStanModel():
 
         df.to_csv(self.summary_path, sep=',')
 
+        if self.supercounties:
+            # save a copy of the supercounties for this run
+            with open(join(self.unique_results_path, 'supercounties.json'), 'w') as file:
+                json.dump(self.get_supercounties(), file) 
+
         df_sd = pd.DataFrame(start_date, index=[0])
         df_geo = pd.DataFrame(geocode, index=[0])
         df_sd.to_csv(self.start_dates_path, sep=',')
@@ -492,9 +502,9 @@ if __name__ == '__main__':
     parser.add_argument('--fips-list', default=None, nargs='+', help='fips codes to run the model on')
     parser.add_argument('--cluster', default=None, type=int, help='cluster label to draw fips-list from')
     parser.add_argument('-s', '--save-tag', default='', type=str, help='tag for saving the summary, geocodes and start-dates.')
-    parser.add_argument('--iter', default=1800, type=int, help='iterations for the model')
-    parser.add_argument('--warmup-iter', default=1000, type=int, help='warmup iterations for the model')
-    parser.add_argument('--max-treedepth', default=20, type=int, help='maximum tree depth for the model')
+    parser.add_argument('--iter', default=1000, type=int, help='iterations for the model')
+    parser.add_argument('--warmup-iter', default=500, type=int, help='warmup iterations for the model')
+    parser.add_argument('--max-treedepth', default=15, type=int, help='maximum tree depth for the model')
     parser.add_argument('--supercounties', action='store_true', help='merge counties in the same state AND cluster with insufficient cases')
     parser.add_argument('--load-supercounties', action='store_true', help='load the supercounties file (don\'t overwrite it)')
     args = parser.parse_args()
