@@ -5,6 +5,7 @@ import numpy as np
 import argparse
 import re
 import datetime as dt
+import json
 
 def main(result_dir=None, end_date='5/28', data_dir='data/us_data'):
   counties_path = join(data_dir, 'counties.csv')
@@ -14,24 +15,50 @@ def main(result_dir=None, end_date='5/28', data_dir='data/us_data'):
   start_dates_path = join(result_dir, 'start_dates.csv')
   geocode_path = join(result_dir, 'geocode.csv')
   summary_path = join(result_dir, 'summary.csv')
+
+  supercounties_path = join(result_dir, 'supercounties.json')
+  if not exists(supercounties_path):
+    supercounties_path = join(data_dir, 'supercounties.json')
+    print(f'WARNING: using {supercounties_path}, possibly old data')
+
   for path in [counties_path, clustering_path, cases_path, deaths_path,
                start_dates_path, geocode_path, summary_path]:
     if not exists(path):
       raise FileNotFoundError(f'not found: {path}')
 
+  with open(supercounties_path, 'r') as file:
+    supercounties = json.load(file)
+
   dtype = {'FIPS': str}
   counties = pd.read_csv(counties_path, dtype=dtype, delimiter=',')
   counties = counties.set_index('FIPS')
-  
-  populations = dict(zip(counties.index, counties['POP_ESTIMATE_2018']))
 
+  populations = dict(zip(counties.index, counties['POP_ESTIMATE_2018']))
+  for supercounty, fips_codes in supercounties.items():
+    populations[supercounty] = sum(populations[fips] for fips in fips_codes)
+    
   converters = {'FIPS': lambda x : str(x).zfill(5)}
   cases = pd.read_csv(cases_path, converters=converters)
   cases = cases.set_index('FIPS')
   deaths = pd.read_csv(deaths_path, converters=converters)
   deaths = deaths.set_index('FIPS')
-  print(cases)
+  supercounty_cases = []
+  supercounty_deaths = []
+  supercounties_index = []
+  for supercounty, fips_codes in supercounties.items():
+    state = cases.loc[fips_codes[0], 'Combined_Key'].split('-')[1].strip()
+    cluster = supercounty.split('_')[-1]
+    name = f'{state} Super-county Cluster {cluster}'
 
+    supercounties_index.append(supercounty)
+    supercounty_cases.append([name] + list(cases.loc[fips_codes].iloc[:, 1:].sum(0)))
+    supercounty_deaths.append([name] + list(deaths.loc[fips_codes].iloc[:, 1:].sum(0)))
+
+  supercounty_cases = pd.DataFrame(supercounty_cases, columns=cases.columns, index=supercounties_index)
+  supercounty_deaths = pd.DataFrame(supercounty_deaths, columns=deaths.columns, index=supercounties_index)
+  cases = cases.append(supercounty_cases)
+  deaths = deaths.append(supercounty_deaths)
+  
   clustering = pd.read_csv(clustering_path, dtype=dtype)
   clustering = dict(zip(clustering['FIPS'], clustering['cluster']))
   start_dates = list(pd.read_csv(start_dates_path, index_col=0).iloc[0])
@@ -82,7 +109,7 @@ def main(result_dir=None, end_date='5/28', data_dir='data/us_data'):
     pred_cases = sum(list(summary.loc[prediction_indices, 'mean'])[:end_date_idx + 1])
     row['# (%) infected as predicted'] = '{:d} ({:.01f})'.format(int(pred_cases), 999999999 if fips not in populations else pred_cases / populations[fips] * 100)
 
-    if is_county and fips in cases.index:
+    if fips in cases.index:
       num_cases = sum(cases.loc[fips][1:])
       row['Measured cases'] = num_cases
       row['Fatality rate (measured death/cases)'] = f'{sum(deaths.loc[fips][1:]) / num_cases}%'
