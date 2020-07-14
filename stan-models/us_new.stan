@@ -48,8 +48,11 @@ transformed parameters {
     
     {
       matrix[N2,M] cumm_sum = rep_matrix(0,N2,M);
-      for(i in 1:P){
+      for(i in 1:8){
         alpha[i] = alpha_hier[i] - ( log(1.05) / 6.0 );
+      }
+      for(i in 9:13){
+        alpha[i] = -alpha_hier[i] + ( log(1.05) / 6.0 );
       }
       for (m in 1:M){
         prediction[1:N0,m] = rep_vector(y[m],N0); // learn the number of cases in the first N0 days
