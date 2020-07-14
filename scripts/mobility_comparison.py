@@ -13,11 +13,8 @@ from matplotlib import pyplot as plt
 from scipy import stats
 
 
-# taken from https://matplotlib.org/3.2.1/tutorials/text/usetex.html
-from matplotlib import rc
-rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
-rc('text', usetex=True)
-
+# END_DATE = datetime.date(2020,5,28) old
+END_DATE = datetime.date(2020,7,7)  # new
 
 class MobilityReportParser():
     def __init__(self):
@@ -40,6 +37,7 @@ class MobilityReportParser():
             categories[report_files[idx].name[:-33]] = df_current
 
         report_files = [f.name[:-33] for f in report_files]
+        print(categories)
         return categories, report_files 
 
 
@@ -51,7 +49,7 @@ class ResultParser():
         self.geocode, self.number_counties = self.parse_geocode(join(result_dir, 'geocode.csv'))
         self.startdates, self.startdates_dict = self.parse_start_dates(join(result_dir, 'start_dates.csv'), self.geocode) 
         self.deaths, self.infections, self.R_t = self.parse_summary(join(result_dir, 'summary.csv')) 
-        self.end_date_ordinal = datetime.date(2020,5,28).toordinal()
+        self.end_date_ordinal = END_DATE.toordinal()
 
     def parse_summary(self, path):
         assert exists(path)
@@ -292,6 +290,8 @@ class Comparison():
             for category_name in self.mobility_parser.category_names:
                 # some categories could be missing, fill those with NANs
                 if category_name in available_categories_dict:
+                    # print(current_deaths)
+                    # print(available_categories_dict[category_name])
                     r_deaths, p_deaths = stats.pearsonr(current_deaths, available_categories_dict[category_name])
                     r_infections, p_infections = stats.pearsonr(current_infections, available_categories_dict[category_name])
                     r_rt, p_rt = stats.pearsonr(current_rt, available_categories_dict[category_name])
@@ -323,7 +323,6 @@ class Comparison():
         csfont = {'fontsize':20}
         for k, df in enumerate([df_deaths_correlation, df_infections_correlation, df_rt_correlation]):
             print(f'Making Mobility Plot for {df_names[k]}')
-            print(df)
             fig = plt.figure()
 
             # ax = df_deaths_correlation.plot.hist(bins=10)
