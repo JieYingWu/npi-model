@@ -11,6 +11,7 @@
   int EpidemicStart[M];
   real pop[M];
   real SI[N2]; // fixed pre-calculated SI using emprical data from Neil
+  real alpha_npi[8];
 }
 
 transformed data {
@@ -30,7 +31,7 @@ transformed data {
 
 parameters {
   real<lower=0> mu[M]; // intercept for Rt
-  real<lower=0> alpha_hier[P]; // sudo parameter for the hier term for alpha
+  real<lower=0> alpha_hier[5]; // sudo parameter for the hier term for alpha
   real<lower=0> gamma;
   real<lower=0> kappa;
   real<lower=0> y[M];
@@ -49,10 +50,10 @@ transformed parameters {
     {
       matrix[N2,M] cumm_sum = rep_matrix(0,N2,M);
       for(i in 1:8){
-        alpha[i] = alpha_hier[i] - ( log(1.05) / 6.0 );
+        alpha[i] = alpha_npi[i]
       }
       for(i in 9:13){
-        alpha[i] = -alpha_hier[i] + ( log(1.05) / 6.0 );
+        alpha[i] = -alpha_hier[i-8] + ( log(1.05) / 6.0 );
       }
       for (m in 1:M){
         prediction[1:N0,m] = rep_vector(y[m],N0); // learn the number of cases in the first N0 days

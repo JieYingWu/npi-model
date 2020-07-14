@@ -7,7 +7,7 @@ from os.path import join, exists
 import json
 
 pd.set_option('mode.chained_assignment', None)
-THRESHOLD = 150
+THRESHOLD = 50
 
 def remove_negative_regions(df_cases, df_deaths, idx):
     """"
@@ -41,7 +41,7 @@ def select_top_regions(df_cases, df_deaths, interventions, num_counties, populat
     """
 
     headers = df_cases.columns.values
-    last_day = headers[-1]
+    last_day = headers[-45] # Sort by 5/28
     observed_days = len(headers[2:])
 
     if threshold is None:
