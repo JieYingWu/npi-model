@@ -362,7 +362,7 @@ class MainStanModel():
 
         stan_data['f'] = all_f
 
-        fit = sm.sampling(data=stan_data, iter=self.iter-100-self.warmup_iter, chains=4, 
+        fit = sm.sampling(data=stan_data, iter=self.iter, warmup=self.warmup_iter, chains=4, 
                           thin=4, control={'adapt_delta': 0.99, 'max_treedepth': self.max_treedepth})
         # fit = sm.sampling(data=stan_data, iter=2000, chains=4, warmup=10, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
 
