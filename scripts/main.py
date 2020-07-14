@@ -439,7 +439,7 @@ class MainStanModel():
             self.geocode_path = join(self.unique_results_path, 'val_geocode.csv')
             logfile_path = join(self.unique_results_path, 'val_logfile.txt')
 
-        elif itermediate:
+        elif intermediate:
             self.summary_path = join(self.unique_results_path, 'summary_iter_300.csv')
             self.start_dates_path = join(self.unique_results_path, 'start_dates.csv')
             self.geocode_path = join(self.unique_results_path, 'geocode.csv')
