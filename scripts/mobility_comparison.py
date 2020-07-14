@@ -13,7 +13,8 @@ from matplotlib import pyplot as plt
 from scipy import stats
 
 
-
+# END_DATE = datetime.date(2020,5,28) old
+END_DATE = datetime.date(2020,7,7)  # new
 
 class MobilityReportParser():
     def __init__(self):
@@ -36,6 +37,7 @@ class MobilityReportParser():
             categories[report_files[idx].name[:-33]] = df_current
 
         report_files = [f.name[:-33] for f in report_files]
+        print(categories)
         return categories, report_files 
 
 
@@ -47,7 +49,7 @@ class ResultParser():
         self.geocode, self.number_counties = self.parse_geocode(join(result_dir, 'geocode.csv'))
         self.startdates, self.startdates_dict = self.parse_start_dates(join(result_dir, 'start_dates.csv'), self.geocode) 
         self.deaths, self.infections, self.R_t = self.parse_summary(join(result_dir, 'summary.csv')) 
-        self.end_date_ordinal = datetime.date(2020,5,28).toordinal()
+        self.end_date_ordinal = END_DATE.toordinal()
 
     def parse_summary(self, path):
         assert exists(path)
@@ -137,10 +139,11 @@ class Comparison():
     """ Makes plots of the comparison between mobility reports and our expected results
     """ 
 
-    def __init__(self, result_dir, delta):
+    def __init__(self, result_dir, delta, pdf):
         self.mobility_parser = MobilityReportParser()
         self.result_parser = ResultParser(result_dir)
-        print(self.mobility_parser.categories)
+        self.save_to_pdf = pdf
+        # print(self.mobility_parser.categories)
         self.aligned_timeseries = self.align_timeseries(self.result_parser.startdates, self.mobility_parser.categories)
         
         self.save_path = join(result_dir, 'plots', 'mobility')
@@ -287,6 +290,8 @@ class Comparison():
             for category_name in self.mobility_parser.category_names:
                 # some categories could be missing, fill those with NANs
                 if category_name in available_categories_dict:
+                    # print(current_deaths)
+                    # print(available_categories_dict[category_name])
                     r_deaths, p_deaths = stats.pearsonr(current_deaths, available_categories_dict[category_name])
                     r_infections, p_infections = stats.pearsonr(current_infections, available_categories_dict[category_name])
                     r_rt, p_rt = stats.pearsonr(current_rt, available_categories_dict[category_name])
@@ -314,17 +319,26 @@ class Comparison():
         df_rt_correlation = df_rt_correlation.set_index('FIPS')
 
         # make plots of the pearson r values
-        df_names = ['deaths', 'infections', 'rt']
+        df_names = ['Deaths', 'Infections', 'R_t']
+        csfont = {'fontsize':20}
         for k, df in enumerate([df_deaths_correlation, df_infections_correlation, df_rt_correlation]):
             print(f'Making Mobility Plot for {df_names[k]}')
             fig = plt.figure()
 
             # ax = df_deaths_correlation.plot.hist(bins=10)
             ax = sns.violinplot(data=df)
-            ax.set_title(f'Correlation of mobility and {df_names[k]}')
-            ax.set_ylabel('Pearson r')
-            ax.set_xlabel('mobility category')
+            ax.set_title(f'Correlation of Mobility and {df_names[k]}',fontdict=csfont)
+            ax.set_ylabel('Pearson r',fontdict=csfont)
+            ax.set_xlabel('Mobility Category',fontdict=csfont)
+
+            for tick in ax.xaxis.get_major_ticks():
+                tick.label.set_fontsize(18)
+            for tick in ax.yaxis.get_major_ticks():
+                tick.label.set_fontsize(18)
+
             fig.set_size_inches(18.5, 10.5)
+            if self.save_to_pdf:
+                plt.savefig(join(save_path_correlations, df_names[k]+'.pdf'))
             plt.savefig(join(save_path_correlations, df_names[k]+'.png'), dpi=100)
             plt.close(fig)
         
@@ -333,7 +347,7 @@ class Comparison():
         """ shift the mobility timeseries -delta/+delta around the deaths timeseries and calculate the correlation
         """
         assert (isinstance(delta, int))
-        assert (delta < 20)
+        assert (delta < 20), f'delta too big'
 
         final_arr = {}
         for offset in range(-delta, delta+1):
@@ -408,6 +422,8 @@ class Comparison():
         fig.set_size_inches(18.5, 10.5)
         # plt.show()
         print(f'Saving to {join(save_path)}')
+        if self.save_to_pdf:
+            plt.savefig(join(save_path, 'death_lag_analysis.pdf'))
         plt.savefig(join(save_path, 'death_lag_analysis.png'),dpi=500)
         plt.close(fig)
 
@@ -416,7 +432,8 @@ if __name__ == '__main__':
 
     parser.add_argument('--dir','-d', type=str, help='Directory of the result')
     parser.add_argument('--delta', type=int, default= 5, help='offset for lag analysis')
+    parser.add_argument('--pdf', action='store_true', help='generate pdfs for the submission')
 
     args = parser.parse_args()
 
-    comparison = Comparison(args.dir, args.delta)
+    comparison = Comparison(args.dir, args.delta, args.pdf)
