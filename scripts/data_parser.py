@@ -217,7 +217,7 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
         N = len(case)
         N_arr.append(N)
         # N2 = 120 # initial submission
-        N2 = 160 ## decides number of days we are forecasting for
+        N2 = 170 ## decides number of days we are forecasting for
 
         forecast = N2 - N
 
