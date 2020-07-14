@@ -362,21 +362,6 @@ class MainStanModel():
 
         stan_data['f'] = all_f
 
-        fit = sm.sampling(data=stan_data, iter=100+self.warmup_iter, chains=4, warmup=self.warmup_iter,
-                          thin=4, control={'adapt_delta': 0.99, 'max_treedepth': self.max_treedepth})
-        # fit = sm.sampling(data=stan_data, iter=2000, chains=4, warmup=10, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
-
-        if validation:
-            summary_dict = fit.summary(pars={'mu', 'E_deaths', 'prediction', 'Rt_adj'})
-        else:
-            summary_dict = fit.summary(pars={'mu', 'alpha', 'E_deaths', 'prediction', 'Rt_adj'})
-            
-        df = pd.DataFrame(summary_dict['summary'],
-                          columns=summary_dict['summary_colnames'],
-                          index=summary_dict['summary_rownames'])
-
-        self.save_results(df, start_date, geocode, intermediate=True)
-        
         fit = sm.sampling(data=stan_data, iter=self.iter-100-self.warmup_iter, chains=4, 
                           thin=4, control={'adapt_delta': 0.99, 'max_treedepth': self.max_treedepth})
         # fit = sm.sampling(data=stan_data, iter=2000, chains=4, warmup=10, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
@@ -427,7 +412,7 @@ class MainStanModel():
         print(f'loaded results from {self.summary_path}')
         return pd.read_csv(self.summary_path, index_col=0)
     
-    def save_results(self, df, start_date, geocode, validation=False, intermediate=False):
+    def save_results(self, df, start_date, geocode, validation=False):
         """save the result dict, geocodes and start_dates into a unique folder"""
         # results example:
         #        - 05_06_2020_15_40_35_validation_iter_200_warmup_100_processing_REMOVE_NEGATIVE_VALUES
@@ -438,12 +423,6 @@ class MainStanModel():
             self.start_dates_path = join(self.unique_results_path, 'val_start_dates.csv')
             self.geocode_path = join(self.unique_results_path, 'val_geocode.csv')
             logfile_path = join(self.unique_results_path, 'val_logfile.txt')
-
-        elif intermediate:
-            self.summary_path = join(self.unique_results_path, 'summary_iter_300.csv')
-            self.start_dates_path = join(self.unique_results_path, 'start_dates.csv')
-            self.geocode_path = join(self.unique_results_path, 'geocode.csv')
-            logfile_path = join(self.unique_results_path, 'logfile.txt')
         else:
             self.summary_path = join(self.unique_results_path, 'summary.csv')
             self.start_dates_path = join(self.unique_results_path, 'start_dates.csv')
