@@ -232,7 +232,8 @@ class MainStanModel():
             stan_data, regions, start_date, geocode = data_parser.get_data(
                 M, data_dir, processing=self.processing, state=False, fips_list=self.fips_list,
                 validation=self.validation_withholding, supercounties=self.supercounties,
-                clustering=self.clustering, mobility=self.use_mobility, load_supercounties=self.load_supercounties)
+                clustering=self.clustering, mobility=self.use_mobility, load_supercounties=self.load_supercounties,
+                avg_window=self.avg_window)
             weighted_fatalities = self.get_weighted_fatalities(regions)
             
             # # wf_file = join(self.data_dir, 'us_data', 'weighted_fatality.csv')
@@ -474,7 +475,8 @@ class MainStanModel():
                                              forecast_plots_path)
         elif self.mode == 'US_county':
             forecast_plots.make_all_us_county_plots(self.start_dates_path, self.geocode_path,
-                                                    self.summary_path, forecast_plots_path, use_tmp=True)
+                                                    self.summary_path, forecast_plots_path, use_tmp=True,
+                                                    avg_window=self.avg_window)
             plot_rt.make_all_us_plots(self.summary_path, self.geocode_path, self.start_dates_path,
                                       interventions_path, rt_plots_path, state_level=False)
         elif self.mode == 'US_state':
@@ -505,6 +507,7 @@ if __name__ == '__main__':
     parser.add_argument('--max-treedepth', default=15, type=int, help='maximum tree depth for the model')
     parser.add_argument('--supercounties', action='store_true', help='merge counties in the same state AND cluster with insufficient cases')
     parser.add_argument('--load-supercounties', action='store_true', help='load the supercounties file (don\'t overwrite it)')
+    parser.add_argument('--avg-window', default=None, type=int, help='number of days to average data over for modeling')
     args = parser.parse_args()
 
     model = MainStanModel(args)
