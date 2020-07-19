@@ -31,7 +31,7 @@ transformed data {
 parameters {
   real<lower=0> mu[M]; // intercept for Rt
   real<lower=0> alpha_hier[8]; // sudo parameter for the hier term for alpha
-  real<lower=0> alpha_gaussian[5]; // sudo parameter for Gaussian prior for rollbacks
+  real<upper=0> alpha_gaussian[5]; // sudo parameter for Gaussian prior for rollbacks
   real<lower=0> gamma;
   real<lower=0> kappa;
   real<lower=0> y[M];
@@ -83,7 +83,7 @@ model {
   kappa ~ normal(0,0.5);
   mu ~ normal(3.28, kappa); // citation: https://academic.oup.com/jtm/article/27/2/taaa021/5735319
   alpha_hier ~ gamma(.1667,1);
-  alpha_gaussian ~ normal(0,1);
+  alpha_gaussian ~ normal(0,0.05);
   ifr_noise ~ normal(1,0.1);
   for(m in 1:M){
     deaths[EpidemicStart[m]:N[m], m] ~ neg_binomial_2(E_deaths[EpidemicStart[m]:N[m], m], phi);
