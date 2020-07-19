@@ -88,7 +88,7 @@ def plot_forecasts_wo_dates_quantiles(quantiles_dict, confirmed_cases, county_na
     ax.fill_between(date_list, quantiles_dict['25%'], quantiles_dict['75%'], alpha=0.5, color='#377EB8')
     ax.bar(date_list, barplot_values, color='#666666', width=0.5, alpha=0.2)
     if avg_window is not None:
-        ax.errorbars(np.arange(len(cases_avg)), cases_avg, xerr=None, yerr=cases_std, fmt='r--')
+        ax.plot(date_list, cases_avg, 'r-', linewidth=1)
         
     ax.set_ylabel("Daily number of {}".format(metric))
     ax.set_xlabel("Date")
@@ -271,7 +271,7 @@ def make_all_us_county_plots(start_date_dict_path, geocode_dict_path, summary_pa
             if confirmed_cases is None:
                 continue
             plot_daily_infections_num(path, confirmed_cases, county_name, plot_choice, num_of_country,
-                                      dict_of_start_dates, dict_of_eu_geog, output_path, avg_window=None)
+                                      dict_of_start_dates, dict_of_eu_geog, output_path, avg_window=avg_window)
     return
 
 

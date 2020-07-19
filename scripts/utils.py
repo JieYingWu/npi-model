@@ -60,6 +60,7 @@ def compute_moving_window(x, window_size, axis=0, mode='left', func='mean'):
 
     """
     assert mode in ['left', 'center', 'right']
+    x = np.array(x)
 
     if mode == 'center':
         assert window_size % 2 == 1, 'use an odd-numbered window size for mode == \'center\''
@@ -68,11 +69,11 @@ def compute_moving_window(x, window_size, axis=0, mode='left', func='mean'):
     y = np.empty_like(x)
     for i in range(x.shape[axis]):
         if mode == 'left':
-            seq = tuple(np.arange(max(i - window_size, 0), i+1) if ax == axis else slice(x.shape[ax]) for ax in range(x.ndim))
+            seq = tuple(np.arange(max(i - window_size + 1, 0), i+1) if ax == axis else slice(x.shape[ax]) for ax in range(x.ndim))
         elif mode == 'center':
-            seq = tuple(np.arange(max(i - window_width, 0), min(i + window_width + 1, x.shape[ax])) if ax == axis else slice(x.shape[ax]) for ax in range(x.ndim))
+            seq = tuple(np.arange(max(i - window_width + 1, 0), min(i + window_width + 1, x.shape[ax])) if ax == axis else slice(x.shape[ax]) for ax in range(x.ndim))
         elif mode == 'right':
-            seq = tuple(np.arange(i, min(i + window_size + 1, x.shape[ax])) if ax == axis else slice(x.shape[ax]) for ax in range(x.ndim))
+            seq = tuple(np.arange(i, min(i + window_size, x.shape[ax])) if ax == axis else slice(x.shape[ax]) for ax in range(x.ndim))
         else:
             raise ValueError
 
@@ -80,8 +81,11 @@ def compute_moving_window(x, window_size, axis=0, mode='left', func='mean'):
         # print('yidx:', yidx)
         if func == 'mean':
             # print('seq:', seq)
-            # print('x[seq]:', x[seq].shape)
+            # print('x[seq]:', x[seq])
             y[yidx] = x[seq].mean(axis)
+            # print('y[yidx]:', y[yidx])
+            # if (y[yidx] > 0).mean() > 0.5:
+            #     raise ValueError
         elif func == 'std':
             y[yidx] = x[seq].std(axis)
     return y
