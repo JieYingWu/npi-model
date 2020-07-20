@@ -30,7 +30,8 @@ transformed data {
 
 parameters {
   real<lower=0> mu[M]; // intercept for Rt
-  real<lower=0> alpha_hier[P]; // sudo parameter for the hier term for alpha
+  real<lower=0> alpha_hier[8]; // sudo parameter for the hier term for alpha
+  real<lower=-0.1> alpha_gaussian[5]; // sudo parameter for Gaussian prior for rollbacks
   real<lower=0> gamma;
   real<lower=0> kappa;
   real<lower=0> y[M];
@@ -52,7 +53,7 @@ transformed parameters {
         alpha[i] = alpha_hier[i] - ( log(1.05) / 6.0 );
       }
       for(i in 9:13){
-        alpha[i] = -alpha_hier[i] + ( log(1.05) / 6.0 );
+        alpha[i] = -alpha_gaussian[i-8];
       }
       for (m in 1:M){
         prediction[1:N0,m] = rep_vector(y[m],N0); // learn the number of cases in the first N0 days
@@ -78,11 +79,11 @@ model {
   for (m in 1:M){
       y[m] ~ exponential(1/tau);
   }
-  gamma ~ normal(0,.2);
   phi ~ normal(0,5);
   kappa ~ normal(0,0.5);
   mu ~ normal(3.28, kappa); // citation: https://academic.oup.com/jtm/article/27/2/taaa021/5735319
   alpha_hier ~ gamma(.1667,1);
+  alpha_gaussian ~ normal(0,0.1);
   ifr_noise ~ normal(1,0.1);
   for(m in 1:M){
     deaths[EpidemicStart[m]:N[m], m] ~ neg_binomial_2(E_deaths[EpidemicStart[m]:N[m], m], phi);
