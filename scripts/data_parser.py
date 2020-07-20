@@ -4,6 +4,7 @@ import datetime as dt
 
 from future.backports import datetime
 from os.path import join, exists
+from utils import compute_moving_average
 from data_preprocess import *
 
 from enum import Enum
@@ -47,7 +48,7 @@ def get_clustering(data_dir):
     
 def get_data(M, data_dir, processing=None, state=False, fips_list=None, validation=False,
              clustering=None, supercounties=False, validation_on_county=False, mobility=False,
-             threshold=THRESHOLD, load_supercounties=False):
+             threshold=THRESHOLD, load_supercounties=False, avg_window=None):
     cases, deaths, interventions, population, mobility_dict = preprocessing_us_data(data_dir)
 
     if state:
@@ -61,7 +62,7 @@ def get_data(M, data_dir, processing=None, state=False, fips_list=None, validati
     final_dict, fips_list, dict_of_start_dates, dict_of_geo = get_regions(
         data_dir, M, cases, deaths, processing, interventions, population, mobility_dict=mobility_dict,
         fips_list=fips_list, validation=validation, supercounties=supercounties, clustering=clustering,
-        mobility=mobility, threshold=threshold, load_supercounties=load_supercounties)
+        mobility=mobility, threshold=threshold, load_supercounties=load_supercounties, avg_window=avg_window)
 
     return final_dict, fips_list, dict_of_start_dates, dict_of_geo
 
@@ -82,7 +83,7 @@ def save_interventions(interventions, fname):
 
 def get_regions(data_dir, M, cases, deaths, processing, interventions, population, mobility_dict,
                 fips_list=None, validation=False, clustering=None, supercounties=False,
-                mobility=False, threshold=50, load_supercounties=False):
+                mobility=False, threshold=50, load_supercounties=False, avg_window=None):
     if processing == Processing.INTERPOLATE:
         cases = impute(cases, allow_decrease_towards_end=False)
         deaths = impute(deaths, allow_decrease_towards_end=False)
@@ -105,8 +106,6 @@ def get_regions(data_dir, M, cases, deaths, processing, interventions, populatio
         cases, deaths, interventions, M, population, mobility_dict=mobility_dict, validation=validation, threshold=threshold)
 
     # If mobility model, get the mobility reports
-
-
     if save_tmp:
         print('saving tmp data')
         cases.to_csv('data/tmp_cases.csv')
@@ -124,13 +123,18 @@ def get_regions(data_dir, M, cases, deaths, processing, interventions, populatio
 
     # drop non-numeric columns
     cases = cases.drop(['FIPS', 'Combined_Key'], axis=1)
-    cases = cases.T             # Dates are now row-wise
+    cases = cases.T
     cases_dates = np.array(cases.index)
     cases = cases.to_numpy()
 
     deaths = deaths.drop(['FIPS', 'Combined_Key'], axis=1)
     deaths = deaths.T
     deaths = deaths.to_numpy()
+
+    if avg_window is not None:
+        cases = compute_moving_average(cases, avg_window, axis=0)
+        deaths = compute_moving_average(deaths, avg_window, axis=0)
+        # take a avg_window-size moving average of cases and deaths.
 
     interventions.drop(['FIPS', 'STATE', 'AREA_NAME'], axis=1, inplace=True)
     interventions_colnames = interventions.columns.values
