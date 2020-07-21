@@ -99,7 +99,7 @@ def load_masks(data_dir, ref=None):
     for fips, row in required_masks.iterrows():
         for county_fips in masks.index:
             if county_fips[:2] == fips[:2]:
-                masks.loc[county_fips, 'required_masks'] = dt.date.fromisoformat(row['implementation']).toordinal()
+                masks.loc[county_fips, 'required_masks'] = dt.date(*map(int, row['implementation'].split('-'))).toordinal()
 
     return masks
 
@@ -129,6 +129,7 @@ def get_regions(data_dir, M, cases, deaths, processing, interventions, populatio
         cases, deaths, interventions, M, population, mobility_dict=mobility_dict, validation=validation, threshold=threshold)
 
     masks = load_masks(data_dir, ref=interventions) if mask_term else None
+    masks = masks.loc[:, 'required_masks'].to_numpy()
 
     # If mobility model, get the mobility reports
     if save_tmp:
@@ -165,8 +166,6 @@ def get_regions(data_dir, M, cases, deaths, processing, interventions, populatio
     interventions_colnames = interventions.columns.values
     covariates = interventions.to_numpy()
 
-    masks = masks.loc[:, 'required_masks'].to_numpy()
-    
     population = population.drop(['FIPS'], axis=1)
     population = population.to_numpy()
 
