@@ -70,7 +70,8 @@ transformed parameters {
             /* mask the alphas */
             for (n in 1:N2){
                 for (p in 1:P)
-                    masked_alpha[p] = pow(alpha[p], masks[n,m] * alpha_mask[m]);
+                    masked_alpha[p] = alpha[p] * (1 + masks[n,m] * alpha_mask[m]);
+                /* masked_alpha[p] = pow(alpha[p], masks[n,m] * alpha_mask[m]); */ // didn't work, because the alpha can go negative, resulting in nan.
                 Rt[n,m] = mu[m] * exp(-X[m][n] * masked_alpha);
             }
             

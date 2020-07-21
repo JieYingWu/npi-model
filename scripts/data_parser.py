@@ -354,7 +354,7 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
     final_dict['X_partial'] = X_partial
 
     if masks is not None:
-        mask_covariates = np.array(mask_covariates)
+        mask_covariates = np.array(mask_covariates).T
         final_dict['masks'] = mask_covariates
         final_dict['masks_partial'] = mask_covariates
     
