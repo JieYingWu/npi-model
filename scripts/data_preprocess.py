@@ -9,6 +9,7 @@ import json
 pd.set_option('mode.chained_assignment', None)
 THRESHOLD = 50
 
+
 def remove_negative_regions(df_cases, df_deaths, idx):
     """"
     Returns:
@@ -269,7 +270,7 @@ def select_regions(cases, deaths, interventions, M, population, mobility_dict, f
         cases, deaths, interventions, population = merge_supercounties(
             cases, deaths, interventions, population, clustering=clustering, save_supercounties=(fips_list is None),
             load_supercounties=load_supercounties)
-
+        
     return cases, deaths, interventions, population, mobility_dict
 
 
