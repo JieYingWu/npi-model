@@ -233,22 +233,8 @@ class MainStanModel():
                 M, data_dir, processing=self.processing, state=False, fips_list=self.fips_list,
                 validation=self.validation_withholding, supercounties=self.supercounties,
                 clustering=self.clustering, mobility=self.use_mobility, load_supercounties=self.load_supercounties,
-                avg_window=self.avg_window)
+                avg_window=self.avg_window, mask_term=(self.model == 'mask'))
             weighted_fatalities = self.get_weighted_fatalities(regions)
-            
-            # # wf_file = join(self.data_dir, 'us_data', 'weighted_fatality.csv')
-            # wf_file = join(self.data_dir, 'us_data', 'weighted_fatality_new.csv')
-            
-            # weighted_fatalities = np.loadtxt(wf_file, skiprows=1, delimiter=',', dtype=str)
-            # if self.supercounties:
-            #     supercounty_weighted_fatalities = self.load_supercounties_fatalities()
-            #     weighted_fatalities = np.concatenate([weighted_fatalities, supercounty_weighted_fatalities], axis=0)
-            #     # grab just the rows that are in regions, in that order
-            #     weighted_fatalities = weighted_fatalities
-            #     new_weighted_fatalities = []
-            #     for fips in regions:
-            #         new_weighted_fatalities.append(weighted_fatalities[weighted_fatalities[:, 0] == str(fips).zfill(5)][-1])
-            #     weighted_fatalities = np.stack(new_weighted_fatalities)
                 
         elif mode == 'US_state':
             stan_data, regions, start_date, geocode = data_parser.get_data(
@@ -309,10 +295,10 @@ class MainStanModel():
                 sm = pystan.StanModel(file='stan-models/us_val.stan')
             elif self.model == 'old_alpha':
                 sm = pystan.StanModel(file='stan-models/base_us.stan')
-            elif self.model == 'pop':
+            elif self.model == 'mask':
                 sm = pystan.StanModel(file='stan-models/us_mask.stan')
-                exit()
-                # sm = pystan.StanModel(file='stan-models/us_new.stan')
+            elif self.model == 'pop':
+                sm = pystan.StanModel(file='stan-models/us_new.stan')
             elif self.model == 'mobility':
                 sm = pystan.StanModel(file='stan-models/base_us_mobility.stan')
             else:
@@ -499,7 +485,7 @@ if __name__ == '__main__':
     parser.add_argument('-M', default=25, type=int, help='threshold for relevant counties')
     parser.add_argument('-val-1', '--validation-withholding', action='store_true', help='whether to apply validation by withholding days')
     parser.add_argument('-val-2', '--validation-on-county', action='store_true', help='validate the model by withholding the last county (or supercounty) and learning new R_0 values on the withheld county from the alphas learned')
-    parser.add_argument('--model', default='pop', choices=['old_alpha', 'new_alpha', 'pop', 'mobility'], help='which model to use')
+    parser.add_argument('--model', default='pop', choices=['old_alpha', 'new_alpha', 'pop', 'mobility', 'mask'], help='which model to use')
     parser.add_argument('--plot', action='store_true', help='add for generating plots')
     parser.add_argument('--fips-list', default=None, nargs='+', help='fips codes to run the model on')
     parser.add_argument('--cluster', default=None, type=int, help='cluster label to draw fips-list from')
