@@ -311,6 +311,8 @@ class MainStanModel():
                 sm = pystan.StanModel(file='stan-models/base_us.stan')
             elif self.model == 'pop':
                 sm = pystan.StanModel(file='stan-models/us_new.stan')
+            elif self.model == 'rollback':
+                sm = pystan.StanModel(file='stan-models/us_rollback.stan')
             elif self.model == 'mobility':
                 sm = pystan.StanModel(file='stan-models/base_us_mobility.stan')
             else:
@@ -497,13 +499,13 @@ if __name__ == '__main__':
     parser.add_argument('-M', default=25, type=int, help='threshold for relevant counties')
     parser.add_argument('-val-1', '--validation-withholding', action='store_true', help='whether to apply validation by withholding days')
     parser.add_argument('-val-2', '--validation-on-county', action='store_true', help='validate the model by withholding the last county (or supercounty) and learning new R_0 values on the withheld county from the alphas learned')
-    parser.add_argument('--model', default='pop', choices=['old_alpha', 'new_alpha', 'pop', 'mobility'], help='which model to use')
+    parser.add_argument('--model', default='pop', choices=['old_alpha', 'new_alpha', 'pop', 'mobility', 'rollback'], help='which model to use')
     parser.add_argument('--plot', action='store_true', help='add for generating plots')
     parser.add_argument('--fips-list', default=None, nargs='+', help='fips codes to run the model on')
     parser.add_argument('--cluster', default=None, type=int, help='cluster label to draw fips-list from')
     parser.add_argument('-s', '--save-tag', default='', type=str, help='tag for saving the summary, geocodes and start-dates.')
-    parser.add_argument('--iter', default=1000, type=int, help='iterations for the model')
-    parser.add_argument('--warmup-iter', default=500, type=int, help='warmup iterations for the model')
+    parser.add_argument('--iter', default=5000, type=int, help='iterations for the model')
+    parser.add_argument('--warmup-iter', default=2500, type=int, help='warmup iterations for the model')
     parser.add_argument('--max-treedepth', default=15, type=int, help='maximum tree depth for the model')
     parser.add_argument('--supercounties', action='store_true', help='merge counties in the same state AND cluster with insufficient cases')
     parser.add_argument('--load-supercounties', action='store_true', help='load the supercounties file (don\'t overwrite it)')
