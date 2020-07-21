@@ -81,6 +81,28 @@ def save_interventions(interventions, fname):
     interventions.to_csv(fname)
 
 
+def load_masks(data_dir, ref=None):
+    fname = join(data_dir, 'us_data', 'required_masks.csv')
+    if not exists(fname):
+        return None
+
+    required_masks = pd.read_csv(fname, dtype={'FIPS': str, 'implementation': str})
+    required_masks = required_masks.set_index('FIPS')
+
+    if ref is None:
+        raise NotImplementedError
+
+    masks = ref.loc[:, ['FIPS', 'STATE', 'AREA_NAME']].set_index('FIPS')
+
+    masks['required_masks'] = 740000 * np.ones(masks.shape[0], dtype=int)
+    for fips, row in required_masks.iterrows():
+        for county_fips in masks.index:
+            if county_fips[:2] == fips[:2]:
+                masks.loc[county_fips, 'required_masks'] = dt.date.fromisoformat(row['implementation']).toordinal()
+
+    return masks
+
+    
 def get_regions(data_dir, M, cases, deaths, processing, interventions, population, mobility_dict,
                 fips_list=None, validation=False, clustering=None, supercounties=False,
                 mobility=False, threshold=50, load_supercounties=False, avg_window=None):
@@ -104,6 +126,9 @@ def get_regions(data_dir, M, cases, deaths, processing, interventions, populatio
         clustering=clustering, supercounties=supercounties, load_supercounties=load_supercounties)
     cases, deaths, interventions, population, mobility_dict, fips_list = select_top_regions(
         cases, deaths, interventions, M, population, mobility_dict=mobility_dict, validation=validation, threshold=threshold)
+
+    mask_term = True            # TODO: add command line arg
+    masks = load_masks(data_dir, ref=interventions) if mask_term else None
 
     # If mobility model, get the mobility reports
     if save_tmp:
@@ -139,6 +164,8 @@ def get_regions(data_dir, M, cases, deaths, processing, interventions, populatio
     interventions.drop(['FIPS', 'STATE', 'AREA_NAME'], axis=1, inplace=True)
     interventions_colnames = interventions.columns.values
     covariates = interventions.to_numpy()
+
+    masks = masks.loc[:, 'required_masks'].to_numpy()
     
     population = population.drop(['FIPS'], axis=1)
     population = population.to_numpy()
@@ -162,15 +189,15 @@ def get_regions(data_dir, M, cases, deaths, processing, interventions, populatio
     if validation: ### to validate model
         validation_days_dict = get_validation_dict(data_dir, cases, deaths, fips_list, cases_dates)
         deaths = apply_validation(deaths, fips_list, validation_days_dict)
-    
+        
     dict_of_start_dates, final_dict = primary_calculations(
-        cases, deaths, covariates, cases_dates, population, fips_list, mobility=mobility_report)
+        cases, deaths, covariates, cases_dates, population, fips_list, masks=masks, mobility=mobility_report)
 
     return final_dict, fips_list, dict_of_start_dates, dict_of_geo
 
 
 def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, population,
-                         fips_list, mobility=None, interpolate=True):
+                         fips_list, masks=None, mobility=None, interpolate=True):
     """"
     Returns:
         final_dict: Stan_data used to feed main sampler
@@ -198,6 +225,8 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
     covariate12 = []
     covariate13 = []
 
+    mask_covariates = []
+
     cases = []
     deaths = []
     N_arr = []
@@ -218,6 +247,7 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
             covariates2.append(np.where(req_dates >= covariates[i, col], 1, 0))
         covariates2 = np.array(covariates2).T
 
+
         N = len(case)
         N_arr.append(N)
         # N2 = 120 # initial submission
@@ -232,11 +262,17 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
         addlst = [covariates2[N - 1]] * (forecast)
         add_1 = [-1] * forecast ### padding for extra days
 
+        if masks is not None:
+            # append mask info, pad it with the last value
+            masks_req = np.where(req_dates >= dt.date.fromordinal(masks[i]), 1, 0)
+            masks_req = np.concatenate([masks_req, masks_req[-1] * np.ones(forecast)])
+            mask_covariates.append(masks_req)
+
         case = np.append(case, add_1, axis=0)
         death = np.append(death, add_1, axis=0)
         cases.append(case)
         deaths.append(death)
-        
+
         covariates2 = np.append(covariates2, addlst, axis=0)
         covariate1.append(covariates2[:, 0])  # stay at home
         covariate2.append(covariates2[:, 1])  # >50 gatherings
@@ -260,7 +296,7 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
             fill_arr = np.array(3*[add_1]).T
             tmp = np.append(tmp, fill_arr, axis=0)
             mobility_list.append(tmp)
-        
+
     covariate1 = np.array(covariate1).T
     covariate2 = np.array(covariate2).T
     covariate3 = np.array(covariate3).T
@@ -276,7 +312,8 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
     covariate13 = np.array(covariate13).T
     cases = np.array(cases).T
     deaths = np.array(deaths).T
-    
+
+    # the indicators
     X = np.dstack([covariate1, covariate2, covariate3, covariate4, covariate5, covariate6,
                    covariate7, covariate8, covariate9, covariate10, covariate11, covariate12,
                    covariate13])
@@ -286,7 +323,7 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
         X = np.dstack(mobility_list)
         X = np.moveaxis(X, 2, 0)
     X_partial = X
-        
+
     ## populate for stan parameters
     final_dict = {}
     final_dict['M'] = len(fips_list)
@@ -315,6 +352,11 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
     final_dict['pop'] = population.astype(np.float).reshape((len(fips_list)))
     final_dict['X'] = X
     final_dict['X_partial'] = X_partial
+
+    if masks is not None:
+        mask_covariates = np.array(mask_covariates)
+        final_dict['masks'] = mask_covariates
+        final_dict['masks_partial'] = mask_covariates
     
     ## New covariate for foot traffic data
     if mobility is not None:
