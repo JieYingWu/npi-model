@@ -128,8 +128,11 @@ def get_regions(data_dir, M, cases, deaths, processing, interventions, populatio
     cases, deaths, interventions, population, mobility_dict, fips_list = select_top_regions(
         cases, deaths, interventions, M, population, mobility_dict=mobility_dict, validation=validation, threshold=threshold)
 
-    masks = load_masks(data_dir, ref=interventions) if mask_term else None
-    masks = masks.loc[:, 'required_masks'].to_numpy()
+    if mask_term is None:
+        masks = None
+    else:
+        masks = load_masks(data_dir, ref=interventions)
+        masks = masks.loc[:, 'required_masks'].to_numpy()
 
     # If mobility model, get the mobility reports
     if save_tmp:
@@ -250,7 +253,8 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
         N = len(case)
         N_arr.append(N)
         # N2 = 120 # initial submission
-        N2 = 170 ## decides number of days we are forecasting for
+        N2 = 180 ## decides number of days we are forecasting for
+        # TODO: fix this so N2 is read from the data, so we aren't always going over it.
 
         forecast = N2 - N
 

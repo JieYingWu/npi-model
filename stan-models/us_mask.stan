@@ -33,7 +33,7 @@ parameters {
     real<lower=0> mu[M]; // intercept for Rt
     real<lower=0> alpha_hier[8]; // sudo parameter for the hier term for alpha
     real<lower=-0.1> alpha_gaussian[5]; // sudo parameter for Gaussian prior for rollbacks
-    real alpha_mask_gaussian[M];         /* how effective are masks, for each region */
+    real<lower=-0.1,upper=0.1> alpha_mask_gaussian[M];         /* how effective are masks, for each region */
     real<lower=0> gamma;
     real<lower=0> kappa;
     real<lower=0> y[M];

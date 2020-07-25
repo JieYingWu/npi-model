@@ -243,7 +243,7 @@ class MainStanModel():
             wf_file = join(data_dir, 'us_data', 'state_weighted_fatality.csv')
             weighted_fatalities = np.loadtxt(wf_file, skiprows=1, delimiter=',', dtype=str)
 
-        self.N2 = stan_data['N2']
+        self.N2= stan_data['N2']
 
         return stan_data, regions, start_date, geocode, weighted_fatalities
 
@@ -353,7 +353,7 @@ class MainStanModel():
 
         stan_data['f'] = all_f
 
-        fit = sm.sampling(data=stan_data, iter=self.iter, warmup=self.warmup_iter, chains=4, 
+        fit = sm.sampling(data=stan_data, iter=self.iter, warmup=self.warmup_iter, chains=self.chains, 
                           thin=4, control={'adapt_delta': 0.99, 'max_treedepth': self.max_treedepth})
         # fit = sm.sampling(data=stan_data, iter=2000, chains=4, warmup=10, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
 
@@ -498,6 +498,7 @@ if __name__ == '__main__':
     parser.add_argument('--supercounties', action='store_true', help='merge counties in the same state AND cluster with insufficient cases')
     parser.add_argument('--load-supercounties', action='store_true', help='load the supercounties file (don\'t overwrite it)')
     parser.add_argument('--avg-window', default=None, type=int, help='number of days to average data over for modeling')
+    parser.add_argument('--chains', default=4, type=int, help='number of chains for the stan optimization')
     args = parser.parse_args()
 
     model = MainStanModel(args)
