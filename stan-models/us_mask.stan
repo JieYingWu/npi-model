@@ -44,7 +44,7 @@ parameters {
 
 transformed parameters {
     vector[P] alpha;
-    vector[P] masked_alpha;
+//    vector[P] masked_alpha;
     real alpha_mask[M];
     matrix[N2, M] prediction = rep_matrix(0,N2,M);
     matrix[N2, M] E_deaths  = rep_matrix(0,N2,M);
@@ -69,10 +69,10 @@ transformed parameters {
 
             /* mask the alphas */
             for (n in 1:N2){
-                for (p in 1:P)
-                    masked_alpha[p] = alpha[p] * (1 + masks[n,m] * alpha_mask[m]);
+                for (p in 9:P)
+                    alpha[p] = alpha[p] * (masks[n,m] * alpha_mask[m]);
                 /* masked_alpha[p] = pow(alpha[p], masks[n,m] * alpha_mask[m]); */ // didn't work, because the alpha can go negative, resulting in nan.
-                Rt[n,m] = mu[m] * exp(-X[m][n] * masked_alpha);
+                Rt[n,m] = mu[m] * exp(-X[m][n] * alpha);
             }
             
             /* Rt[,m] = mu[m] * exp(-X[m] * alpha); */
@@ -100,7 +100,7 @@ model {
     mu ~ normal(3.28, kappa); // citation: https://academic.oup.com/jtm/article/27/2/taaa021/5735319
     alpha_hier ~ gamma(.1667,1);
     alpha_gaussian ~ normal(0,0.1);
-    alpha_mask_gaussian ~ normal(0,0.1);    
+    alpha_mask_gaussian ~ normal(0.5,0.3);    
     ifr_noise ~ normal(1,0.1);
     for(m in 1:M){
         deaths[EpidemicStart[m]:N[m], m] ~ neg_binomial_2(E_deaths[EpidemicStart[m]:N[m], m], phi);
