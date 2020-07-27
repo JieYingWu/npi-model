@@ -1,4 +1,4 @@
- data{
+data{
   int <lower=1> M; // number of countries
   int <lower=1> P; // number of covariates
   int <lower=1> N0; // number of days for which to impute infections
@@ -30,7 +30,7 @@ transformed data {
 
 parameters {
   real<lower=0> mu[M]; // intercept for Rt
-  real<lower=0> alpha_hier[P]; // sudo parameter for the hier term for alpha
+  real<lower=0> alpha_hier[13]; // sudo parameter for the hier term for alpha
   real<lower=0> gamma;
   real<lower=0> kappa;
   real<lower=0> y[M];
@@ -51,9 +51,11 @@ transformed parameters {
       for(i in 1:8){
         alpha[i] = alpha_hier[i] - ( log(1.05) / 6.0 );
       }
+      alpha[14] = alpha_hier[14] - ( log(1.05) / 6.0)
       for(i in 9:13){
-        alpha[i] = -alpha_hier[i] + ( log(1.05) / 6.0 );
+        alpha[i] = -alpha_hier[i-8] + ( log(1.05) / 6.0 );
       }
+
       for (m in 1:M){
         prediction[1:N0,m] = rep_vector(y[m],N0); // learn the number of cases in the first N0 days
         cumm_sum[2:N0,m] = cumulative_sum(prediction[2:N0,m]);
@@ -78,7 +80,6 @@ model {
   for (m in 1:M){
       y[m] ~ exponential(1/tau);
   }
-  gamma ~ normal(0,.2);
   phi ~ normal(0,5);
   kappa ~ normal(0,0.5);
   mu ~ normal(3.28, kappa); // citation: https://academic.oup.com/jtm/article/27/2/taaa021/5735319
@@ -88,5 +89,3 @@ model {
     deaths[EpidemicStart[m]:N[m], m] ~ neg_binomial_2(E_deaths[EpidemicStart[m]:N[m], m], phi);
    }
 }
-
-
