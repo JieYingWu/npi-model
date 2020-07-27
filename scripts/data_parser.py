@@ -298,7 +298,7 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
         covariate11.append(covariates2[:, 10])  # >50 gatherings rollback
         covariate12.append(covariates2[:, 11])  # >500 gatherings rollback
         covariate13.append(covariates2[:, 12])  # restaurant dine-in rollback
-        covariate14.append(covariates2[:, 13])  # entertainment/gym rollback  
+        covariate14.append(covariates2[:, 13])  # entertainment/gym rollback
 
         # mobility
         if mobility is not None:
@@ -329,7 +329,7 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
     # the indicators
     X = np.dstack([covariate1, covariate2, covariate3, covariate4, covariate5, covariate6,
                    covariate7, covariate8, covariate9, covariate10, covariate11, covariate12,
-                   covariate13])
+                   covariate13, covariate14])
     X = np.moveaxis(X, 1, 0)
 
     if mobility is not None:
