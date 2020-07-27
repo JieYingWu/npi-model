@@ -311,11 +311,9 @@ class MainStanModel():
 
         serial_interval = np.loadtxt(join(self.data_dir, 'us_data', 'serial_interval.csv'), skiprows=1, delimiter=',')
     # Time between primary infector showing symptoms and secondary infected showing symptoms - this is a probability distribution from 1 to 100 days
-        print(serial_interval)
-        print(stan_data['N2'])
-        SI = serial_interval[0:stan_data['N2'],1]
+        SI = serial_interval[:min(stan_data['N2'], serial_interval.shape[0]),1]
+        SI = np.concatenate([SI, np.zeros(stan_data['N2'] - SI.shape[0], SI.dtype)], 0)
         stan_data['SI'] = SI
-        print(SI)
     # infection to onset
         mean1 = 5.1
         cv1 = 0.86
