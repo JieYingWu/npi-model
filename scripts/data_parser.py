@@ -341,7 +341,7 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
     final_dict = {}
     final_dict['M'] = len(fips_list)
     final_dict['N0'] = 6
-    final_dict['P'] = 13 # num of covariates (used to be 8)
+    final_dict['P'] = 14 # num of covariates (used to be 8)
     final_dict['N'] = np.asarray(N_arr, dtype=np.int)
     final_dict['N2'] = N2
     final_dict['p'] = covariates.shape[1] - 1
