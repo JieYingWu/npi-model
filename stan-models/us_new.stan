@@ -30,7 +30,7 @@ transformed data {
 
 parameters {
   real<lower=0> mu[M]; // intercept for Rt
-  real<lower=0> alpha_hier[P]; // sudo parameter for the hier term for alpha
+  real<lower=0> alpha_hier[P-5]; // sudo parameter for the hier term for alpha
   real<lower=0> gamma;
   real<lower=0> kappa;
   real<lower=0> y[M];
@@ -51,8 +51,11 @@ transformed parameters {
       for(i in 1:9){
         alpha[i] = alpha_hier[i] - ( log(1.05) / 6.0 );
       }
-      for(i in 10:14){
-        alpha[i] = -alpha_hier[i] + ( log(1.05) / 6.0 );
+      for(i in 10:12){
+        alpha[i] = -alpha_hier[i-9] + ( log(1.05) / 6.0 );
+      }
+      for(i in 13:14){
+        alpha[i] = -alpha_hier[i-8] + (log(1.05)/6.0);
       }
 
       for (m in 1:M){
@@ -80,7 +83,7 @@ model {
       y[m] ~ exponential(1/tau);
   }
   phi ~ normal(0,5);
-  kappa ~ normal(0,0.5);
+  kappa ~ normal(1,0.5);
   mu ~ normal(3.28, kappa); // citation: https://academic.oup.com/jtm/article/27/2/taaa021/5735319
   alpha_hier ~ gamma(.1667,1);
   ifr_noise ~ normal(1,0.1);
