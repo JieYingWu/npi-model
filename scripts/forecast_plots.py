@@ -44,6 +44,9 @@ def plot_forecasts_wo_dates_quantiles(quantiles_dict, confirmed_cases, county_na
     :return: beautiful magestic plot
     '''
 
+    if avg_window is None:
+        avg_window = 7
+    
     if plot_choice == 0:
         metric = "infections"
     elif plot_choice == 1:
