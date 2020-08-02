@@ -356,9 +356,9 @@ class MainStanModel():
         # fit = sm.sampling(data=stan_data, iter=2000, chains=4, warmup=10, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
 
         if validation:
-            summary_dict = fit.summary(pars={'mu', 'E_deaths', 'prediction', 'Rt_adj'})
+            summary_dict = fit.summary(pars={'mu', 'E_deaths', 'prediction', 'Rt_adj', 'mask'})
         else:
-            summary_dict = fit.summary(pars={'mu', 'alpha', 'E_deaths', 'prediction', 'Rt_adj'})
+            summary_dict = fit.summary(pars={'mu', 'alpha', 'E_deaths', 'prediction', 'Rt_adj', 'mask'})
             
         df = pd.DataFrame(summary_dict['summary'],
                           columns=summary_dict['summary_colnames'],
@@ -490,8 +490,8 @@ if __name__ == '__main__':
     parser.add_argument('--fips-list', default=None, nargs='+', help='fips codes to run the model on')
     parser.add_argument('--cluster', default=None, type=int, help='cluster label to draw fips-list from')
     parser.add_argument('-s', '--save-tag', default='', type=str, help='tag for saving the summary, geocodes and start-dates.')
-    parser.add_argument('--iter', default=5000, type=int, help='iterations for the model')
-    parser.add_argument('--warmup-iter', default=2500, type=int, help='warmup iterations for the model')
+    parser.add_argument('--iter', default=4000, type=int, help='iterations for the model')
+    parser.add_argument('--warmup-iter', default=2000, type=int, help='warmup iterations for the model')
     parser.add_argument('--max-treedepth', default=15, type=int, help='maximum tree depth for the model')
     parser.add_argument('--supercounties', action='store_true', help='merge counties in the same state AND cluster with insufficient cases')
     parser.add_argument('--load-supercounties', action='store_true', help='load the supercounties file (don\'t overwrite it)')
