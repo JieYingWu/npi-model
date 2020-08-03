@@ -311,11 +311,9 @@ class MainStanModel():
 
         serial_interval = np.loadtxt(join(self.data_dir, 'us_data', 'serial_interval.csv'), skiprows=1, delimiter=',')
     # Time between primary infector showing symptoms and secondary infected showing symptoms - this is a probability distribution from 1 to 100 days
-        print(serial_interval)
-        print(stan_data['N2'])
-        SI = serial_interval[0:stan_data['N2'],1]
+        SI = serial_interval[:min(stan_data['N2'], serial_interval.shape[0]),1]
+        SI = np.concatenate([SI, np.zeros(stan_data['N2'] - SI.shape[0], SI.dtype)], 0)
         stan_data['SI'] = SI
-        print(SI)
     # infection to onset
         mean1 = 5.1
         cv1 = 0.86
@@ -358,9 +356,9 @@ class MainStanModel():
         # fit = sm.sampling(data=stan_data, iter=2000, chains=4, warmup=10, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
 
         if validation:
-            summary_dict = fit.summary(pars={'mu', 'E_deaths', 'prediction', 'Rt_adj'})
+            summary_dict = fit.summary(pars={'mu', 'E_deaths', 'prediction', 'Rt_adj', 'mask'})
         else:
-            summary_dict = fit.summary(pars={'mu', 'alpha', 'E_deaths', 'prediction', 'Rt_adj'})
+            summary_dict = fit.summary(pars={'mu', 'alpha', 'E_deaths', 'prediction', 'Rt_adj', 'mask'})
             
         df = pd.DataFrame(summary_dict['summary'],
                           columns=summary_dict['summary_colnames'],
@@ -492,13 +490,13 @@ if __name__ == '__main__':
     parser.add_argument('--fips-list', default=None, nargs='+', help='fips codes to run the model on')
     parser.add_argument('--cluster', default=None, type=int, help='cluster label to draw fips-list from')
     parser.add_argument('-s', '--save-tag', default='', type=str, help='tag for saving the summary, geocodes and start-dates.')
-    parser.add_argument('--iter', default=1800, type=int, help='iterations for the model')
-    parser.add_argument('--warmup-iter', default=1000, type=int, help='warmup iterations for the model')
+    parser.add_argument('--iter', default=4000, type=int, help='iterations for the model')
+    parser.add_argument('--warmup-iter', default=2000, type=int, help='warmup iterations for the model')
     parser.add_argument('--max-treedepth', default=15, type=int, help='maximum tree depth for the model')
     parser.add_argument('--supercounties', action='store_true', help='merge counties in the same state AND cluster with insufficient cases')
     parser.add_argument('--load-supercounties', action='store_true', help='load the supercounties file (don\'t overwrite it)')
     parser.add_argument('--avg-window', default=None, type=int, help='number of days to average data over for modeling')
-    parser.add_argument('--chains', default=4, type=int, help='number of chains for the stan optimization')
+    parser.add_argument('--chains', default=6, type=int, help='number of chains for the stan optimization')
     args = parser.parse_args()
 
     model = MainStanModel(args)

@@ -69,14 +69,20 @@ def main(result_dir=None, end_date='5/28', data_dir='data/us_data'):
   # first, report and save the alpha values:
   alpha_indices = list(filter(lambda x : re.match(r'alpha\[\d\]', x) is not None, indices))
   alphas = summary.loc[alpha_indices, ['mean', 'sd']]
-  alphas['NPI'] = ['I1: Stay at home',
-                   'I2: >50 gathering',
-                   'I3: >500 gathering',
-                   'I4: Public schools',
-                   'I5: Restaurant dine-in',
-                   'I6: Entertainment/gym',
-                   'I7: Federal guidelines',
-                   'I8: Foreign travel ban']
+  alphas['NPI'] = ['$I_1$: Stay at home',
+                   '$I_2$: >50 gathering',
+                   '$I_3$: >500 gathering',
+                   '$I_4$: Public schools',
+                   '$I_5$: Restaurant dine-in',
+                   '$I_6$: Entertainment/gym',
+                   '$I_7$: Federal guidelines',
+                   '$I_8$: Foreign travel ban',
+                   '$I_9$: Mask mandate',
+                   '$I_{10}:$',
+                   '$I_{11}:$',
+                   '$I_{12}:$',
+                   '$I_{13}:$',
+                   '$I_{14}:$'][:alphas.shape[0]]
   alphas = alphas.set_index('NPI')
   print(alphas)
   print('================================================================================')
@@ -94,7 +100,6 @@ def main(result_dir=None, end_date='5/28', data_dir='data/us_data'):
 
       cluster = clustering[fips]
       row['County'] = '{fips}\n{Area_Name}, {State}'.format(fips=fips, **counties.loc[fips])
-<<<<<<< HEAD
     else:
       cluster = fips.split('_')[-1]
       state_fips = fips.split('_')[0]
@@ -112,20 +117,6 @@ def main(result_dir=None, end_date='5/28', data_dir='data/us_data'):
 
     if fips in cases.index:
       num_cases = sum(cases.loc[fips][1:])
-=======
-      row['Cluster'] = cluster
-
-      row['R_0 (std)'] = '{mean:.03f} ({sd:.03f})'.format(**summary.loc[f'Rt_adj[1,{i + 1}]'])
-      end_date_idx = dt.date(2020, *map(int, end_date.split('/'))).toordinal() - dt.date(2020, *map(int, start_dates[i].split('/')[:2])).toordinal()
-      row[f'R_{end_date} (std)'] = '{mean:.03f} ({sd:.03f})'.format(**summary.loc[f'Rt_adj[{end_date_idx + 1},{i + 1}]'])
- 
-      # get the number of predicted cases
-      prediction_indices = list(filter(lambda x : re.match(r'prediction\[\d+,' + str(i + 1) + r'\]', x) is not None, indices))
-      pred_cases = sum(list(summary.loc[prediction_indices, 'mean'])[:end_date_idx + 1])
-      row['# (%) infected as predicted'] = '{:d} ({:.01f})'.format(int(pred_cases), pred_cases / populations[fips] * 100)
-
-      num_cases = cases.loc[fips][-1]
->>>>>>> bb2bbe0ecd5a0683f2256e68c64b55a794fa6fb1
       row['Measured cases'] = num_cases
       row['Fatality rate (measured death/cases)'] = f'{deaths.loc[fips][-1] / num_cases * 100:.02f}%'
       readable_summary.append(row)

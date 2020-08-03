@@ -95,11 +95,11 @@ def load_masks(data_dir, ref=None):
 
     masks = ref.loc[:, ['FIPS', 'STATE', 'AREA_NAME']].set_index('FIPS')
 
-    masks['required_masks'] = 740000 * np.ones(masks.shape[0], dtype=int)
+    masks['required_masks'] = [dt.date.fromordinal(740000) for _ in range(masks.shape[0])] # * np.ones(masks.shape[0], dtype=int)
     for fips, row in required_masks.iterrows():
         for county_fips in masks.index:
             if county_fips[:2] == fips[:2]:
-                masks.loc[county_fips, 'required_masks'] = dt.date(*map(int, row['implementation'].split('-'))).toordinal()
+                masks.loc[county_fips, 'required_masks'] = dt.date(*map(int, row['implementation'].split('-')))
 
     return masks
 
@@ -133,6 +133,9 @@ def get_regions(data_dir, M, cases, deaths, processing, interventions, populatio
     else:
         masks = load_masks(data_dir, ref=interventions)
         masks = masks.loc[:, 'required_masks'].to_numpy()
+
+    masks = load_masks(data_dir, ref=interventions).set_index(interventions.index)
+    interventions.insert(3 + 8, 'required_masks', masks['required_masks'])
 
     # If mobility model, get the mobility reports
     if save_tmp:
@@ -213,6 +216,8 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
     start_dates = index1 + 1 - index2
     dict_of_start_dates = {}
 
+    N2 = df_deaths.shape[0]
+    
     covariate1 = []
     covariate2 = []
     covariate3 = []
@@ -226,6 +231,7 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
     covariate11 = []
     covariate12 = []
     covariate13 = []
+    covariate14 = []    
 
     mask_covariates = []
 
@@ -253,23 +259,25 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
         N = len(case)
         N_arr.append(N)
         # N2 = 120 # initial submission
-        N2 = 180 ## decides number of days we are forecasting for
-        # TODO: fix this so N2 is read from the data, so we aren't always going over it.
+        # N2 = 180 ## decides number of days we are forecasting for
+        # TODO: N2 is now set up above based on the shapes of the arrays.
 
         forecast = N2 - N
 
         if forecast < 0:
             print("FIPS: ", fips_list[i], " N: ", N)
             print("Error!!!! Number of days from data is greater than number of days for prediction!")
-            N2 = N
+            raise RuntimeError('TODO: fix this scenario')
+            N2 = N              # TODO: what is this doing?
         addlst = [covariates2[N - 1]] * (forecast)
         add_1 = [-1] * forecast ### padding for extra days
 
         if masks is not None:
+            pass
             # append mask info, pad it with the last value
-            masks_req = np.where(req_dates >= dt.date.fromordinal(masks[i]), 1, 0)
-            masks_req = np.concatenate([masks_req, masks_req[-1] * np.ones(forecast)])
-            mask_covariates.append(masks_req)
+            # masks_req = np.where(req_dates >= dt.date.fromordinal(masks[i]), 1, 0)
+            # masks_req = np.concatenate([masks_req, masks_req[-1] * np.ones(forecast)])
+            # mask_covariates.append(masks_req)
 
         case = np.append(case, add_1, axis=0)
         death = np.append(death, add_1, axis=0)
@@ -284,12 +292,13 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
         covariate5.append(covariates2[:, 4])  # restaurant dine-in
         covariate6.append(covariates2[:, 5])  # entertainment/gym
         covariate7.append(covariates2[:, 6])  # federal guidelines
-        covariate8.append(covariates2[:, 7])  # federal guidelines
-        covariate9.append(covariates2[:, 8])  # stay at home rollback
-        covariate10.append(covariates2[:, 9])  # >50 gatherings rollback
-        covariate11.append(covariates2[:, 10])  # >500 gatherings rollback
-        covariate12.append(covariates2[:, 11])  # restaurant dine-in rollback
-        covariate13.append(covariates2[:, 12])  # entertainment/gym rollback
+        covariate8.append(covariates2[:, 7])  # masks required
+        covariate9.append(covariates2[:, 8])  
+        covariate10.append(covariates2[:, 9])  # stay at home rollback
+        covariate11.append(covariates2[:, 10])  # >50 gatherings rollback
+        covariate12.append(covariates2[:, 11])  # >500 gatherings rollback
+        covariate13.append(covariates2[:, 12])  # restaurant dine-in rollback
+        covariate14.append(covariates2[:, 13])  # entertainment/gym rollback
 
         # mobility
         if mobility is not None:
@@ -313,13 +322,14 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
     covariate11 = np.array(covariate11).T
     covariate12 = np.array(covariate12).T
     covariate13 = np.array(covariate13).T
+    covariate14 = np.array(covariate14).T    
     cases = np.array(cases).T
     deaths = np.array(deaths).T
 
     # the indicators
     X = np.dstack([covariate1, covariate2, covariate3, covariate4, covariate5, covariate6,
                    covariate7, covariate8, covariate9, covariate10, covariate11, covariate12,
-                   covariate13])
+                   covariate13, covariate14])
     X = np.moveaxis(X, 1, 0)
 
     if mobility is not None:
@@ -331,7 +341,7 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
     final_dict = {}
     final_dict['M'] = len(fips_list)
     final_dict['N0'] = 6
-    final_dict['P'] = 13 # num of covariates (used to be 8)
+    final_dict['P'] = 14 # num of covariates (used to be 8)
     final_dict['N'] = np.asarray(N_arr, dtype=np.int)
     final_dict['N2'] = N2
     final_dict['p'] = covariates.shape[1] - 1
@@ -352,6 +362,7 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
     final_dict['covariate11'] = covariate11
     final_dict['covariate12'] = covariate12
     final_dict['covariate13'] = covariate13
+    final_dict['covariate14'] = covariate14
     final_dict['pop'] = population.astype(np.float).reshape((len(fips_list)))
     final_dict['X'] = X
     final_dict['X_partial'] = X_partial
@@ -360,7 +371,7 @@ def primary_calculations(df_cases, df_deaths, covariates, df_cases_dates, popula
         mask_covariates = np.array(mask_covariates).T
         final_dict['masks'] = mask_covariates
         final_dict['masks_partial'] = mask_covariates
-    
+
     ## New covariate for foot traffic data
     if mobility is not None:
         final_dict['P'] = 3
