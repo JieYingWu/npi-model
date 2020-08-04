@@ -28,7 +28,13 @@ class CountyGenerator():
         scale = shape / self.alpha_mu
         alphas = np.random.gamma(self.alpha_mu, self.alpha_var, num_alphas)/2.5
 #        alphas = np.ones(num_alphas)*0.2
-        self.alphas = -1*alphas
+        self.alphas = np.zeros(14)
+        self.alphas[0:8] = -1*alphas
+        self.alphas[9] = -alphas[0]
+        self.alphas[10] = -alphas[1]
+        self.alphas[11] = -alphas[2]
+        self.alphas[12] = -alphas[4]
+        self.alphas[13] = -alphas[5]
         print(self.alphas)
 
         
@@ -119,22 +125,14 @@ class CountyGenerator():
     
 # Get interventions as binary timeseries
 def parse_interventions(stan_data, data_dir='data'):
-    i1 = np.expand_dims(stan_data['covariate1'], axis=2)
-    i2 = np.expand_dims(stan_data['covariate2'], axis=2)
-    i3 = np.expand_dims(stan_data['covariate3'], axis=2)
-    i4 = np.expand_dims(stan_data['covariate4'], axis=2)
-    i5 = np.expand_dims(stan_data['covariate5'], axis=2)
-    i6 = np.expand_dims(stan_data['covariate6'], axis=2)
-    i7 = np.expand_dims(stan_data['covariate7'], axis=2)
-    i8 = np.expand_dims(stan_data['covariate8'], axis=2)
-    interventions = np.concatenate((i1, i2, i3, i4, i5, i6, i7, i8), axis=2)
-    interventions = interventions.transpose(1, 0, 2)
+    interventions = stan_data['X']
+#    interventions = interventions.transpose(1, 0, 2)
     return interventions
     
     
 if __name__ == '__main__':
     data_dir = sys.argv[1]
-    N2 = 120
+    N2 = 194
 
     alpha_mu = 0.5
     alpha_var = 1
@@ -147,8 +145,8 @@ if __name__ == '__main__':
 #    for i in range(len(regions)):
 #        regions[i] = str(regions[i])
     stan_data, regions, start_date, geocode = get_data(100, 'data', processing=Processing.REMOVE_NEGATIVE_VALUES, state=False)
-
-    r0_file_path = join('results', 'real_county', 'summary.csv')
+    
+    r0_file_path = join('results', 'region_specific_2000_iter', 'cluster_2', 'summary.csv')
     r0_file = pd.read_csv(r0_file_path)
     
     means = r0_file['mean'].values
@@ -163,7 +161,6 @@ if __name__ == '__main__':
     si = serial_interval[:,1]
 
     generator = CountyGenerator(N2, si, num_alphas, alpha_mu, alpha_var)
-#    generator.alphas = [-0.124371438107218, -0.196069499889346, -0.194197939254073, -0.495431571118872, -0.378146551081655, -0.137932933788039, -0.29558366952368, -0.422007707986038]
 
     interventions = parse_interventions(stan_data)
     all_rt = {}
