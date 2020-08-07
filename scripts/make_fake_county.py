@@ -30,11 +30,11 @@ class CountyGenerator():
 #        alphas = np.ones(num_alphas)*0.2
         self.alphas = np.zeros(14)
         self.alphas[0:8] = -1*alphas
-        self.alphas[9] = -alphas[0]
-        self.alphas[10] = -alphas[1]
-        self.alphas[11] = -alphas[2]
-        self.alphas[12] = -alphas[4]
-        self.alphas[13] = -alphas[5]
+        self.alphas[9] = -self.alphas[0]
+        self.alphas[10] = -self.alphas[1]
+        self.alphas[11] = -self.alphas[2]
+        self.alphas[12] = -self.alphas[4]
+        self.alphas[13] = -self.alphas[5]
         print(self.alphas)
 
         
@@ -144,7 +144,8 @@ if __name__ == '__main__':
 
 #    for i in range(len(regions)):
 #        regions[i] = str(regions[i])
-    stan_data, regions, start_date, geocode = get_data(100, 'data', processing=Processing.REMOVE_NEGATIVE_VALUES, state=False)
+    stan_data, regions, start_date, geocode = get_data(100, 'data', threshold=500, processing=Processing.REMOVE_NEGATIVE_VALUES, state=False)
+    print(regions)
     
     r0_file_path = join('results', 'region_specific_2000_iter', 'cluster_2', 'summary.csv')
     r0_file = pd.read_csv(r0_file_path)
