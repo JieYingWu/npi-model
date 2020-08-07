@@ -107,8 +107,8 @@ def plot_mask_alphas(result_dirs):
       # dtick=5,
       # yanchor='middle'
     ))
-  fig.show()
-  # fig.write_image(join('visualizations', f'mask_alphas.pdf'), scale=3)
+  #fig.show()
+  fig.write_image(join('visualizations', f'mask_alphas.pdf'), scale=3)
   
 
 def main(result_dir):
