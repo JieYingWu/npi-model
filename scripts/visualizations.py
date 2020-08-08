@@ -146,9 +146,9 @@ def plot_supercounties(state=None, num_clusters=5):
       color=y,
       color_discrete_map=color_discrete_map,
     )
-    fig.update_layout(showlegend=False, font=dict(family='Times New Roman'))
-    fig.update_geos(fitbounds="locations", visible=False)
-    fig.write_image(join('visualizations', f'{supercounty}_supercounty.pdf'), scale=3)
+  fig.update_layout(showlegend=False, font=dict(family='Times New Roman'))
+  fig.update_geos(fitbounds="locations", visible=False)
+  fig.write_image(join('visualizations', f'{supercounty}_supercounty.pdf'), scale=3)
 
 
 def make_plots(state=None):

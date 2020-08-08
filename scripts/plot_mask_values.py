@@ -7,6 +7,7 @@ import wget
 import re
 from glob import glob
 import argparse
+import numpy as np
 
 import plotly.express as px
 import plotly.graph_objects as go
@@ -79,17 +80,21 @@ def get_mask_alphas(result_dirs):
   return mask_data
 
 
-def plot_mask_alphas(result_dirs):
+def plot_mask_alphas(result_dirs, tag=''):
   mask_alphas = get_mask_alphas(result_dirs)
   df = pd.DataFrame.from_dict(mask_alphas, orient='index', columns=['Alpha Value'])
+  df['Alpha Value'] = np.log10(df['Alpha Value'])
 
+  lower_bound = df['Alpha Value'].min()
+  upper_bound = np.quantile(df['Alpha Value'], 0.99)
+  
   fig = px.choropleth(
     df,
     geojson=counties_geojson,
     locations=df.index,
     color='Alpha Value',
-    color_continuous_scale='Reds',
-    # range_color=()
+    color_continuous_scale='Blues',
+    range_color=(lower_bound, upper_bound)
   )
   fig.update_geos(fitbounds="locations", visible=False)
   fig.update_layout(
@@ -101,19 +106,20 @@ def plot_mask_alphas(result_dirs):
       thickness=10,
       lenmode='pixels',
       len=300,
-      # ticks='outside',
-      # tickvals=[0, 10, 20, 30, 40, 50],
-      # ticktext=['0', '10', '20', '30', '40', '50+'],
-      # dtick=5,
-      # yanchor='middle'
+      ticks='outside',
+      tickvals=[i for i in range(-5, 1)] + [upper_bound],
+      ticktext=[f'{10**i}' for i in range(-5, 1)] + [f'{10**upper_bound:.02f}+'],
+      dtick=5,
+      yanchor='middle'
     ))
-  #fig.show()
-  fig.write_image(join('visualizations', f'mask_alphas.pdf'), scale=3)
+  # fig.show()
+  tag = '_' + tag if tag else tag
+  fig.write_image(join('visualizations', f'mask_alphas{tag}.pdf'), width=1600, height=800)
   
 
-def main(result_dir):
+def main(result_dir, tag=''):
   result_dirs = []
-  for r in result_dir:
+  for i, r in enumerate(result_dir):
     if is_result_dir(r):
       result_dirs.append(r)
     else:
@@ -127,5 +133,6 @@ if __name__ == '__main__':
 
   parser.add_argument('result_dir', nargs='+', type=str,
                       help='path to result dir to load the summary.csv, or a dir containing several such dirs')
+  
   args = parser.parse_args()
   main(args.result_dir)
