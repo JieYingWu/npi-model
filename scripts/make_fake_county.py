@@ -135,7 +135,7 @@ if __name__ == '__main__':
     N2 = 194
 
     alpha_mu = 0.5
-    alpha_var = 1
+    alpha_var = 0.3
     num_alphas = 8
 
 #    interventions = get_npis(data_dir)
@@ -145,9 +145,8 @@ if __name__ == '__main__':
 #    for i in range(len(regions)):
 #        regions[i] = str(regions[i])
     stan_data, regions, start_date, geocode = get_data(100, 'data', threshold=500, processing=Processing.REMOVE_NEGATIVE_VALUES, state=False)
-    print(regions)
     
-    r0_file_path = join('results', 'region_specific_2000_iter', 'cluster_2', 'summary.csv')
+    r0_file_path = join('results', 'real_county', 'summary.csv')
     r0_file = pd.read_csv(r0_file_path)
     
     means = r0_file['mean'].values
@@ -156,7 +155,7 @@ if __name__ == '__main__':
 
     all_r0 = {}
     for r in range(M):
-        all_r0[str(geocode[r]).zfill(5)] = means[r]
+        all_r0[geocode[r]] = means[r]
 
     serial_interval = np.loadtxt(join('data', 'us_data', 'serial_interval.csv'), skiprows=1, delimiter=',')
     si = serial_interval[:,1]
@@ -200,7 +199,7 @@ if __name__ == '__main__':
     deaths_df = real_deaths_df.copy()
 
     for r in range(M):
-        region = str(geocode[r]).zfill(5)
+        region = geocode[r]
 
         simulated_cases = all_cases[region][0:len(real_cases_df.loc[region, start_date[r]:])]
         cases_df.loc[region, start_date[r]:] = simulated_cases

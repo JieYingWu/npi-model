@@ -29,15 +29,14 @@ data_dir = sys.argv[1]
 #    regions[i] = str(regions[i])
 #filename = 'data/us_data/clustering.csv'
     
-tag = 'simulated_county' 
+tag = 'real_county' 
 #regions.sort()
 M = len(regions) 
-#print('Running for ' + str(M) + ' FIPS')
+print('Running for ' + str(M) + ' FIPS')
 
 #stan_data, regions, start_date, geocode = get_data(M, data_dir, processing=Processing.REMOVE_NEGATIVE_VALUES, state=False, fips_list=regions, threshold=5)w
-stan_data, regions, start_date, geocode = get_data(M, data_dir, processing=Processing.REMOVE_NEGATIVE_VALUES, state=False, fips_list=regions)
+stan_data, regions, start_date, geocode = get_data(M, data_dir, processing=Processing.REMOVE_NEGATIVE_VALUES, state=False, fips_list=regions, threshold=0)
 #print(stan_data['M'])
-#exit()
 
 for i in range(len(regions)):
     regions[i] = int(regions[i])

@@ -140,9 +140,9 @@ def get_regions(data_dir, M, cases, deaths, processing, interventions, populatio
     # If mobility model, get the mobility reports
     if save_tmp:
         print('saving tmp data')
-        cases.to_csv('data/tmp_cases.csv')
-        deaths.to_csv('data/tmp_deaths.csv')
-        save_interventions(interventions, 'data/tmp_interventions.csv')
+        cases.to_csv(join(data_dir, 'tmp_cases.csv'))
+        deaths.to_csv(join(data_dir, 'tmp_deaths.csv'))
+        save_interventions(interventions, join(data_dir, 'tmp_interventions.csv'))
     print('CASES', cases, sep='\n')
     print('DEATHS', deaths, sep='\n')
     print('INTERVENTIONS', interventions, sep='\n')
