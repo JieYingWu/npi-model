@@ -152,8 +152,11 @@ class MainStanModel():
 
         validx = 0
         trainidx = 0
+
+        sort_indices = np.argsort(stan_data['pop'])[::-1]
+        sorted_regions = [regions[i] for i in sort_indices]
         
-        for i, region in enumerate(regions):
+        for i, region in enumerate(sorted_regions):
             c = self.get_cluster(region)
             count = counts.get(c, 0)
             if count < counties_per_cluster:

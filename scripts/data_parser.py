@@ -91,7 +91,7 @@ def load_masks(data_dir, ref=None):
     required_masks = required_masks.set_index('FIPS')
 
     if ref is None:
-        raise NotImplementedError
+        return required_masks
 
     masks = ref.loc[:, ['FIPS', 'STATE', 'AREA_NAME']].set_index('FIPS')
 
