@@ -14,7 +14,8 @@ from scipy import stats
 
 
 # END_DATE = datetime.date(2020,5,28) old
-END_DATE = datetime.date(2020,7,7)  # new
+# END_DATE = datetime.date(2020,7,7)  # new
+END_DATE = datetime.date(2020,8,2)  # new
 
 class MobilityReportParser():
     def __init__(self):
@@ -290,6 +291,7 @@ class Comparison():
             for category_name in self.mobility_parser.category_names:
                 # some categories could be missing, fill those with NANs
                 if category_name in available_categories_dict:
+                    # print(f'Calculating for {category_name}')
                     # print(current_deaths)
                     # print(available_categories_dict[category_name])
                     r_deaths, p_deaths = stats.pearsonr(current_deaths, available_categories_dict[category_name])
