@@ -1,7 +1,7 @@
  data{
-  int <lower=1> M; // number of countries
-  int <lower=1> P; // number of covariates
-  int <lower=1> N0; // number of days for which to impute infections
+  int<lower=1> M; // number of countries
+  int<lower=1> P; // number of covariates
+  int<lower=1> N0; // number of days for which to impute infections
   int<lower=1> N[M]; // days of observed data for country m. each entry must be <= N2
   int<lower=1> N2; // days of observed data + # of days to forecast
   int cases[N2,M]; // reported cases
@@ -91,9 +91,9 @@ generated quantities {
       matrix[N2,M] cumm_sum0 = rep_matrix(0,N2,M);
       for (m in 1:M){
          for (i in 2:N0){
-          cumm_sum0[i,m] = cumm_sum0[i-1,m] + y[m]; 
+          cumm_sum0[i,m] = cumm_sum0[i-1,m] + y[m];
         }
-        prediction0[1:N0,m] = rep_vector(y[m],N0); 
+        prediction0[1:N0,m] = rep_vector(y[m],N0);
         for (i in (N0+1):N2) {
           real convolution0 = dot_product(sub_col(prediction0, 1, m, i-1), tail(SI_rev, i-1));
           cumm_sum0[i,m] = cumm_sum0[i-1,m] + prediction0[i-1,m];
