@@ -19,6 +19,8 @@ from utils import get_cluster, get_npis, get_counties_isolated_NPIs
 #            34029, 12099, 12081, 31081, 10005, 4015, 12103, 25001, 37089, 12021, 40041, 12071, 24029, 26007, 12085, 25003, 12101, 12069, 26001, 12127,
 #            17031, 34003, 34031, 6037, 26163, 34013, 25017, 34017, 34023, 34039, 9001, 33011, 26125, 9003, 34027, 36119, 34025, 25009, 18097, 42091,
 #            39093, 33013, 37047, 1017, 21085, 17027, 37037, 26155, 28075, 28057, 9011, 9005, 48477, 28069, 28085, 28109, 5075, 5069, 51065, 40097]
+regions = ['04013', '06037', '06059', '06065', '06073', '09001', '09003', '09009', '11001', '12011', '12086', '12099', '17031', '17043', '18097', '22051', '22071', '24005', '24031', '24033', '25005', '25009', '25013', '25017', '25021', '25023', '25025', '25027', '26099', '26125', '26163', '27053', '29189', '32003', '34003', '34007', '34013', '34017', '34021', '34023', '34025', '34027', '34029', '34031', '34035', '34039', '36029', '36059', '36061', '36087', '36103', '36119', '39049', '42017', '42045', '42091', '42101', '48029', '48113', '48201', '48215', '51059', '53033']
+
 data_dir = sys.argv[1]
 #interventions = get_npis(data_dir)
 #regions = get_counties_isolated_NPIs(interventions, 'public schools').values.tolist()
@@ -27,15 +29,14 @@ data_dir = sys.argv[1]
 #    regions[i] = str(regions[i])
 #filename = 'data/us_data/clustering.csv'
     
-tag = 'simulated_county' 
+tag = 'real_county' 
 #regions.sort()
-M = 100#len(regions) 
-#print('Running for ' + str(M) + ' FIPS')
+M = len(regions) 
+print('Running for ' + str(M) + ' FIPS')
 
 #stan_data, regions, start_date, geocode = get_data(M, data_dir, processing=Processing.REMOVE_NEGATIVE_VALUES, state=False, fips_list=regions, threshold=5)w
-stan_data, regions, start_date, geocode = get_data(M, data_dir, processing=Processing.REMOVE_NEGATIVE_VALUES, state=False)
+stan_data, regions, start_date, geocode = get_data(M, data_dir, processing=Processing.REMOVE_NEGATIVE_VALUES, state=False, fips_list=regions, threshold=0)
 #print(stan_data['M'])
-#exit()
 
 for i in range(len(regions)):
     regions[i] = int(regions[i])
@@ -45,9 +46,7 @@ weighted_fatalities = np.loadtxt(wf_file, skiprows=1, delimiter=',', dtype=str)
 
 # Temporarily setting this so it doesn't break SI
 M = stan_data['M']
-stan_data['N2'] = 150
 N2 = stan_data['N2']
-
 
 wf_file = join(data_dir, 'us_data', 'weighted_fatality_new.csv')
 ifrs = pd.read_csv(wf_file, encoding='latin1', index_col='FIPS')
@@ -100,7 +99,7 @@ for r in range(len(regions)):
 
 stan_data['f'] = all_f
 
-fit = sm.sampling(data=stan_data, iter=300, chains=4, warmup=150, thin=4, control={'adapt_delta':0.9, 'max_treedepth':15})
+fit = sm.sampling(data=stan_data, iter=1800, chains=4, warmup=1000, thin=4, control={'adapt_delta':0.9, 'max_treedepth':15})
 # fit = sm.sampling(data=stan_data, iter=1000, chains=4, warmup=500, thin=4, control={'adapt_delta':0.9, 'max_treedepth':12})
 # fit = sm.sampling(data=stan_data, iter=2000, chains=4, warmup=10, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
 
