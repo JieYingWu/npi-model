@@ -44,13 +44,13 @@ class MobilityReportParser():
         return categories, report_files 
 
     def create_supercounties(self, supercounties):
-        dict_ = {}
+        dict_no_data = {}
         counties_no_data = []
         for category_name, df in self.categories.items():
             list_of_supercounties = []
             for (supercounty_name, county_list) in supercounties.items():
                 # get the population weighted average of the counties
-                print(f'Creating supercounty: {supercounty_name}')
+                # print(f'Creating supercounty: {supercounty_name}')
                 mobility_acc = [0 for i in range(len(self.categories[self.category_names[0]].iloc[0].values.tolist()[4:]))]
                 pop_acc = 0
                 for county in county_list:
@@ -61,8 +61,9 @@ class MobilityReportParser():
                     try:
                         mobility_current = df[df['FIPS']==int(county)].values.tolist()[0][4:]
                     except IndexError as e:
-                        print(e)
+                        print(f'{county} has empty mobility data for {category_name}')
                         counties_no_data.append(county)
+                        dict_no_data.setdefault(category_name, []).append(county)
                         continue
                     # scale by population
                     pop_current = self.pop_parser.get_population(int(county))
@@ -81,8 +82,9 @@ class MobilityReportParser():
             print('Concatenating...')
             df_to_append = pd.DataFrame(list_of_supercounties, columns=df.columns)
             df = pd.concat([df, df_to_append])
-            print(df)
-
+            self.categories[category_name] = df
+        print(counties_no_data)
+        return self.categories, dict_no_data
 
 class PopulationParser():
     """ Returns the POP_ESTIMATE_2018 of the census for a given fips code
@@ -205,7 +207,10 @@ class Comparison():
     def __init__(self, result_dir, delta, pdf):
         self.mobility_parser = MobilityReportParser()
         self.result_parser = ResultParser(result_dir)
-        self.mobility_parser.create_supercounties(self.result_parser.supercounties_dict)
+        categories, dict_no_data = self.mobility_parser.create_supercounties(self.result_parser.supercounties_dict)
+        # dump dict to json
+        with open(join(result_dir,'missing_counties.json'), 'w') as fp:
+            json.dump(dict_no_data, fp)
         self.save_to_pdf = pdf
         # print(self.mobility_parser.categories)
         self.aligned_timeseries = self.align_timeseries(self.result_parser.startdates, self.mobility_parser.categories)
