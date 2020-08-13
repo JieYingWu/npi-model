@@ -1,7 +1,7 @@
 data{
-  int <lower=1> M; // number of countries
-  int <lower=1> P; // number of covariates
-  int <lower=1> N0; // number of days for which to impute infections
+  int<lower=1> M; // number of countries
+  int<lower=1> P; // number of covariates
+  int<lower=1> N0; // number of days for which to impute infections
   int<lower=1> N[M]; // days of observed data for country m. each entry must be <= N2
   int<lower=1> N2; // days of observed data + # of days to forecast
   int cases[N2,M]; // reported cases
