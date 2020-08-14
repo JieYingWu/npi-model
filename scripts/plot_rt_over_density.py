@@ -157,7 +157,7 @@ def get_start_day(path, geo_list):
 # plot the R0
 def plot_scatter_r0(path, plot_variable):
     pos = 0
-    path_density = "../data/us_data"
+    path_density = "data/us_data"
     ax[pos].set_title("R0", pad=15)
     colors = ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00']
     x_array = []
@@ -165,6 +165,9 @@ def plot_scatter_r0(path, plot_variable):
     for cluster_n in range(0, 5):
         print(cluster_n)
         path_rt = path + str(cluster_n)
+        if not exists(path_rt):
+            x_array.append(None)
+            continue
         supercounties_dist, supercounties_names = create_geocodes_dict(path_rt, path_density)
 
         start_day_dict = get_start_day(path_rt, supercounties_names)
@@ -228,13 +231,16 @@ def plot_scatter_r0(path, plot_variable):
 
 # plot the Rt over the dates
 def plot_scatter_radj(path, date_plot, pos, plot_variable,x_array):
-    path_density = "../data/us_data"
+    path_density = "data/us_data"
     ax[pos].set_title(date_plot, pad=17)
     colors = ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00']
 
     for cluster_n in range(0, 5):
         print("Retrieving information for cluster number ...", cluster_n)
         path_rt = path + str(cluster_n)
+        if not exists(path_rt):
+            continue
+        
         supercounties_dist, supercounties_names = create_geocodes_dict(path_rt, path_density)
 
         start_day_dict = get_start_day_dict(path_rt, supercounties_names, date_plot)
@@ -309,7 +315,9 @@ if __name__ == '__main__':
     plt.rcParams.update({'font.size': 16})
 
     # lest of dates for which plots should be generated
-    dates = ['3/15/20', '3/25/20', '4/1/20', '4/10/20', '5/28/20']
+    dates = ['3/15/20', '3/25/20', '4/1/20', '4/10/20', '5/28/20', 
+             # '7/26/20'
+    ]
     plot_variable = ['transit_scores - population weighted averages aggregated from town/city level to county',
                      'Median_Household_Income_2018',
                      'Density per square mile of land area - Housing units']
@@ -317,7 +325,7 @@ if __name__ == '__main__':
                      'Relating Median Household Income with Reproductive Number over Time',
                      'Relating Density per Square Mile of Land Area with Reproductive Number over Time']
 
-    path = "../results/no_validation_clusters/cluster_"
+    path = "results/region_specific_2000_iter/cluster_"
     plot_supercounties = True  # if set to False then plot on the scatter all the counties
     use_weight_average = True  # weight the supercounties over the population
     use_death_weight = False  # used for testing, futher experiments set that weighting over the deaths is not reliable
@@ -327,6 +335,6 @@ if __name__ == '__main__':
     for idx in range(0, len(plot_variable)):
         make_all_plots(path, plot_variable[idx])
         fig.suptitle(pretty_titles[idx])
-        # plt.savefig("../results/plots/"+plot_variable[i]+'.pdf')
-        fig.tight_layout()
-        plt.show()
+        plt.savefig("results/plots/"+plot_variable[idx].replace('- ', '').replace(' ', '_').replace('/','-')+'.pdf')
+        # fig.tight_layout()
+        # plt.show()
