@@ -113,24 +113,39 @@ def read_density(path_density, selected_dict, dict_r0_supercounty, plot_variable
     return density_dict, dict_r0
 
 
-def get_rt_adj(path, geo_list, start_day_dict):
-    # 1 for deaths; 0 for infections
-    plot_name = "Rt_adj["
-    df = pd.read_csv(path + "/summary.csv", delimiter=',', index_col=0)
-    row_names = list(df.index.tolist())
-    means = {}
-    for num_of_country in range(0, len(geo_list)):
-        county_number = str(int(num_of_country) + 1) + "]"
-        for name in row_names:
-            if plot_name in name and name.split(",")[1] == county_number:
-                rowData = df.loc[name, :]
-                key = geo_list[num_of_country]
-                if start_day_dict[key] > 0:  # in case there is first few plots will miss some counties that haven't begun yet.
-                    if name.split(",")[0] == (plot_name + str(start_day_dict[key])):
-                        means[key] = rowData['mean']
-                else:
-                    means[key] = None
-    return means
+def get_reproductive_ratio(result_dir):
+  summary = pd.read_csv(join(result_dir, 'summary.csv'), index_col=0)
+  indices = [x for x in summary.index if re.match(r'Rt_adj\[\d+,\d+\]', x) is not None]
+  m = re.match(r'Rt_adj\[(?P<num_days>\d+),(?P<num_counties>\d+)\]', indices[-1])
+  num_days = int(m.group('num_days'))
+  num_counties = int(m.group('num_counties'))
+  
+  reproductive_ratio = summary.loc[indices, 'mean'].to_numpy()
+  reproductive_ratio = reproductive_ratio.reshape(num_counties, num_days)
+  # print(reproductive_ratio.shape, reproductive_ratio[0])
+  return reproductive_ratio
+
+
+# def get_rt_adj(path, geo_list, start_day_dict):
+#     # 1 for deaths; 0 for infections
+#     plot_name = "Rt_adj["
+#     df = pd.read_csv(path + "/summary.csv", delimiter=',', index_col=0)
+#     row_names = list(df.index.tolist())
+#     means = {}
+#     for num_of_country in range(0, len(geo_list)):
+#         county_number = str(int(num_of_country) + 1) + "]"
+#         for name in row_names:
+#             if plot_name in name and name.split(",")[1] == county_number:
+#                 rowData = df.loc[name, :]
+#                 key = geo_list[num_of_country]
+#                 if start_day_dict[key] > 0:  # in case there is first few plots will miss some counties that haven't begun yet.
+#                     if name.split(",")[0] == (plot_name + str(start_day_dict[key])):
+#                         means[key] = rowData['mean']
+#                 else:
+#                     means[key] = None
+#     print(means)
+#     exit()
+#     return means
 
 
 def get_start_day_dict(path, geo_list, date_plot):
@@ -238,6 +253,7 @@ def plot_scatter_radj(path, date_plot, pos, plot_variable,x_array):
     for cluster_n in range(0, 5):
         print("Retrieving information for cluster number ...", cluster_n)
         path_rt = path + str(cluster_n)
+        print(path_rt)
         if not exists(path_rt):
             continue
         

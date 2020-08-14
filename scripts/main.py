@@ -256,7 +256,7 @@ class MainStanModel():
                 clustering=self.clustering, mobility=self.use_mobility, load_supercounties=self.load_supercounties,
                 avg_window=self.avg_window, mask_term=(self.model == 'mask'))
             weighted_fatalities = self.get_weighted_fatalities(regions)
-                
+
         elif mode == 'US_state':
             stan_data, regions, start_date, geocode = data_parser.get_data(
                 M, data_dir, processing=self.processing, state=True, fips_list=self.fips_list,
@@ -283,6 +283,9 @@ class MainStanModel():
                 count += len(supercounties[region])
         print(f'running model on {len(regions)} regions (counties + supercounties) with {count} total counties')
 
+        if self.summarize:
+            exit()
+
     def run_model(self, stan_data, regions, start_date, geocode, weighted_fatalities, validation=False):
         """Run the model
 
@@ -302,10 +305,10 @@ class MainStanModel():
         # print('regions:', regions)
         # print('start_date:', start_date)
         # print('geocode:', geocode)
-        
-        # Build a dictionary of region identifier to weighted fatality rate
+
         self.summarize_regions(regions)
         
+        # Build a dictionary of region identifier to weighted fatality rate
         ifrs = {}
         for i in range(weighted_fatalities.shape[0]):
             ifrs[weighted_fatalities[i, 0]] = weighted_fatalities[i, -1]
@@ -520,6 +523,7 @@ if __name__ == '__main__':
     parser.add_argument('--avg-window', default=None, type=int, help='number of days to average data over for modeling')
     parser.add_argument('--chains', default=6, type=int, help='number of chains for the stan optimization')
     parser.add_argument('--dont-make-plots', action='store_true', help='make the main plots (maybe set to False when running validation)')
+    parser.add_argument('--summarize', action='store_true', help='summarize num counties and quit')
     args = parser.parse_args()
 
     model = MainStanModel(args)
