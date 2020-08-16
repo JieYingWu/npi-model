@@ -8,6 +8,7 @@ import datetime
 import json
 import seaborn as sns
 import math
+import datetime as dt
 
 
 def get_means_list(path, geo_list):
@@ -334,7 +335,12 @@ if __name__ == '__main__':
 
     # lest of dates for which plots should be generated
     # dates = ['3/15/20', '3/25/20', '4/1/20', '4/10/20', '5/28/20']
-    dates = ['3/15/20', '3/25/20', '4/1/20', '4/10/20', '/20']
+    start = dt.date(2020, 3, 15)
+    end = dt.date(2020, 8, 2)
+    num_dates = 5
+    dates = [(start + i * (end - start) / (num_dates - 1)).strftime('%m/%d/%y') for i in range(num_dates)]
+    print(dates)
+    
     plot_variable = ['transit_scores - population weighted averages aggregated from town/city level to county',
                      'Median_Household_Income_2018',
                      'Density per square mile of land area - Housing units']
