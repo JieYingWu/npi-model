@@ -126,26 +126,24 @@ def get_reproductive_ratio(result_dir):
   return reproductive_ratio
 
 
-# def get_rt_adj(path, geo_list, start_day_dict):
-#     # 1 for deaths; 0 for infections
-#     plot_name = "Rt_adj["
-#     df = pd.read_csv(path + "/summary.csv", delimiter=',', index_col=0)
-#     row_names = list(df.index.tolist())
-#     means = {}
-#     for num_of_country in range(0, len(geo_list)):
-#         county_number = str(int(num_of_country) + 1) + "]"
-#         for name in row_names:
-#             if plot_name in name and name.split(",")[1] == county_number:
-#                 rowData = df.loc[name, :]
-#                 key = geo_list[num_of_country]
-#                 if start_day_dict[key] > 0:  # in case there is first few plots will miss some counties that haven't begun yet.
-#                     if name.split(",")[0] == (plot_name + str(start_day_dict[key])):
-#                         means[key] = rowData['mean']
-#                 else:
-#                     means[key] = None
-#     print(means)
-#     exit()
-#     return means
+def get_rt_adj(path, geo_list, start_day_dict):
+    # 1 for deaths; 0 for infections
+    plot_name = "Rt_adj["
+    df = pd.read_csv(path + "/summary.csv", delimiter=',', index_col=0)
+    row_names = list(df.index.tolist())
+    means = {}
+    for num_of_country in range(0, len(geo_list)):
+        county_number = str(int(num_of_country) + 1) + "]"
+        for name in row_names:
+            if plot_name in name and name.split(",")[1] == county_number:
+                rowData = df.loc[name, :]
+                key = geo_list[num_of_country]
+                if start_day_dict[key] > 0:  # in case there is first few plots will miss some counties that haven't begun yet.
+                    if name.split(",")[0] == (plot_name + str(start_day_dict[key])):
+                        means[key] = rowData['mean']
+                else:
+                    means[key] = None
+    return means
 
 
 def get_start_day_dict(path, geo_list, date_plot):
@@ -245,7 +243,7 @@ def plot_scatter_r0(path, plot_variable):
 
 
 # plot the Rt over the dates
-def plot_scatter_radj(path, date_plot, pos, plot_variable,x_array):
+def plot_scatter_radj(path, date_plot, pos, plot_variable, x_array):
     path_density = "data/us_data"
     ax[pos].set_title(date_plot, pad=17)
     colors = ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00']
@@ -253,7 +251,6 @@ def plot_scatter_radj(path, date_plot, pos, plot_variable,x_array):
     for cluster_n in range(0, 5):
         print("Retrieving information for cluster number ...", cluster_n)
         path_rt = path + str(cluster_n)
-        print(path_rt)
         if not exists(path_rt):
             continue
         
@@ -270,14 +267,19 @@ def plot_scatter_radj(path, date_plot, pos, plot_variable,x_array):
             density_dict, dict_r0 = read_density(path_density, supercounties_dist, rt_adj_list, plot_variable)
 
         # creating a scatter plot
+        x_list = []
         y_list = []
         for key in density_dict.keys():
             x = density_dict[key]
             y = dict_r0[key]
             if (y is not None) and (not math.isnan(x)):
+                x_list.append(x)
                 y_list.append(y)
-            ax[pos].scatter(x, y, color=colors[cluster_n], s=8, alpha=set_transparency)
+            # ax[pos].scatter(x, y, color=colors[cluster_n], s=8, alpha=set_transparency)
 
+        print(f'plotting:\n  {x_list}\n  {y_list}')
+        ax[pos].scatter(x_list, y_list, color=colors[cluster_n], s=8, alpha=set_transparency)
+            
         # creating a density plot on Y axis
         ax2 = ax[pos].twiny()
         sns.distplot(y_list, hist=False, kde=True, vertical=True, norm_hist=True,
@@ -328,12 +330,11 @@ def make_all_plots(path, plot_variable):
 
 if __name__ == '__main__':
     plt.rc('font', serif='Helvetica Neue')
-    plt.rcParams.update({'font.size': 16})
+    plt.rcParams.update({'font.size': 16, 'figure.figsize': (22, 8.5)})
 
     # lest of dates for which plots should be generated
-    dates = ['3/15/20', '3/25/20', '4/1/20', '4/10/20', '5/28/20', 
-             # '7/26/20'
-    ]
+    # dates = ['3/15/20', '3/25/20', '4/1/20', '4/10/20', '5/28/20']
+    dates = ['3/15/20', '3/25/20', '4/1/20', '4/10/20', '/20']
     plot_variable = ['transit_scores - population weighted averages aggregated from town/city level to county',
                      'Median_Household_Income_2018',
                      'Density per square mile of land area - Housing units']
@@ -348,9 +349,11 @@ if __name__ == '__main__':
     set_transparency = 0.5  # transparency of scatter circles
 
     fig, ax = plt.subplots(1, len(dates) + 1, sharex=True, sharey=True)
+    if not exists('visualizations/rt_plots'):
+        os.mkdir('visualizations/rt_plots')
     for idx in range(0, len(plot_variable)):
         make_all_plots(path, plot_variable[idx])
         fig.suptitle(pretty_titles[idx])
-        plt.savefig("results/plots/"+plot_variable[idx].replace('- ', '').replace(' ', '_').replace('/','-')+'.pdf')
+        plt.savefig("visualizations/rt_plots/"+plot_variable[idx].replace('- ', '').replace(' ', '_').replace('/','-')+'.pdf')
         # fig.tight_layout()
         # plt.show()

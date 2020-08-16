@@ -45,6 +45,9 @@ def main(result_dir=None, end_date='5/28', data_dir='data/us_data'):
   populations = dict(zip(counties.index, counties['POP_ESTIMATE_2018']))
   for supercounty, fips_codes in supercounties.items():
     populations[supercounty] = sum(populations[fips] for fips in fips_codes)
+
+  # new york county population, aggregated over manhattan, the bronx, brooklyn, queens, and staten island, resp.
+  populations['36061'] = sum(populations[k] for k in ['36061', '36005', '36047', '36081', '36085'])
     
   converters = {'FIPS': lambda x : str(x).zfill(5)}
   cases = pd.read_csv(cases_path, converters=converters)
@@ -121,11 +124,11 @@ def main(result_dir=None, end_date='5/28', data_dir='data/us_data'):
     # get the number of predicted cases
     prediction_indices = list(filter(lambda x : re.match(r'prediction\[\d+,' + str(i + 1) + r'\]', x) is not None, indices))
     pred_cases = sum(list(summary.loc[prediction_indices, 'mean'])[:end_date_idx + 1])
-    row['# (\\%) infected as predicted'] = '{:d} ({:.01f})'.format(int(pred_cases), 999999999 if fips not in populations else pred_cases / populations[fips] * 100)
+    row['# (\\%) infected as predicted'] = '{:,d} ({:.01f})'.format(int(pred_cases), 999999999 if fips not in populations else pred_cases / populations[fips] * 100)
 
     if re.match(r'^\d{5}$', fips) is not None:
       num_cases = cases.loc[fips][-1]
-      row['Measured cases'] = num_cases
+      row['Measured cases'] = f'{num_cases:,d}'
       row['Fatality rate (measured death/cases)'] = f'{deaths.loc[fips][-1] / num_cases * 100:.02f}\\%'
       readable_summary.append(row)
 
@@ -145,10 +148,9 @@ def main(result_dir=None, end_date='5/28', data_dir='data/us_data'):
         supercounty_conversion_factor = deaths.loc[fips][-1] / deaths.loc[supercounty][-1]
         prediction_indices = list(filter(lambda x : re.match(r'prediction\[\d+,' + str(i + 1) + r'\]', x) is not None, indices))
         pred_cases = sum(list(summary.loc[prediction_indices, 'mean'])[:end_date_idx + 1]) * supercounty_conversion_factor
-        row['# (\\%) infected as predicted'] = '{:d} ({:.01f})'.format(int(pred_cases), pred_cases / populations[fips] * 100)
-
+        row['# (\\%) infected as predicted'] = '{:,d} ({:.01f})'.format(int(pred_cases), pred_cases / populations[fips] * 100)          
         num_cases = cases.loc[fips][-1]
-        row['Measured cases'] = num_cases
+        row['Measured cases'] = f'{num_cases:,d}'
         row['Fatality rate (measured death/cases)'] = f'{deaths.loc[fips][-1] / num_cases * 100:.02f}\\%'
         readable_summary.append(row)
 

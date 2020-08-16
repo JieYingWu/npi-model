@@ -275,13 +275,23 @@ class MainStanModel():
     
     def summarize_regions(self, regions):
         supercounties = self.get_supercounties()
-        count = 0
+        num_supercounties = 0
+        num_counties_in_supercounties = 0
+        num_counties_not_in_supercounties = 0
+        num_counties = 0
         for region in regions:
             if is_county(region):
-                count += 1
+                num_counties_not_in_supercounties += 1
+                num_counties += 1
             else:
-                count += len(supercounties[region])
-        print(f'running model on {len(regions)} regions (counties + supercounties) with {count} total counties')
+                num_supercounties += 1
+                num_counties_in_supercounties += len(supercounties[region])
+                num_counties += len(supercounties[region])
+
+        print(f'Super-counties: {num_supercounties}')
+        print(f'Counties in super-counties: {num_counties_in_supercounties}')
+        print(f'Counties NOT in super-counties: {num_counties_not_in_supercounties}')
+        print(f'Total Counties Considered: {num_counties}')
 
         if self.summarize:
             exit()
