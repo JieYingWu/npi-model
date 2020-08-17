@@ -175,20 +175,20 @@ def get_regions(data_dir, M, cases, deaths, processing, interventions, populatio
     population = population.drop(['FIPS'], axis=1)
     population = population.to_numpy()
 
-    # create mobility array
-    for name, df in mobility_dict.items():
-        try:
-            df.drop(['FIPS', 'State', 'County'], axis=1, inplace=True)
-        except KeyError:
-            df.drop(['FIPS'], axis=1, inplace=True)
-        df.T # dates are row-wisw
-        arr = df.to_numpy()
-        mobility_dict[name] = arr
+    if mobility:
+        # create mobility array
+        for name, df in mobility_dict.items():
+            try:
+                df.drop(['FIPS', 'State', 'County'], axis=1, inplace=True)
+            except KeyError:
+                df.drop(['FIPS'], axis=1, inplace=True)
+            df.T # dates are row-wisw
+            arr = df.to_numpy()
+            mobility_dict[name] = arr
 
-    mobility_report = np.dstack(tuple(mobility_dict.values()))
+        mobility_report = np.dstack(tuple(mobility_dict.values()))
         
-        
-    if not mobility:
+    else:
         mobility_report = None
     
     if validation: ### to validate model
