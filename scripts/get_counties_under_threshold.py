@@ -7,7 +7,7 @@ import re
 from glob import glob
 import argparse
 import numpy as np
-
+import datetime as dt
 
 
 
@@ -45,7 +45,14 @@ def is_result_dir(result_dir):
   return exists(join(result_dir, 'summary.csv'))
 
 
-def get_counties_under_threshold(result_dirs, threshold=1.0, day=None):
+def get_start_dates(result_dir):
+  start_dates_path = join(result_dir, 'start_dates.csv')
+  start_dates = list(map(lambda x : dt.datetime.strptime(x, '%m/%d/%y'),
+                         pd.read_csv(start_dates_path, index_col=0).iloc[0]))
+  return start_dates
+  
+
+def get_counties_under_threshold(result_dirs, end_date, threshold=1.0, any_day=True):
   """Count the counties with Rt < threshold.
 
   If day is None, count the counties that lowered it at any point. Else, look at just that day. -1
@@ -64,21 +71,22 @@ def get_counties_under_threshold(result_dirs, threshold=1.0, day=None):
     total += sum(1 if is_county(fips) else len(supercounties[fips]) for fips in fips_codes)
     
     reproductive_ratio = get_reproductive_ratio(result_dir)
-
     assert reproductive_ratio.shape[0] == len(fips_codes)
-
+    
+    end_date_indices = [(end_date - sd).days for sd in get_start_dates(result_dir)]
     under = reproductive_ratio < threshold
-    if day is None:
-      under = np.any(under, axis=1)
+    if any_day:
+      under = np.array([np.any(r[:end_date_indices[i]]) for i, r in enumerate(under)])
     else:
-      under = under[:, day]
+      under = under[range(under.shape[0]), end_date_indices]
 
     under = under.astype(int)
     count += sum(under[i] * (1 if is_county(fips) else len(supercounties[fips])) for i, fips in enumerate(fips_codes))
 
   return count, total
 
-def main(*, result_dir, data_dir, threshold):
+
+def main(*, result_dir, data_dir, threshold, end_date):
   result_dirs = []
   for i, r in enumerate(result_dir):
     if is_result_dir(r):
@@ -86,8 +94,10 @@ def main(*, result_dir, data_dir, threshold):
     else:
       result_dirs += [x for x in glob(join(r, '*/')) if is_result_dir(x)]
 
-  num_any_day, total = get_counties_under_threshold(result_dirs, threshold=threshold, day=None)
-  num_last_day, total_ = get_counties_under_threshold(result_dirs, threshold=threshold, day=-1)
+  end_date = dt.datetime.strptime(end_date, '%m/%d/%y')
+  
+  num_any_day, total = get_counties_under_threshold(result_dirs, end_date=end_date, threshold=threshold, any_day=True)
+  num_last_day, total_ = get_counties_under_threshold(result_dirs, end_date=end_date, threshold=threshold, any_day=False)
   assert total == total_
   print(f'{num_any_day} / {total} ({num_any_day / total * 100:.02f}%) had Rt < {threshold} at some point.')
   print(f'{num_last_day} / {total} ({num_last_day / total * 100:.02f}%) had Rt < {threshold} as of most recent data.')
@@ -101,6 +111,7 @@ if __name__ == '__main__':
   parser.add_argument('--data_dir', default='./data', type=str,
                       help='path to result dir to load the summary.csv, or a dir containing several such dirs')
   parser.add_argument('--threshold', default=1.0, type=float, help='Rt threshold to count for')
+  parser.add_argument('--end-date', default='8/2/20', help='end date')
   
   args = parser.parse_args()
   main(**args.__dict__)
