@@ -353,7 +353,7 @@ if __name__ == '__main__':
     #            'Population Density (per Square Mile)']
 
     path = "results/region_specific_2000_iter/cluster_"
-    plot_supercounties = False  # if set to False then plot on the scatter all the counties
+    plot_supercounties = True  # if set to False then plot on the scatter all the counties
     use_weight_average = True  # weight the supercounties over the population
     use_death_weight = False  # used for testing, futher experiments set that weighting over the deaths is not reliable
     set_transparency = 0.5  # transparency of scatter circles

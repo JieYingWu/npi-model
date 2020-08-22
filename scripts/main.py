@@ -394,7 +394,7 @@ class MainStanModel():
         # fit = sm.sampling(data=stan_data, iter=2000, chains=4, warmup=10, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
 
         if validation:
-            summary_dict = fit.summary(pars={'mu', 'E_deaths', 'prediction', 'Rt_adj'})
+            summary_dict = fit.summary(pars={'mu', 'E_deaths', 'prediction', 'Rt_adj', 'mask'})
         else:
             summary_dict = fit.summary(pars={'mu', 'alpha', 'E_deaths', 'prediction', 'Rt_adj', 'mask'})
             
