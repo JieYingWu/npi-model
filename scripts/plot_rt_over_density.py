@@ -10,6 +10,9 @@ import seaborn as sns
 import math
 import datetime as dt
 
+colors = ['#D55E00', '#CC79A7', '#0072B2', '#F0E442', '#009E73']
+# colors = ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00'] # Anna's old colors
+
 
 def get_means_list(path, geo_list):
     # 1 for deaths; 0 for infections
@@ -169,11 +172,10 @@ def get_start_day(path, geo_list):
 
 
 # plot the R0
-def plot_scatter_r0(path, plot_variable):
+def plot_scatter_r0(path, plot_variable, xlabel=''):
     pos = 0
     path_density = "data/us_data"
     ax[pos].set_title("R0", pad=15)
-    colors = ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00']
     x_array = []
 
     for cluster_n in range(0, 5):
@@ -247,7 +249,6 @@ def plot_scatter_r0(path, plot_variable):
 def plot_scatter_radj(path, date_plot, pos, plot_variable, x_array):
     path_density = "data/us_data"
     ax[pos].set_title(date_plot, pad=17)
-    colors = ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00']
 
     for cluster_n in range(0, 5):
         print("Retrieving information for cluster number ...", cluster_n)
@@ -331,7 +332,7 @@ def make_all_plots(path, plot_variable):
 
 if __name__ == '__main__':
     plt.rc('font', serif='Helvetica Neue')
-    plt.rcParams.update({'font.size': 16, 'figure.figsize': (22, 8.5)})
+    plt.rcParams.update({'font.size': 16, 'figure.figsize': (20, 8.5)})
 
     # lest of dates for which plots should be generated
     # dates = ['3/15/20', '3/25/20', '4/1/20', '4/10/20', '5/28/20']
@@ -344,9 +345,12 @@ if __name__ == '__main__':
     plot_variable = ['transit_scores - population weighted averages aggregated from town/city level to county',
                      'Median_Household_Income_2018',
                      'Density per square mile of land area - Housing units']
-    pretty_titles = ['Relating Public Transit with Reproductive Number over Time',
-                     'Relating Median Household Income with Reproductive Number over Time',
-                     'Relating Density per Square Mile of Land Area with Reproductive Number over Time']
+    pretty_titles = ['Relating Public Transit with Reproductive Ratio over Time',
+                     'Relating Median Household Income with Reproductive Ratio over Time',
+                     'Relating Population Density with Reproductive Ratio over Time']
+    # xlabels = ['Public Transit Score',
+    #            'Median Household Income (USD)',
+    #            'Population Density (per Square Mile)']
 
     path = "results/region_specific_2000_iter/cluster_"
     plot_supercounties = True  # if set to False then plot on the scatter all the counties
@@ -359,6 +363,7 @@ if __name__ == '__main__':
         os.mkdir('visualizations/rt_plots')
     for idx in range(0, len(plot_variable)):
         make_all_plots(path, plot_variable[idx])
+        
         fig.suptitle(pretty_titles[idx])
         plt.savefig("visualizations/rt_plots/"+plot_variable[idx].replace('- ', '').replace(' ', '_').replace('/','-')+'.pdf')
         # fig.tight_layout()
