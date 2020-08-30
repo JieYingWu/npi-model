@@ -329,12 +329,8 @@ class MainStanModel():
                 sm = pystan.StanModel(file='stan-models/us_val.stan')
             elif self.model == 'old_alpha':
                 sm = pystan.StanModel(file='stan-models/base_us.stan')
-            elif self.model == 'mask':
-                sm = pystan.StanModel(file='stan-models/us_mask.stan')
             elif self.model == 'pop':
                 sm = pystan.StanModel(file='stan-models/us_new.stan')
-            elif self.model == 'rollback':
-                sm = pystan.StanModel(file='stan-models/us_rollback.stan')
             elif self.model == 'mobility':
                 sm = pystan.StanModel(file='stan-models/base_us_mobility.stan')
             else:
