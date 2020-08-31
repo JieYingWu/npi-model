@@ -100,7 +100,7 @@ def make_readable_summary(result_dir, end_date, data_dir='data/us_data'):
 
   # first, report and save the alpha values:
   alpha_indices = list(filter(lambda x : re.match(r'alpha\[\d\]', x) is not None, indices))
-  alphas = summary.loc[alpha_indices, ['mean', 'sd']]
+  alphas = summary.loc[alpha_indices, ['mean', '2.5%', '97.5%']]
   alphas['NPI'] = ['$I_1$: Stay at home',
                    '$I_2$: >50 gathering',
                    '$I_3$: >500 gathering',
@@ -119,9 +119,9 @@ def make_readable_summary(result_dir, end_date, data_dir='data/us_data'):
 
   print(alphas)
   print('================================================================================')
-  print(f'alpha value [mean (std)] for copying:')
+  print(f'alpha value [mean (ci)] for copying:')
   print('================================================================================')
-  print('\n'.join('{:.03f} ({:.03f})'.format(row['mean'], row['sd']) for i, row in alphas.iterrows()))
+  print('\n'.join('{:.03f} ({:.03f}, {:,.03f}))'.format(row['mean'], row['2.5%'], row['97.5%']) for i, row in alphas.iterrows()))
   print('================================================================================')
   alphas.to_csv(join(result_dir, 'alphas.csv'))
 
@@ -134,23 +134,24 @@ def make_readable_summary(result_dir, end_date, data_dir='data/us_data'):
   final_rts = reproductive_ratio[range(reproductive_ratio.shape[0]), end_date_indices]
   sorting_indices = np.argsort(final_rts)
   sorted_geocodes = [geocodes[i] for i in sorting_indices]
-  
+    
   for i, fips in zip(sorting_indices, sorted_geocodes):
     row = {}
     if fips not in supercounties:
       cluster = clustering[fips]
+      row['Cluster'] = str(int(cluster) + 1)
       row['County'] = '{Area_Name}, {State}'.format(fips=fips, **counties.loc[fips])
     else:
       cluster = fips.split('_')[-1]
       state_fips = fips.split('_')[0]
+      row['Cluster'] = str(int(cluster) + 1)
       row['County'] = '{State} Super-county Cluster {cluster}'.format(fips=fips, cluster=cluster, **counties.loc[state_fips])
 
-    # row['Cluster'] = str(int(cluster) + 1)
-    row['R_0 (std)'] = '{mean:.03f} ({sd:.03f})'.format(**summary.loc[f'Rt_adj[1,{i + 1}]'])
+    row['R_0'] = '{:.03f} ({:.03f},~{:.03f})'.format(*summary.loc[f'Rt_adj[1,{i + 1}]', ['mean', '2.5%', '97.5%']])
     end_date_idx = (dt.date(2020, *map(int, end_date.split('/'))).toordinal()
                     - dt.date(2020, *map(int, start_dates[i].split('/')[:2])).toordinal())
-    row[f'R_{end_date} (std)'] = '{mean:.03f} ({sd:.03f})'.format(
-      **summary.loc[f'Rt_adj[{max(1, end_date_idx + 1)},{i + 1}]'])
+    row['R_{end_date}'] = '{:.03f} ({:.03f},~{:.03f})'.format(
+      *summary.loc[f'Rt_adj[{max(1, end_date_idx + 1)},{i + 1}]', ['mean', '2.5%', '97.5%']])
 
     # get the number of predicted cases
     prediction_indices = list(filter(lambda x : re.match(r'prediction\[\d+,' + str(i + 1) + r'\]', x) is not None, indices))
@@ -170,12 +171,13 @@ def make_readable_summary(result_dir, end_date, data_dir='data/us_data'):
       for fips in supercounties[supercounty]:
         row = {}
         cluster = clustering[fips]
+        row['Cluster'] = str(int(cluster) + 1)
         row['County'] = '{Area_Name}, {State}'.format(fips=fips, **counties.loc[fips])
-        # row['Cluster'] = str(int(cluster) + 1)
 
-        row['R_0 (std)'] = '{mean:.03f} ({sd:.03f})'.format(**summary.loc[f'Rt_adj[1,{i + 1}]'])
+        row['R_0'] = '{:.03f} ({:.03f},~{:.03f})'.format(*summary.loc[f'Rt_adj[1,{i + 1}]', ['mean', '2.5%', '97.5%']])
         end_date_idx = dt.date(2020, *map(int, end_date.split('/'))).toordinal() - dt.date(2020, *map(int, start_dates[i].split('/')[:2])).toordinal()
-        row[f'R_{end_date} (std)'] = '{mean:.03f} ({sd:.03f})'.format(**summary.loc[f'Rt_adj[{end_date_idx + 1},{i + 1}]'])
+        row['R_{end_date}'] = '{:.03f} ({:.03f},~{:.03f})'.format(
+          *summary.loc[f'Rt_adj[{max(1, end_date_idx + 1)},{i + 1}]', ['mean', '2.5%', '97.5%']])
 
         # get proportion of deaths in this county to deaths in supercounty, assume cases are proportional, and divide by population of the county
         supercounty_conversion_factor = deaths.loc[fips][-1] / deaths.loc[supercounty][-1]
@@ -190,7 +192,6 @@ def make_readable_summary(result_dir, end_date, data_dir='data/us_data'):
         readable_summary.append(row)
 
   readable_summary = pd.DataFrame(readable_summary)
-  readable_summary.to_csv(join(result_dir, 'readable_summary.csv'))
   
   return readable_summary
 
@@ -204,13 +205,23 @@ def get_readable_summary(result_dir, end_date):
 def main(*, result_dir, end_date):
   # readable_summary = get_readable_summary(result_dir, end_date)
   readable_summary = make_readable_summary(result_dir, end_date)
-  print(readable_summary)
+  readable_summary.to_csv(join(result_dir, 'readable_summary.csv'))
+
+  pops = list(map(lambda x: int(x.replace(',', '')), readable_summary.loc[:, 'Population']))
+  indices = np.argsort(pops)
+  readable_summary_by_population = readable_summary.iloc[indices, :]
+  readable_summary_by_population.reset_index(inplace=True)
+  readable_summary_by_population.to_csv(join(result_dir, 'readable_summary_by_population.csv'))
+  print(readable_summary_by_population)
+  
   print('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
   latex_summary = to_latex(readable_summary)
-  # print(latex_summary)
   with open(join(result_dir, 'readable_summary.tex'), 'w') as file:
     file.write(latex_summary)
   
+  latex_summary_by_pop = to_latex(readable_summary_by_population)
+  with open(join(result_dir, 'readable_summary_by_population.tex'), 'w') as file:
+    file.write(latex_summary_by_pop)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

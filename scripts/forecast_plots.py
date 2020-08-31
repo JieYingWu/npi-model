@@ -7,6 +7,7 @@ import pandas as pd
 import datetime
 from data_parser import impute, remove_negative_values
 from utils import compute_moving_average, compute_moving_std
+from string import capwords
 
 # change here variables for different plotting options
 plot_settings = 'usa'  # choose 'eu' for europe and 'usa' for usa plots
@@ -87,13 +88,15 @@ def plot_forecasts_wo_dates_quantiles(quantiles_dict, confirmed_cases, county_na
 
     fig = plt.figure('Forecast ')
     ax = fig.add_subplot(111)
-    ax.fill_between(date_list, quantiles_dict['2.5%'], quantiles_dict['97.5%'], alpha=0.2, color='#377EB8')
+    ax.fill_between(date_list, quantiles_dict['2.5%'], quantiles_dict['97.5%'], alpha=0.2, color='#377EB8',
+                    label='Estimated Interval')
     ax.fill_between(date_list, quantiles_dict['25%'], quantiles_dict['75%'], alpha=0.5, color='#377EB8')
     ax.bar(date_list, barplot_values, color='#666666', width=0.5, alpha=0.2)
     if avg_window is not None:
-        ax.plot(date_list, cases_avg, 'r-', linewidth=1)
-        
-    ax.set_ylabel("Daily number of {}".format(metric))
+        ax.plot(date_list, cases_avg, 'r-', linewidth=1, alpha=0.5, label=f'{avg_window}-day Average')
+
+    ax.legend()
+    ax.set_ylabel("Daily Number of {}".format(capwords(metric)))
     ax.set_xlabel("Date")
 
     if county_name == "":

@@ -29,7 +29,7 @@ data_dir = sys.argv[1]
 #    regions[i] = str(regions[i])
 #filename = 'data/us_data/clustering.csv'
     
-tag = 'real_county' 
+tag = 'simulated_no_rollback' 
 #regions.sort()
 M = len(regions) 
 print('Running for ' + str(M) + ' FIPS')
@@ -54,7 +54,7 @@ ifrs = pd.read_csv(wf_file, encoding='latin1', index_col='FIPS')
 stan_data['cases'] = stan_data['cases'].astype(np.int)
 stan_data['deaths'] = stan_data['deaths'].astype(np.int)
 
-sm = pystan.StanModel(file='stan-models/us_new.stan')
+sm = pystan.StanModel(file='stan-models/base_us.stan')
 
 
 serial_interval = np.loadtxt(join(data_dir, 'us_data', 'serial_interval.csv'), skiprows=1, delimiter=',')
@@ -103,7 +103,7 @@ fit = sm.sampling(data=stan_data, iter=1800, chains=4, warmup=1000, thin=4, cont
 # fit = sm.sampling(data=stan_data, iter=1000, chains=4, warmup=500, thin=4, control={'adapt_delta':0.9, 'max_treedepth':12})
 # fit = sm.sampling(data=stan_data, iter=2000, chains=4, warmup=10, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
 
-summary_dict = fit.summary(pars={'mu', 'alpha', 'E_deaths', 'prediction', 'Rt_adj'}, probs=())
+summary_dict = fit.summary(pars={'mu', 'alpha', 'E_deaths', 'prediction', 'Rt_adj'})
 df = pd.DataFrame(summary_dict['summary'],
                  columns=summary_dict['summary_colnames'],
                  index=summary_dict['summary_rownames'])

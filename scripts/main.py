@@ -92,7 +92,10 @@ class MainStanModel():
                 stan_data, regions, start_date, geocode, weighted_fatalities = val
                 stan_data['alpha'] = get_alpha_from_summary(result_df)
                 print('M:', stan_data['M'])
-                val_df = self.run_model(stan_data, regions, start_date, geocode, weighted_fatalities, validation=True)
+                if self.load_val and exists(join(self.result_dir, 'val_summary.csv')):
+                    val_df = self.load_results(self.result_dir, val=True)
+                else:
+                    val_df = self.run_model(stan_data, regions, start_date, geocode, weighted_fatalities, validation=True)
                 self.save_results(val_df, start_date, geocode, validation=True)
                 self.make_plots(validation=True)
 
@@ -329,12 +332,8 @@ class MainStanModel():
                 sm = pystan.StanModel(file='stan-models/us_val.stan')
             elif self.model == 'old_alpha':
                 sm = pystan.StanModel(file='stan-models/base_us.stan')
-            elif self.model == 'mask':
-                sm = pystan.StanModel(file='stan-models/us_mask.stan')
             elif self.model == 'pop':
                 sm = pystan.StanModel(file='stan-models/us_new.stan')
-            elif self.model == 'rollback':
-                sm = pystan.StanModel(file='stan-models/us_rollback.stan')
             elif self.model == 'mobility':
                 sm = pystan.StanModel(file='stan-models/base_us_mobility.stan')
             else:
@@ -391,7 +390,7 @@ class MainStanModel():
         # fit = sm.sampling(data=stan_data, iter=2000, chains=4, warmup=10, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
 
         if validation:
-            summary_dict = fit.summary(pars={'mu', 'E_deaths', 'prediction', 'Rt_adj'})
+            summary_dict = fit.summary(pars={'mu', 'E_deaths', 'prediction', 'Rt_adj', 'mask'})
         else:
             summary_dict = fit.summary(pars={'mu', 'alpha', 'E_deaths', 'prediction', 'Rt_adj', 'mask'})
             
@@ -425,14 +424,19 @@ class MainStanModel():
             os.mkdir(self._unique_results_path)
         return self._unique_results_path
 
-    def load_results(self, result_dir=None):
+    def load_results(self, result_dir=None, val=False):
         """load the result df, and set geocodes and start date paths"""
         if result_dir is None:
             result_dir = self.unique_results_path
 
-        self.summary_path = join(result_dir, 'summary.csv')
-        self.start_dates_path = join(result_dir, 'start_dates.csv')
-        self.geocode_path = join(result_dir, 'geocode.csv')
+        if val:
+            self.summary_path = join(result_dir, 'val_summary.csv')
+            self.start_dates_path = join(result_dir, 'val_start_dates.csv')
+            self.geocode_path = join(result_dir, 'val_geocode.csv')
+        else:
+            self.summary_path = join(result_dir, 'summary.csv')
+            self.start_dates_path = join(result_dir, 'start_dates.csv')
+            self.geocode_path = join(result_dir, 'geocode.csv')
         print(f'loaded results from {self.summary_path}')
         return pd.read_csv(self.summary_path, index_col=0)
     
@@ -533,6 +537,7 @@ if __name__ == '__main__':
     parser.add_argument('--avg-window', default=None, type=int, help='number of days to average data over for modeling')
     parser.add_argument('--chains', default=6, type=int, help='number of chains for the stan optimization')
     parser.add_argument('--dont-make-plots', action='store_true', help='make the main plots (maybe set to False when running validation)')
+    parser.add_argument('--load-val', action='store_true', help='load val results if they exist (for plotting)')
     parser.add_argument('--summarize', action='store_true', help='summarize num counties and quit')
     args = parser.parse_args()
 
