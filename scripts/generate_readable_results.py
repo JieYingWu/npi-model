@@ -147,11 +147,11 @@ def make_readable_summary(result_dir, end_date, data_dir='data/us_data'):
       row['Cluster'] = str(int(cluster) + 1)
       row['County'] = '{State} Super-county Cluster {cluster}'.format(fips=fips, cluster=cluster, **counties.loc[state_fips])
 
-    row['R_0 (std)'] = '{mean:.03f} ({sd:.03f})'.format(**summary.loc[f'Rt_adj[1,{i + 1}]'])
+    row['R_0'] = '{:.03f} ({:.03f},~{:.03f})'.format(*summary.loc[f'Rt_adj[1,{i + 1}]', ['mean', '2.5%', '97.5%']])
     end_date_idx = (dt.date(2020, *map(int, end_date.split('/'))).toordinal()
                     - dt.date(2020, *map(int, start_dates[i].split('/')[:2])).toordinal())
-    row[f'R_{end_date} (std)'] = '{mean:.03f} ({sd:.03f})'.format(
-      **summary.loc[f'Rt_adj[{max(1, end_date_idx + 1)},{i + 1}]'])
+    row['R_{end_date}'] = '{:.03f} ({:.03f},~{:.03f})'.format(
+      *summary.loc[f'Rt_adj[{max(1, end_date_idx + 1)},{i + 1}]', ['mean', '2.5%', '97.5%']])
 
     # get the number of predicted cases
     prediction_indices = list(filter(lambda x : re.match(r'prediction\[\d+,' + str(i + 1) + r'\]', x) is not None, indices))
@@ -174,9 +174,10 @@ def make_readable_summary(result_dir, end_date, data_dir='data/us_data'):
         row['Cluster'] = str(int(cluster) + 1)
         row['County'] = '{Area_Name}, {State}'.format(fips=fips, **counties.loc[fips])
 
-        row['R_0 (std)'] = '{mean:.03f} ({sd:.03f})'.format(**summary.loc[f'Rt_adj[1,{i + 1}]'])
+        row['R_0'] = '{:.03f} ({:.03f},~{:.03f})'.format(*summary.loc[f'Rt_adj[1,{i + 1}]', ['mean', '2.5%', '97.5%']])
         end_date_idx = dt.date(2020, *map(int, end_date.split('/'))).toordinal() - dt.date(2020, *map(int, start_dates[i].split('/')[:2])).toordinal()
-        row[f'R_{end_date} (std)'] = '{mean:.03f} ({sd:.03f})'.format(**summary.loc[f'Rt_adj[{end_date_idx + 1},{i + 1}]'])
+        row['R_{end_date}'] = '{:.03f} ({:.03f},~{:.03f})'.format(
+          *summary.loc[f'Rt_adj[{max(1, end_date_idx + 1)},{i + 1}]', ['mean', '2.5%', '97.5%']])
 
         # get proportion of deaths in this county to deaths in supercounty, assume cases are proportional, and divide by population of the county
         supercounty_conversion_factor = deaths.loc[fips][-1] / deaths.loc[supercounty][-1]
