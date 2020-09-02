@@ -3,6 +3,7 @@ import os
 import argparse 
 import csv
 import datetime 
+import json
 import pandas as pd
 import numpy as np
 import seaborn as sns
@@ -13,13 +14,16 @@ from matplotlib import pyplot as plt
 from scipy import stats
 
 
-
+# END_DATE = datetime.date(2020,5,28) old
+# END_DATE = datetime.date(2020,7,7)  # new
+END_DATE = datetime.date(2020,8,2)  # new
 
 class MobilityReportParser():
     def __init__(self):
         self.report_dir = 'data/us_data/google_reports'
         self.categories, self.category_names = self.parse_google_reports(self.report_dir)
         self.start_date_ordinal = datetime.datetime.strptime(self.categories['residential'].columns[4], '%Y-%m-%d').toordinal()
+        self.pop_parser = PopulationParser()
 
     def parse_google_reports(self, path):
         report_files = [f for f in os.scandir(path) if f.name.endswith('.csv') and len(f.name) > 25]
@@ -36,7 +40,63 @@ class MobilityReportParser():
             categories[report_files[idx].name[:-33]] = df_current
 
         report_files = [f.name[:-33] for f in report_files]
+        print(categories)
         return categories, report_files 
+
+    def create_supercounties(self, supercounties):
+        dict_no_data = {}
+        counties_no_data = []
+        for category_name, df in self.categories.items():
+            list_of_supercounties = []
+            for (supercounty_name, county_list) in supercounties.items():
+                # get the population weighted average of the counties
+                # print(f'Creating supercounty: {supercounty_name}')
+                mobility_acc = [0 for i in range(len(self.categories[self.category_names[0]].iloc[0].values.tolist()[4:]))]
+                pop_acc = 0
+                for county in county_list:
+                    # if county == '02195':
+                        # print(df[df['FIPS']==int(county)])
+                    # pick the corresponding mobility timeseries
+                    # handle empty series
+                    try:
+                        mobility_current = df[df['FIPS']==int(county)].values.tolist()[0][4:]
+                    except IndexError as e:
+                        print(f'{county} has empty mobility data for {category_name}')
+                        counties_no_data.append(county)
+                        dict_no_data.setdefault(category_name, []).append(county)
+                        continue
+                    # scale by population
+                    pop_current = self.pop_parser.get_population(int(county))
+                    mobility_current = [pop_current*x for x in mobility_current]
+                    
+                    pop_acc += pop_current
+                    # this ensures that mobility_acc and mobility_current have the same length
+                    mobility_acc = [mobility_current[i] + mobility_acc[i] for i in range(len(mobility_current))]
+                
+                # perform weigthing by dividing through the accumulated population count
+                mobility_acc = [x/pop_acc for x in mobility_acc] 
+                list_to_merge = [0, supercounty_name,'None','None'] + mobility_acc
+                list_of_supercounties.append(list_to_merge)
+                # dict_[supercounty_name] = mobility_acc
+            
+            print('Concatenating...')
+            df_to_append = pd.DataFrame(list_of_supercounties, columns=df.columns)
+            df = pd.concat([df, df_to_append])
+            self.categories[category_name] = df
+        print(counties_no_data)
+        return self.categories, dict_no_data
+
+class PopulationParser():
+    """ Returns the POP_ESTIMATE_2018 of the census for a given fips code
+    """
+    def __init__(self):
+        path = 'data/us_data/counties.csv' #POP_ESTIMATE_2018     
+        pop = pd.read_csv(path, engine='python')
+        cols_population = ['FIPS', 'POP_ESTIMATE_2018']
+        self.pop = pop[cols_population]
+    
+    def get_population(self, fips):
+        return self.pop[self.pop['FIPS']==fips].values.tolist()[0][1]
 
 
 class ResultParser():
@@ -47,7 +107,8 @@ class ResultParser():
         self.geocode, self.number_counties = self.parse_geocode(join(result_dir, 'geocode.csv'))
         self.startdates, self.startdates_dict = self.parse_start_dates(join(result_dir, 'start_dates.csv'), self.geocode) 
         self.deaths, self.infections, self.R_t = self.parse_summary(join(result_dir, 'summary.csv')) 
-        self.end_date_ordinal = datetime.date(2020,5,28).toordinal()
+        self.end_date_ordinal = END_DATE.toordinal()
+        self.supercounties_dict = self.parse_supercounties(join(result_dir, 'supercounties.json'))
 
     def parse_summary(self, path):
         assert exists(path)
@@ -113,7 +174,7 @@ class ResultParser():
     def parse_start_dates(self, path, geocode_list):
         assert exists(path)
         df = pd.read_csv(path)
-        start_dates_list = df.values.tolist()[0][1:]
+        start_dates_list = df.values.tolist()[0][1:] 
         start_dates_dict = df.to_dict('list')
 
         del start_dates_dict['Unnamed: 0']
@@ -123,13 +184,19 @@ class ResultParser():
         return start_dates_list,start_dates_dict
 
 
-    
     def parse_geocode(self, path):
         assert exists(path)
         df = pd.read_csv(path)
         # First entry is 0
         df = df.values.tolist()[0][1:]
         return df, len(df)
+        
+
+    def parse_supercounties(self, path):
+        assert exists(path)
+        with open(path) as file:
+            supercounties = json.load(file)
+        return supercounties
 
 
 
@@ -137,10 +204,15 @@ class Comparison():
     """ Makes plots of the comparison between mobility reports and our expected results
     """ 
 
-    def __init__(self, result_dir, delta):
+    def __init__(self, result_dir, delta, pdf):
         self.mobility_parser = MobilityReportParser()
         self.result_parser = ResultParser(result_dir)
-        print(self.mobility_parser.categories)
+        categories, dict_no_data = self.mobility_parser.create_supercounties(self.result_parser.supercounties_dict)
+        # dump dict to json
+        with open(join(result_dir,'missing_counties.json'), 'w') as fp:
+            json.dump(dict_no_data, fp)
+        self.save_to_pdf = pdf
+        # print(self.mobility_parser.categories)
         self.aligned_timeseries = self.align_timeseries(self.result_parser.startdates, self.mobility_parser.categories)
         
         self.save_path = join(result_dir, 'plots', 'mobility')
@@ -287,6 +359,9 @@ class Comparison():
             for category_name in self.mobility_parser.category_names:
                 # some categories could be missing, fill those with NANs
                 if category_name in available_categories_dict:
+                    # print(f'Calculating for {category_name}')
+                    # print(current_deaths)
+                    # print(available_categories_dict[category_name])
                     r_deaths, p_deaths = stats.pearsonr(current_deaths, available_categories_dict[category_name])
                     r_infections, p_infections = stats.pearsonr(current_infections, available_categories_dict[category_name])
                     r_rt, p_rt = stats.pearsonr(current_rt, available_categories_dict[category_name])
@@ -314,17 +389,26 @@ class Comparison():
         df_rt_correlation = df_rt_correlation.set_index('FIPS')
 
         # make plots of the pearson r values
-        df_names = ['deaths', 'infections', 'rt']
+        df_names = ['Deaths', 'Infections', 'R_t']
+        csfont = {'fontsize':20}
         for k, df in enumerate([df_deaths_correlation, df_infections_correlation, df_rt_correlation]):
             print(f'Making Mobility Plot for {df_names[k]}')
             fig = plt.figure()
 
             # ax = df_deaths_correlation.plot.hist(bins=10)
             ax = sns.violinplot(data=df)
-            ax.set_title(f'Correlation of mobility and {df_names[k]}')
-            ax.set_ylabel('Pearson r')
-            ax.set_xlabel('mobility category')
+            ax.set_title(f'Correlation of Mobility and {df_names[k]}',fontdict=csfont)
+            ax.set_ylabel('Pearson r',fontdict=csfont)
+            ax.set_xlabel('Mobility Category',fontdict=csfont)
+
+            for tick in ax.xaxis.get_major_ticks():
+                tick.label.set_fontsize(18)
+            for tick in ax.yaxis.get_major_ticks():
+                tick.label.set_fontsize(18)
+
             fig.set_size_inches(18.5, 10.5)
+            if self.save_to_pdf:
+                plt.savefig(join(save_path_correlations, df_names[k]+'.pdf'))
             plt.savefig(join(save_path_correlations, df_names[k]+'.png'), dpi=100)
             plt.close(fig)
         
@@ -333,7 +417,7 @@ class Comparison():
         """ shift the mobility timeseries -delta/+delta around the deaths timeseries and calculate the correlation
         """
         assert (isinstance(delta, int))
-        assert (delta < 20)
+        assert (delta < 20), f'delta too big'
 
         final_arr = {}
         for offset in range(-delta, delta+1):
@@ -408,6 +492,8 @@ class Comparison():
         fig.set_size_inches(18.5, 10.5)
         # plt.show()
         print(f'Saving to {join(save_path)}')
+        if self.save_to_pdf:
+            plt.savefig(join(save_path, 'death_lag_analysis.pdf'))
         plt.savefig(join(save_path, 'death_lag_analysis.png'),dpi=500)
         plt.close(fig)
 
@@ -416,7 +502,8 @@ if __name__ == '__main__':
 
     parser.add_argument('--dir','-d', type=str, help='Directory of the result')
     parser.add_argument('--delta', type=int, default= 5, help='offset for lag analysis')
+    parser.add_argument('--pdf', action='store_true', help='generate pdfs for the submission')
 
     args = parser.parse_args()
 
-    comparison = Comparison(args.dir, args.delta)
+    comparison = Comparison(args.dir, args.delta, args.pdf)

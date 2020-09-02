@@ -9,6 +9,7 @@ import json
 pd.set_option('mode.chained_assignment', None)
 THRESHOLD = 50
 
+
 def remove_negative_regions(df_cases, df_deaths, idx):
     """"
     Returns:
@@ -269,7 +270,7 @@ def select_regions(cases, deaths, interventions, M, population, mobility_dict, f
         cases, deaths, interventions, population = merge_supercounties(
             cases, deaths, interventions, population, clustering=clustering, save_supercounties=(fips_list is None),
             load_supercounties=load_supercounties)
-
+        
     return cases, deaths, interventions, population, mobility_dict
 
 
@@ -411,21 +412,19 @@ def preprocessing_us_data(data_dir, mode='county'):
     population.at[population['FIPS']=='36047','POP_ESTIMATE_2018'] = '0'
     population.at[population['FIPS']=='36081','POP_ESTIMATE_2018'] = '0'
     population.at[population['FIPS']=='36085','POP_ESTIMATE_2018'] = '0'
-
     
-    def get_daily_counts(L):
-        diff = np.array([y - x for x, y in zip(L, L[1:])])
-        L[1:] = diff
-        return L
+    def get_daily_counts(row):
+        x = row.to_numpy()
+        row = row.copy()
+        row[1:] = x[1:] - x[:-1]
+        return row
 
     #### get daily counts instead of cumulative
     df_cases.iloc[:, 2:] = df_cases.iloc[:, 2:].apply(get_daily_counts, axis=1)
     df_deaths.iloc[:, 2:] = df_deaths.iloc[:, 2:].apply(get_daily_counts, axis=1)
-    
-
 
     # get the mobility dict
-    mobility = preprocess_mobility_reports(data_dir) 
+    mobility = preprocess_mobility_reports(data_dir)
 
     return df_cases, df_deaths, interventions, population, mobility
 

@@ -6,12 +6,14 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import datetime
 from data_parser import impute, remove_negative_values
+from utils import compute_moving_average, compute_moving_std
+from string import capwords
 
 # change here variables for different plotting options
 plot_settings = 'usa'  # choose 'eu' for europe and 'usa' for usa plots
 base_model = True  # True for prediction/E_deaths, False for prediction0/E_deaths0
 # to match with IC paper select base_model==True
-last_day_to_plot = '7/2/20'  # predict to this date
+last_day_to_plot = '8/2/20'  # predict to this date
 
 
 # saving some params for plot settings
@@ -31,7 +33,7 @@ elif plot_settings == 'usa':
 
 def plot_forecasts_wo_dates_quantiles(quantiles_dict, confirmed_cases, county_name, plot_choice,
                                       num_of_country, dict_of_start_dates,
-                                      dict_of_eu_geog, output_path, save_image=True):
+                                      dict_of_eu_geog, output_path, save_image=True, avg_window=None):
     '''
     :param quantiles_dict: stores values of quantiles
     :param confirmed_cases: real confirmed cases
@@ -43,6 +45,9 @@ def plot_forecasts_wo_dates_quantiles(quantiles_dict, confirmed_cases, county_na
     :return: beautiful magestic plot
     '''
 
+    if avg_window is None:
+        avg_window = 7
+    
     if plot_choice == 0:
         metric = "infections"
     elif plot_choice == 1:
@@ -58,13 +63,24 @@ def plot_forecasts_wo_dates_quantiles(quantiles_dict, confirmed_cases, county_na
     print("Will make plot for {} days".format(days_to_predict))
     date_list = [base + datetime.timedelta(days=x) for x in range(days_to_predict)]
 
+    if avg_window is not None:
+        cases_avg = compute_moving_average(confirmed_cases[:days_to_predict], avg_window)
+        cases_std = compute_moving_std(confirmed_cases[:days_to_predict], avg_window)
+        
     # make the shapes match
     diff = days_to_predict - np.shape(confirmed_cases)[0]
     if diff <= 0:
         barplot_values = list(confirmed_cases[:days_to_predict])
+        if avg_window is not None:
+            cases_avg = list(cases_avg[:days_to_predict])
+            cases_std = list(cases_avg[:days_to_predict])
     else:
         barplot_missing_values = np.zeros(days_to_predict - np.shape(confirmed_cases)[0])
         barplot_values = list(confirmed_cases) + list(barplot_missing_values)
+        if avg_window is not None:
+            cases_avg = list(cases_avg[:days_to_predict]) + list(barplot_missing_values)
+            cases_std = list(cases_std[:days_to_predict]) + list(barplot_missing_values)
+
 
     # print(np.shape(days_to_predict), np.shape(confirmed_cases)[0])
     # plot creation
@@ -72,10 +88,15 @@ def plot_forecasts_wo_dates_quantiles(quantiles_dict, confirmed_cases, county_na
 
     fig = plt.figure('Forecast ')
     ax = fig.add_subplot(111)
-    ax.fill_between(date_list, quantiles_dict['2.5%'], quantiles_dict['97.5%'], alpha=0.2, color='#377EB8')
+    ax.fill_between(date_list, quantiles_dict['2.5%'], quantiles_dict['97.5%'], alpha=0.2, color='#377EB8',
+                    label='Estimated Interval')
     ax.fill_between(date_list, quantiles_dict['25%'], quantiles_dict['75%'], alpha=0.5, color='#377EB8')
     ax.bar(date_list, barplot_values, color='#666666', width=0.5, alpha=0.2)
-    ax.set_ylabel("Daily number of {}".format(metric))
+    if avg_window is not None:
+        ax.plot(date_list, cases_avg, 'r-', linewidth=1, alpha=0.5, label=f'{avg_window}-day Average')
+
+    ax.legend()
+    ax.set_ylabel("Daily Number of {}".format(capwords(metric)))
     ax.set_xlabel("Date")
 
     if county_name == "":
@@ -96,10 +117,11 @@ def plot_forecasts_wo_dates_quantiles(quantiles_dict, confirmed_cases, county_na
         fig.clf()
     else:
         plt.show()
+        input()
 
 
 def plot_daily_infections_num(path, confirmed_cases, county_name, plot_choice, num_of_country, dict_of_start_dates,
-                              dict_of_eu_geog, output_path):
+                              dict_of_eu_geog, output_path, avg_window=None):
     # 1 for deaths; 0 for infections
     plot_name = ""
     if plot_choice == 0:
@@ -157,7 +179,8 @@ def plot_daily_infections_num(path, confirmed_cases, county_name, plot_choice, n
     if do_plot:
         quantiles_dict = {'2.5%': list2_5, '25%': list25, '50%': list50, '75%': list75, '97.5%': list97_5}
         plot_forecasts_wo_dates_quantiles(quantiles_dict, confirmed_cases, county_name,
-                                          plot_choice, num_of_country, dict_of_start_dates, dict_of_eu_geog, output_path)
+                                          plot_choice, num_of_country, dict_of_start_dates, dict_of_eu_geog, output_path,
+                                          avg_window=avg_window)
 
 
 def read_true_cases_europe(plot_choice, num_of_country, dict_of_start_dates, dict_of_eu_geog):
@@ -243,7 +266,7 @@ def read_true_cases_us(plot_choice, num_of_country, dict_of_start_dates, dict_of
 
 
 # create a batch of all possible plots for usa
-def make_all_us_county_plots(start_date_dict_path, geocode_dict_path, summary_path, output_path, use_tmp=True):
+def make_all_us_county_plots(start_date_dict_path, geocode_dict_path, summary_path, output_path, use_tmp=True, avg_window=None):
     dict_of_start_dates = pd.read_csv(start_date_dict_path, delimiter=',', index_col=0)
     dict_of_eu_geog = pd.read_csv(geocode_dict_path, delimiter=',', index_col=0)
     path = summary_path 
@@ -255,7 +278,7 @@ def make_all_us_county_plots(start_date_dict_path, geocode_dict_path, summary_pa
             if confirmed_cases is None:
                 continue
             plot_daily_infections_num(path, confirmed_cases, county_name, plot_choice, num_of_country,
-                                      dict_of_start_dates, dict_of_eu_geog, output_path)
+                                      dict_of_start_dates, dict_of_eu_geog, output_path, avg_window=avg_window)
     return
 
 
