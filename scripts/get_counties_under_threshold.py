@@ -50,7 +50,7 @@ def get_start_dates(result_dir):
   start_dates = list(map(lambda x : dt.datetime.strptime(x, '%m/%d/%y'),
                          pd.read_csv(start_dates_path, index_col=0).iloc[0]))
   return start_dates
-  
+
 
 def get_counties_under_threshold(result_dirs, end_date, threshold=1.0, any_day=True):
   """Count the counties with Rt < threshold.
@@ -86,6 +86,40 @@ def get_counties_under_threshold(result_dirs, end_date, threshold=1.0, any_day=T
   return count, total
 
 
+def enumerate_counties(result_dirs):
+  total_supercounties = 0
+  total_counties_in_supercounties = 0
+  total_counties_not_in_supercounties = 0
+  total_counties = 0
+  
+  for result_dir in sorted(result_dirs):
+    fips_codes = get_fips_codes(result_dir)
+    supercounties = get_supercounties(result_dir)
+
+    num_supercounties = sum(1 if not is_county(fips) else 0 for fips in fips_codes)
+    num_counties_in_supercounties = sum(0 if is_county(fips) else len(supercounties[fips]) for fips in fips_codes)
+    num_counties_not_in_supercounties = sum(1 if is_county(fips) else 0 for fips in fips_codes)
+    num_counties = sum(1 if is_county(fips) else len(supercounties[fips]) for fips in fips_codes)
+
+    print(f'{result_dir}:')
+    print(f'  supercounties: {num_supercounties}')
+    print(f'  counties in supercounties: {num_counties_in_supercounties}')
+    print(f'  counties not in supercounties: {num_counties_not_in_supercounties}')
+    print(f'  counties: {num_counties}')
+
+    total_supercounties += num_supercounties
+    total_counties_in_supercounties += num_counties_in_supercounties
+    total_counties_not_in_supercounties += num_counties_not_in_supercounties
+    total_counties += num_counties
+
+  print('total:')
+  print(f'  supercounties: {total_supercounties}')
+  print(f'  counties in supercounties: {total_counties_in_supercounties}')
+  print(f'  counties not in supercounties: {total_counties_not_in_supercounties}')
+  print(f'  counties: {total_counties}')
+  
+
+
 def main(*, result_dir, data_dir, threshold, end_date):
   result_dirs = []
   for i, r in enumerate(result_dir):
@@ -95,12 +129,14 @@ def main(*, result_dir, data_dir, threshold, end_date):
       result_dirs += [x for x in glob(join(r, '*/')) if is_result_dir(x)]
 
   end_date = dt.datetime.strptime(end_date, '%m/%d/%y')
-  
+
   num_any_day, total = get_counties_under_threshold(result_dirs, end_date=end_date, threshold=threshold, any_day=True)
   num_last_day, total_ = get_counties_under_threshold(result_dirs, end_date=end_date, threshold=threshold, any_day=False)
   assert total == total_
   print(f'{num_any_day} / {total} ({num_any_day / total * 100:.02f}%) had Rt < {threshold} at some point.')
   print(f'{num_last_day} / {total} ({num_last_day / total * 100:.02f}%) had Rt < {threshold} as of most recent data.')
+
+  enumerate_counties(result_dirs)
   
 
 if __name__ == '__main__':

@@ -34,7 +34,7 @@ def create_geocodes_dict(path_rt, path_density):
     df = pd.read_csv(path_rt + "/geocode.csv", delimiter=',', index_col=0)
     supercounties_names = list(df.loc[0][:])
 
-    with open(path_density + "/supercounties.json") as f:
+    with open(path_rt + "/supercounties.json") as f:
         super_file = json.load(f)
 
     selected_dict = {}
@@ -182,6 +182,7 @@ def plot_scatter_r0(path, plot_variable, xlabel=''):
         print(cluster_n)
         path_rt = path + str(cluster_n)
         if not exists(path_rt):
+            print('OOPs')
             x_array.append(None)
             continue
         supercounties_dist, supercounties_names = create_geocodes_dict(path_rt, path_density)

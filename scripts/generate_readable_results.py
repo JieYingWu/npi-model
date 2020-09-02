@@ -134,7 +134,7 @@ def make_readable_summary(result_dir, end_date, data_dir='data/us_data'):
   final_rts = reproductive_ratio[range(reproductive_ratio.shape[0]), end_date_indices]
   sorting_indices = np.argsort(final_rts)
   sorted_geocodes = [geocodes[i] for i in sorting_indices]
-    
+
   for i, fips in zip(sorting_indices, sorted_geocodes):
     row = {}
     if fips not in supercounties:
