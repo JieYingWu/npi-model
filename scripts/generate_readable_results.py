@@ -100,7 +100,7 @@ def make_readable_summary(result_dir, end_date, data_dir='data/us_data'):
 
   # first, report and save the alpha values:
   alpha_indices = list(filter(lambda x : re.match(r'alpha\[\d\]', x) is not None, indices))
-  alphas = summary.loc[alpha_indices, ['mean', 'sd']]
+  alphas = summary.loc[alpha_indices, ['mean', '2.5%', '97.5%']]
   alphas['NPI'] = ['$I_1$: Stay at home',
                    '$I_2$: >50 gathering',
                    '$I_3$: >500 gathering',
@@ -119,9 +119,9 @@ def make_readable_summary(result_dir, end_date, data_dir='data/us_data'):
 
   print(alphas)
   print('================================================================================')
-  print(f'alpha value [mean (std)] for copying:')
+  print(f'alpha value [mean (ci)] for copying:')
   print('================================================================================')
-  print('\n'.join('{:.03f} ({:.03f})'.format(row['mean'], row['sd']) for i, row in alphas.iterrows()))
+  print('\n'.join('{:.03f} ({:.03f}, {:,.03f}))'.format(row['mean'], row['2.5%'], row['97.5%']) for i, row in alphas.iterrows()))
   print('================================================================================')
   alphas.to_csv(join(result_dir, 'alphas.csv'))
 
@@ -164,6 +164,10 @@ def make_readable_summary(result_dir, end_date, data_dir='data/us_data'):
       row['Measured cases'] = f'{num_cases:,d}'
       row['Population'] = f'{populations[fips]:,d}'
       row['Fatality rate (measured death/cases)'] = f'{deaths.loc[fips][-1] / num_cases * 100:.02f}\\%'
+      pred_cases_25 = sum(list(summary.loc[prediction_indices, '2.5%'])[:end_date_idx + 1])
+      pred_cases_975 = sum(list(summary.loc[prediction_indices, '97.5%'])[:end_date_idx + 1])
+      row['Cases 2.5%'] = f'{pred_cases_25}'
+      row['Cases 97.5%'] = f'{pred_cases_975}'
       readable_summary.append(row)
 
     else:
@@ -183,12 +187,18 @@ def make_readable_summary(result_dir, end_date, data_dir='data/us_data'):
         supercounty_conversion_factor = deaths.loc[fips][-1] / deaths.loc[supercounty][-1]
         prediction_indices = list(filter(lambda x : re.match(r'prediction\[\d+,' + str(i + 1) + r'\]', x) is not None, indices))
         pred_cases = sum(list(summary.loc[prediction_indices, 'mean'])[:end_date_idx + 1]) * supercounty_conversion_factor
+        pred_cases_25 = sum(list(summary.loc[prediction_indices, '2.5%'])[:end_date_idx + 1]) * supercounty_conversion_factor
+        pred_cases_975 = sum(list(summary.loc[prediction_indices, '97.5%'])[:end_date_idx + 1]) * supercounty_conversion_factor
         row['# (\\%) infected as predicted'] = '{:,d} ({:.01f})'.format(int(pred_cases), pred_cases / populations[fips] * 100)
 
         num_cases = cases.loc[fips][-1]
         row['Measured cases'] = f'{num_cases:,d}'
         row['Population'] = f'{populations[fips]:,d}'
         row['Fatality rate (measured death/cases)'] = f'{deaths.loc[fips][-1] / num_cases * 100:.02f}\\%'
+        pred_cases_25 = sum(list(summary.loc[prediction_indices, '2.5%'])[:end_date_idx + 1]) * supercounty_conversion_factor
+        pred_cases_975 = sum(list(summary.loc[prediction_indices, '97.5%'])[:end_date_idx + 1]) * supercounty_conversion_factor
+        row['Cases 2.5%'] = f'{pred_cases_25}'
+        row['Cases 97.5%'] = f'{pred_cases_975}'
         readable_summary.append(row)
 
   readable_summary = pd.DataFrame(readable_summary)
