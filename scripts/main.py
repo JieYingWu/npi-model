@@ -9,6 +9,7 @@ import datetime as dt
 import pandas as pd
 import numpy as np
 import data_parser
+import re
 from statsmodels.distributions.empirical_distribution import ECDF
 from os.path import join, exists
 
@@ -24,8 +25,23 @@ def get_alpha_from_summary(df):
     :rtype: 
 
     """
-    alpha = df.loc[[f'alpha[{i}]' for i in range(1, 9)], 'mean'].to_numpy()
+    P = len([x for x in df.index if re.match(r'alpha\[\d+\]', x) is not None])
+    alpha = df.loc[[f'alpha[{i}]' for i in range(1, P + 1)], 'mean'].to_numpy()
+    print(f'alpha: {alpha}')
     return alpha
+
+
+def get_mask_from_summary(df):
+    """ result_df or summary from running the model. Return array of alphas
+
+    :param df: 
+    :returns: 
+    :rtype: 
+
+    """
+    m = len([x for x in df.index if re.match(r'mask\[\d+\]', x) is not None])
+    mask = df.loc[[f'mask[{i}]' for i in range(1, m + 1)], 'mean'].to_numpy()
+    return mask
 
 
 def is_county(fips):
@@ -67,14 +83,19 @@ class MainStanModel():
         else:
             result_df = self.load_results(self.result_dir)
 
-        self.make_plots()
+        if not self.dont_make_plots:
+            self.make_plots()
             
         if self.validation_on_county:
             vals = self.divide_validation_counties(val)
             for val in vals:
                 stan_data, regions, start_date, geocode, weighted_fatalities = val
                 stan_data['alpha'] = get_alpha_from_summary(result_df)
-                val_df = self.run_model(stan_data, regions, start_date, geocode, weighted_fatalities, validation=True)
+                print('M:', stan_data['M'])
+                if self.load_val and exists(join(self.result_dir, 'val_summary.csv')):
+                    val_df = self.load_results(self.result_dir, val=True)
+                else:
+                    val_df = self.run_model(stan_data, regions, start_date, geocode, weighted_fatalities, validation=True)
                 self.save_results(val_df, start_date, geocode, validation=True)
                 self.make_plots(validation=True)
 
@@ -238,7 +259,7 @@ class MainStanModel():
                 clustering=self.clustering, mobility=self.use_mobility, load_supercounties=self.load_supercounties,
                 avg_window=self.avg_window, mask_term=(self.model == 'mask'))
             weighted_fatalities = self.get_weighted_fatalities(regions)
-                
+
         elif mode == 'US_state':
             stan_data, regions, start_date, geocode = data_parser.get_data(
                 M, data_dir, processing=self.processing, state=True, fips_list=self.fips_list,
@@ -257,13 +278,26 @@ class MainStanModel():
     
     def summarize_regions(self, regions):
         supercounties = self.get_supercounties()
-        count = 0
+        num_supercounties = 0
+        num_counties_in_supercounties = 0
+        num_counties_not_in_supercounties = 0
+        num_counties = 0
         for region in regions:
             if is_county(region):
-                count += 1
+                num_counties_not_in_supercounties += 1
+                num_counties += 1
             else:
-                count += len(supercounties[region])
-        print(f'running model on {len(regions)} regions (counties + supercounties) with {count} total counties')
+                num_supercounties += 1
+                num_counties_in_supercounties += len(supercounties[region])
+                num_counties += len(supercounties[region])
+
+        print(f'Super-counties: {num_supercounties}')
+        print(f'Counties in super-counties: {num_counties_in_supercounties}')
+        print(f'Counties NOT in super-counties: {num_counties_not_in_supercounties}')
+        print(f'Total Counties Considered: {num_counties}')
+
+        if self.summarize:
+            exit()
 
     def run_model(self, stan_data, regions, start_date, geocode, weighted_fatalities, validation=False):
         """Run the model
@@ -284,10 +318,10 @@ class MainStanModel():
         # print('regions:', regions)
         # print('start_date:', start_date)
         # print('geocode:', geocode)
-        
-        # Build a dictionary of region identifier to weighted fatality rate
+
         self.summarize_regions(regions)
         
+        # Build a dictionary of region identifier to weighted fatality rate
         ifrs = {}
         for i in range(weighted_fatalities.shape[0]):
             ifrs[weighted_fatalities[i, 0]] = weighted_fatalities[i, -1]
@@ -298,12 +332,8 @@ class MainStanModel():
                 sm = pystan.StanModel(file='stan-models/us_val.stan')
             elif self.model == 'old_alpha':
                 sm = pystan.StanModel(file='stan-models/base_us.stan')
-            elif self.model == 'mask':
-                sm = pystan.StanModel(file='stan-models/us_mask.stan')
             elif self.model == 'pop':
                 sm = pystan.StanModel(file='stan-models/us_new.stan')
-            elif self.model == 'rollback':
-                sm = pystan.StanModel(file='stan-models/us_rollback.stan')
             elif self.model == 'mobility':
                 sm = pystan.StanModel(file='stan-models/base_us_mobility.stan')
             else:
@@ -354,6 +384,7 @@ class MainStanModel():
 
         stan_data['f'] = all_f
 
+        print('actual M (I must be mad):', stan_data['M'])
         fit = sm.sampling(data=stan_data, iter=self.iter, warmup=self.warmup_iter, chains=self.chains, 
                           thin=4, control={'adapt_delta': 0.99, 'max_treedepth': self.max_treedepth})
         # fit = sm.sampling(data=stan_data, iter=2000, chains=4, warmup=10, thin=4, seed=101, control={'adapt_delta':0.9, 'max_treedepth':10})
@@ -393,14 +424,19 @@ class MainStanModel():
             os.mkdir(self._unique_results_path)
         return self._unique_results_path
 
-    def load_results(self, result_dir=None):
+    def load_results(self, result_dir=None, val=False):
         """load the result df, and set geocodes and start date paths"""
         if result_dir is None:
             result_dir = self.unique_results_path
 
-        self.summary_path = join(result_dir, 'summary.csv')
-        self.start_dates_path = join(result_dir, 'start_dates.csv')
-        self.geocode_path = join(result_dir, 'geocode.csv')
+        if val:
+            self.summary_path = join(result_dir, 'val_summary.csv')
+            self.start_dates_path = join(result_dir, 'val_start_dates.csv')
+            self.geocode_path = join(result_dir, 'val_geocode.csv')
+        else:
+            self.summary_path = join(result_dir, 'summary.csv')
+            self.start_dates_path = join(result_dir, 'start_dates.csv')
+            self.geocode_path = join(result_dir, 'geocode.csv')
         print(f'loaded results from {self.summary_path}')
         return pd.read_csv(self.summary_path, index_col=0)
     
@@ -500,6 +536,9 @@ if __name__ == '__main__':
     parser.add_argument('--load-supercounties', action='store_true', help='load the supercounties file (don\'t overwrite it)')
     parser.add_argument('--avg-window', default=None, type=int, help='number of days to average data over for modeling')
     parser.add_argument('--chains', default=6, type=int, help='number of chains for the stan optimization')
+    parser.add_argument('--dont-make-plots', action='store_true', help='make the main plots (maybe set to False when running validation)')
+    parser.add_argument('--load-val', action='store_true', help='load val results if they exist (for plotting)')
+    parser.add_argument('--summarize', action='store_true', help='summarize num counties and quit')
     args = parser.parse_args()
 
     model = MainStanModel(args)

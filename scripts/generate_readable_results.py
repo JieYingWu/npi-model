@@ -14,9 +14,29 @@ def to_latex(df):
   for i in range(df.shape[0]):
     out.append(' & '.join(map(str, df.iloc[i,:])) + r' \\')
   return '\n'.join(out)
-  
 
-def main(result_dir=None, end_date='5/28', data_dir='data/us_data'):
+def get_reproductive_ratio(summary=None, result_dir=None):
+  """Get the reproductive ratios.
+
+  :param summary: summary data frame
+  :param geocode: list of region codes
+  :returns: 
+  :rtype: 
+
+  """
+  if summary is None:
+    assert result_dir is not None
+    summary = pd.read_csv(join(result_dir, 'summary.csv'), index_col=0)
+  indices = [x for x in summary.index if re.match(r'Rt_adj\[\d+,\d+\]', x) is not None]
+  m = re.match(r'Rt_adj\[(?P<num_days>\d+),(?P<num_counties>\d+)\]', indices[-1])
+  num_days = int(m.group('num_days'))
+  num_counties = int(m.group('num_counties'))
+  
+  reproductive_ratio = summary.loc[indices, 'mean'].to_numpy()
+  reproductive_ratio = reproductive_ratio.reshape(num_counties, num_days)
+  return reproductive_ratio
+
+def make_readable_summary(result_dir, end_date, data_dir='data/us_data'):
   counties_path = join(data_dir, 'counties.csv')
   clustering_path = join(data_dir, 'clustering.csv')
   cases_path = join(data_dir, 'infections_timeseries.csv')
@@ -45,6 +65,9 @@ def main(result_dir=None, end_date='5/28', data_dir='data/us_data'):
   populations = dict(zip(counties.index, counties['POP_ESTIMATE_2018']))
   for supercounty, fips_codes in supercounties.items():
     populations[supercounty] = sum(populations[fips] for fips in fips_codes)
+
+  # new york county population, aggregated over manhattan, the bronx, brooklyn, queens, and staten island, resp.
+  populations['36061'] = sum(populations[k] for k in ['36061', '36005', '36047', '36081', '36085'])
     
   converters = {'FIPS': lambda x : str(x).zfill(5)}
   cases = pd.read_csv(cases_path, converters=converters)
@@ -77,7 +100,7 @@ def main(result_dir=None, end_date='5/28', data_dir='data/us_data'):
 
   # first, report and save the alpha values:
   alpha_indices = list(filter(lambda x : re.match(r'alpha\[\d\]', x) is not None, indices))
-  alphas = summary.loc[alpha_indices, ['mean', 'sd']]
+  alphas = summary.loc[alpha_indices, ['mean', '2.5%', '97.5%']]
   alphas['NPI'] = ['$I_1$: Stay at home',
                    '$I_2$: >50 gathering',
                    '$I_3$: >500 gathering',
@@ -93,39 +116,53 @@ def main(result_dir=None, end_date='5/28', data_dir='data/us_data'):
                    '$I_{13}:$',
                    '$I_{14}:$'][:alphas.shape[0]]
   alphas = alphas.set_index('NPI')
+
   print(alphas)
   print('================================================================================')
-  print(f'alpha value [mean (std)] for copying:')
+  print(f'alpha value [mean (ci)] for copying:')
   print('================================================================================')
-  print('\n'.join('{:.03f} ({:.03f})'.format(row['mean'], row['sd']) for i, row in alphas.iterrows()))
+  print('\n'.join('{:.03f} ({:.03f}, {:,.03f}))'.format(row['mean'], row['2.5%'], row['97.5%']) for i, row in alphas.iterrows()))
   print('================================================================================')
   alphas.to_csv(join(result_dir, 'alphas.csv'))
 
   readable_summary = []         # list of dicts, which are the rows
-  print(*map(int, end_date.split('/')))
-  for i, fips in enumerate(geocodes):
+
+  # Sort the fips codes by reproductive ratio.
+  reproductive_ratio = get_reproductive_ratio(summary=summary)
+  end_date_dt = dt.datetime.strptime(f'{end_date}/20', '%m/%d/%y')
+  end_date_indices = [(end_date_dt - dt.datetime.strptime(sd, '%m/%d/%y')).days for sd in start_dates]
+  final_rts = reproductive_ratio[range(reproductive_ratio.shape[0]), end_date_indices]
+  sorting_indices = np.argsort(final_rts)
+  sorted_geocodes = [geocodes[i] for i in sorting_indices]
+    
+  for i, fips in zip(sorting_indices, sorted_geocodes):
     row = {}
     if fips not in supercounties:
       cluster = clustering[fips]
+      row['Cluster'] = str(int(cluster) + 1)
       row['County'] = '{Area_Name}, {State}'.format(fips=fips, **counties.loc[fips])
     else:
       cluster = fips.split('_')[-1]
       state_fips = fips.split('_')[0]
+      row['Cluster'] = str(int(cluster) + 1)
       row['County'] = '{State} Super-county Cluster {cluster}'.format(fips=fips, cluster=cluster, **counties.loc[state_fips])
 
-    row['Cluster'] = str(int(cluster) + 1)
-    row['R_0 (std)'] = '{mean:.03f} ({sd:.03f})'.format(**summary.loc[f'Rt_adj[1,{i + 1}]'])
-    end_date_idx = dt.date(2020, *map(int, end_date.split('/'))).toordinal() - dt.date(2020, *map(int, start_dates[i].split('/')[:2])).toordinal()
-    row[f'R_{end_date} (std)'] = '{mean:.03f} ({sd:.03f})'.format(**summary.loc[f'Rt_adj[{max(1, end_date_idx + 1)},{i + 1}]'])
+    row['R_0'] = '{:.03f} ({:.03f},~{:.03f})'.format(*summary.loc[f'Rt_adj[1,{i + 1}]', ['mean', '2.5%', '97.5%']])
+    end_date_idx = (dt.date(2020, *map(int, end_date.split('/'))).toordinal()
+                    - dt.date(2020, *map(int, start_dates[i].split('/')[:2])).toordinal())
+    row['R_{end_date}'] = '{:.03f} ({:.03f},~{:.03f})'.format(
+      *summary.loc[f'Rt_adj[{max(1, end_date_idx + 1)},{i + 1}]', ['mean', '2.5%', '97.5%']])
 
     # get the number of predicted cases
     prediction_indices = list(filter(lambda x : re.match(r'prediction\[\d+,' + str(i + 1) + r'\]', x) is not None, indices))
     pred_cases = sum(list(summary.loc[prediction_indices, 'mean'])[:end_date_idx + 1])
-    row['# (\\%) infected as predicted'] = '{:d} ({:.01f})'.format(int(pred_cases), 999999999 if fips not in populations else pred_cases / populations[fips] * 100)
+    row['# (\\%) infected as predicted'] = '{:,d} ({:.01f})'.format(
+      int(pred_cases), 999999999 if fips not in populations else pred_cases / populations[fips] * 100)
 
     if re.match(r'^\d{5}$', fips) is not None:
       num_cases = cases.loc[fips][-1]
-      row['Measured cases'] = num_cases
+      row['Measured cases'] = f'{num_cases:,d}'
+      row['Population'] = f'{populations[fips]:,d}'
       row['Fatality rate (measured death/cases)'] = f'{deaths.loc[fips][-1] / num_cases * 100:.02f}\\%'
       readable_summary.append(row)
 
@@ -134,38 +171,63 @@ def main(result_dir=None, end_date='5/28', data_dir='data/us_data'):
       for fips in supercounties[supercounty]:
         row = {}
         cluster = clustering[fips]
-        row['County'] = '{Area_Name}, {State}'.format(fips=fips, **counties.loc[fips])
         row['Cluster'] = str(int(cluster) + 1)
+        row['County'] = '{Area_Name}, {State}'.format(fips=fips, **counties.loc[fips])
 
-        row['R_0 (std)'] = '{mean:.03f} ({sd:.03f})'.format(**summary.loc[f'Rt_adj[1,{i + 1}]'])
+        row['R_0'] = '{:.03f} ({:.03f},~{:.03f})'.format(*summary.loc[f'Rt_adj[1,{i + 1}]', ['mean', '2.5%', '97.5%']])
         end_date_idx = dt.date(2020, *map(int, end_date.split('/'))).toordinal() - dt.date(2020, *map(int, start_dates[i].split('/')[:2])).toordinal()
-        row[f'R_{end_date} (std)'] = '{mean:.03f} ({sd:.03f})'.format(**summary.loc[f'Rt_adj[{end_date_idx + 1},{i + 1}]'])
+        row['R_{end_date}'] = '{:.03f} ({:.03f},~{:.03f})'.format(
+          *summary.loc[f'Rt_adj[{max(1, end_date_idx + 1)},{i + 1}]', ['mean', '2.5%', '97.5%']])
 
         # get proportion of deaths in this county to deaths in supercounty, assume cases are proportional, and divide by population of the county
         supercounty_conversion_factor = deaths.loc[fips][-1] / deaths.loc[supercounty][-1]
         prediction_indices = list(filter(lambda x : re.match(r'prediction\[\d+,' + str(i + 1) + r'\]', x) is not None, indices))
         pred_cases = sum(list(summary.loc[prediction_indices, 'mean'])[:end_date_idx + 1]) * supercounty_conversion_factor
-        row['# (\\%) infected as predicted'] = '{:d} ({:.01f})'.format(int(pred_cases), pred_cases / populations[fips] * 100)
+        row['# (\\%) infected as predicted'] = '{:,d} ({:.01f})'.format(int(pred_cases), pred_cases / populations[fips] * 100)
 
         num_cases = cases.loc[fips][-1]
-        row['Measured cases'] = num_cases
+        row['Measured cases'] = f'{num_cases:,d}'
+        row['Population'] = f'{populations[fips]:,d}'
         row['Fatality rate (measured death/cases)'] = f'{deaths.loc[fips][-1] / num_cases * 100:.02f}\\%'
         readable_summary.append(row)
 
   readable_summary = pd.DataFrame(readable_summary)
-  # print(readable_summary)
+  
+  return readable_summary
+
+
+def get_readable_summary(result_dir, end_date):
+  readable_summary_path = join(result_dir, 'readable_summary.csv')
+  if exists(readable_summary_path):
+    return pd.read_csv(readable_summary_path, index_col=0)
+
+
+def main(*, result_dir, end_date):
+  # readable_summary = get_readable_summary(result_dir, end_date)
+  readable_summary = make_readable_summary(result_dir, end_date)
+  readable_summary.to_csv(join(result_dir, 'readable_summary.csv'))
+
+  pops = list(map(lambda x: int(x.replace(',', '')), readable_summary.loc[:, 'Population']))
+  indices = np.argsort(pops)
+  readable_summary_by_population = readable_summary.iloc[indices, :]
+  readable_summary_by_population.reset_index(inplace=True)
+  readable_summary_by_population.to_csv(join(result_dir, 'readable_summary_by_population.csv'))
+  print(readable_summary_by_population)
+  
+  print('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
   latex_summary = to_latex(readable_summary)
-  print(latex_summary)
   with open(join(result_dir, 'readable_summary.tex'), 'w') as file:
     file.write(latex_summary)
   
-  readable_summary.to_csv(join(result_dir, 'readable_summary.csv'))
+  latex_summary_by_pop = to_latex(readable_summary_by_population)
+  with open(join(result_dir, 'readable_summary_by_population.tex'), 'w') as file:
+    file.write(latex_summary_by_pop)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('result_dir', help='path to result dir to load the summary.csv, and to save the readable output version')
-    parser.add_argument('--end_date', default='5/28', help='month/day (2020) to end predictions on')
+    parser.add_argument('--end-date', default='8/2', help='month/day (2020) to end predictions on')
     args = parser.parse_args()
 
     main(**args.__dict__)

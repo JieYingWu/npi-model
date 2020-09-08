@@ -8,6 +8,10 @@ import datetime
 import json
 import seaborn as sns
 import math
+import datetime as dt
+
+colors = ['#D55E00', '#CC79A7', '#0072B2', '#F0E442', '#009E73']
+# colors = ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00'] # Anna's old colors
 
 
 def get_means_list(path, geo_list):
@@ -113,6 +117,19 @@ def read_density(path_density, selected_dict, dict_r0_supercounty, plot_variable
     return density_dict, dict_r0
 
 
+def get_reproductive_ratio(result_dir):
+  summary = pd.read_csv(join(result_dir, 'summary.csv'), index_col=0)
+  indices = [x for x in summary.index if re.match(r'Rt_adj\[\d+,\d+\]', x) is not None]
+  m = re.match(r'Rt_adj\[(?P<num_days>\d+),(?P<num_counties>\d+)\]', indices[-1])
+  num_days = int(m.group('num_days'))
+  num_counties = int(m.group('num_counties'))
+  
+  reproductive_ratio = summary.loc[indices, 'mean'].to_numpy()
+  reproductive_ratio = reproductive_ratio.reshape(num_counties, num_days)
+  # print(reproductive_ratio.shape, reproductive_ratio[0])
+  return reproductive_ratio
+
+
 def get_rt_adj(path, geo_list, start_day_dict):
     # 1 for deaths; 0 for infections
     plot_name = "Rt_adj["
@@ -155,16 +172,18 @@ def get_start_day(path, geo_list):
 
 
 # plot the R0
-def plot_scatter_r0(path, plot_variable):
+def plot_scatter_r0(path, plot_variable, xlabel=''):
     pos = 0
-    path_density = "../data/us_data"
+    path_density = "data/us_data"
     ax[pos].set_title("R0", pad=15)
-    colors = ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00']
     x_array = []
 
     for cluster_n in range(0, 5):
         print(cluster_n)
         path_rt = path + str(cluster_n)
+        if not exists(path_rt):
+            x_array.append(None)
+            continue
         supercounties_dist, supercounties_names = create_geocodes_dict(path_rt, path_density)
 
         start_day_dict = get_start_day(path_rt, supercounties_names)
@@ -227,14 +246,16 @@ def plot_scatter_r0(path, plot_variable):
 
 
 # plot the Rt over the dates
-def plot_scatter_radj(path, date_plot, pos, plot_variable,x_array):
-    path_density = "../data/us_data"
+def plot_scatter_radj(path, date_plot, pos, plot_variable, x_array):
+    path_density = "data/us_data"
     ax[pos].set_title(date_plot, pad=17)
-    colors = ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00']
 
     for cluster_n in range(0, 5):
         print("Retrieving information for cluster number ...", cluster_n)
         path_rt = path + str(cluster_n)
+        if not exists(path_rt):
+            continue
+        
         supercounties_dist, supercounties_names = create_geocodes_dict(path_rt, path_density)
 
         start_day_dict = get_start_day_dict(path_rt, supercounties_names, date_plot)
@@ -248,14 +269,19 @@ def plot_scatter_radj(path, date_plot, pos, plot_variable,x_array):
             density_dict, dict_r0 = read_density(path_density, supercounties_dist, rt_adj_list, plot_variable)
 
         # creating a scatter plot
+        x_list = []
         y_list = []
         for key in density_dict.keys():
             x = density_dict[key]
             y = dict_r0[key]
             if (y is not None) and (not math.isnan(x)):
+                x_list.append(x)
                 y_list.append(y)
-            ax[pos].scatter(x, y, color=colors[cluster_n], s=8, alpha=set_transparency)
+            # ax[pos].scatter(x, y, color=colors[cluster_n], s=8, alpha=set_transparency)
 
+        print(f'plotting:\n  {x_list}\n  {y_list}')
+        ax[pos].scatter(x_list, y_list, color=colors[cluster_n], s=8, alpha=set_transparency)
+            
         # creating a density plot on Y axis
         ax2 = ax[pos].twiny()
         sns.distplot(y_list, hist=False, kde=True, vertical=True, norm_hist=True,
@@ -306,27 +332,39 @@ def make_all_plots(path, plot_variable):
 
 if __name__ == '__main__':
     plt.rc('font', serif='Helvetica Neue')
-    plt.rcParams.update({'font.size': 16})
+    plt.rcParams.update({'font.size': 16, 'figure.figsize': (20, 8.5)})
 
     # lest of dates for which plots should be generated
-    dates = ['3/15/20', '3/25/20', '4/1/20', '4/10/20', '5/28/20']
+    # dates = ['3/15/20', '3/25/20', '4/1/20', '4/10/20', '5/28/20']
+    start = dt.date(2020, 3, 15)
+    end = dt.date(2020, 8, 2)
+    num_dates = 5
+    dates = [(start + i * (end - start) / (num_dates - 1)).strftime('%m/%d/%y') for i in range(num_dates)]
+    print(dates)
+    
     plot_variable = ['transit_scores - population weighted averages aggregated from town/city level to county',
                      'Median_Household_Income_2018',
                      'Density per square mile of land area - Housing units']
-    pretty_titles = ['Relating Public Transit with Reproductive Number over Time',
-                     'Relating Median Household Income with Reproductive Number over Time',
-                     'Relating Density per Square Mile of Land Area with Reproductive Number over Time']
+    pretty_titles = ['Relating Public Transit with Reproductive Ratio over Time',
+                     'Relating Median Household Income with Reproductive Ratio over Time',
+                     'Relating Population Density with Reproductive Ratio over Time']
+    # xlabels = ['Public Transit Score',
+    #            'Median Household Income (USD)',
+    #            'Population Density (per Square Mile)']
 
-    path = "../results/no_validation_clusters/cluster_"
+    path = "results/region_specific_2000_iter/cluster_"
     plot_supercounties = True  # if set to False then plot on the scatter all the counties
     use_weight_average = True  # weight the supercounties over the population
     use_death_weight = False  # used for testing, futher experiments set that weighting over the deaths is not reliable
     set_transparency = 0.5  # transparency of scatter circles
 
     fig, ax = plt.subplots(1, len(dates) + 1, sharex=True, sharey=True)
+    if not exists('visualizations/rt_plots'):
+        os.mkdir('visualizations/rt_plots')
     for idx in range(0, len(plot_variable)):
         make_all_plots(path, plot_variable[idx])
+        
         fig.suptitle(pretty_titles[idx])
-        # plt.savefig("../results/plots/"+plot_variable[i]+'.pdf')
-        fig.tight_layout()
-        plt.show()
+        plt.savefig("visualizations/rt_plots/"+plot_variable[idx].replace('- ', '').replace(' ', '_').replace('/','-')+'.pdf')
+        # fig.tight_layout()
+        # plt.show()

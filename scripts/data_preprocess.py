@@ -412,21 +412,19 @@ def preprocessing_us_data(data_dir, mode='county'):
     population.at[population['FIPS']=='36047','POP_ESTIMATE_2018'] = '0'
     population.at[population['FIPS']=='36081','POP_ESTIMATE_2018'] = '0'
     population.at[population['FIPS']=='36085','POP_ESTIMATE_2018'] = '0'
-
     
-    def get_daily_counts(L):
-        diff = np.array([y - x for x, y in zip(L, L[1:])])
-        L[1:] = diff
-        return L
+    def get_daily_counts(row):
+        x = row.to_numpy()
+        row = row.copy()
+        row[1:] = x[1:] - x[:-1]
+        return row
 
     #### get daily counts instead of cumulative
     df_cases.iloc[:, 2:] = df_cases.iloc[:, 2:].apply(get_daily_counts, axis=1)
     df_deaths.iloc[:, 2:] = df_deaths.iloc[:, 2:].apply(get_daily_counts, axis=1)
-    
-
 
     # get the mobility dict
-    mobility = preprocess_mobility_reports(data_dir) 
+    mobility = preprocess_mobility_reports(data_dir)
 
     return df_cases, df_deaths, interventions, population, mobility
 
