@@ -230,7 +230,7 @@ def plot_scatter_r0(path, plot_variable, xlabel=''):
         ax3.tick_params(labelright=False)
         ax3.tick_params(labeltop=False)
         ax[pos].tick_params(axis='x', labelrotation=45)
-        ax[pos].set_ylabel('Reproductive Rate')
+        ax[pos].set_ylabel('Reproductive Ratio')
         x_array.append(x_list)
 
         # set different ranges for different features
@@ -341,7 +341,6 @@ if __name__ == '__main__':
     end = dt.date(2020, 8, 2)
     num_dates = 5
     dates = [(start + i * (end - start) / (num_dates - 1)).strftime('%m/%d/%y') for i in range(num_dates)]
-    print(dates)
     
     plot_variable = ['transit_scores - population weighted averages aggregated from town/city level to county',
                      'Median_Household_Income_2018',
@@ -349,9 +348,9 @@ if __name__ == '__main__':
     pretty_titles = ['Relating Public Transit with Reproductive Ratio over Time',
                      'Relating Median Household Income with Reproductive Ratio over Time',
                      'Relating Population Density with Reproductive Ratio over Time']
-    # xlabels = ['Public Transit Score',
-    #            'Median Household Income (USD)',
-    #            'Population Density (per Square Mile)']
+    xlabels = ['Public Transit Score',
+               'Median Household Income (USD)',
+               'Population Density (per Square Mile)']
 
     path = "results/region_specific_2000_iter/cluster_"
     plot_supercounties = True  # if set to False then plot on the scatter all the counties
